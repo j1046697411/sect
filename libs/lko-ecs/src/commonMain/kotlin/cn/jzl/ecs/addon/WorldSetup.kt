@@ -2,6 +2,7 @@ package cn.jzl.ecs.addon
 
 import androidx.collection.mutableScatterMapOf
 import cn.jzl.di.singleton
+import cn.jzl.ecs.ECSDsl
 import cn.jzl.ecs.WorldOwner
 
 data class WorldSetup(val injector: Injector, val phaseTaskRegistry: (String, Phase, WorldOwner.() -> Unit) -> Unit) {
@@ -9,6 +10,7 @@ data class WorldSetup(val injector: Injector, val phaseTaskRegistry: (String, Ph
     @PublishedApi
     internal val addonInstallers = mutableScatterMapOf<Addon<*, *>, AddonInstaller<*, *>>()
 
+    @ECSDsl
     inline fun <reified Configuration, reified Instance> install(
         addon: Addon<Configuration, Instance>,
         configuration: Configuration.() -> Unit = {}

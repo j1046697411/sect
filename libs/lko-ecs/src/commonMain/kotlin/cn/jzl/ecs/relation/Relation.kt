@@ -16,6 +16,7 @@ value class Relation @PublishedApi internal constructor(val data: Long) : Compar
 
     companion object {
         operator fun invoke(kind: ComponentId, target: Entity): Relation {
+            require(target != Entity.ENTITY_INVALID) { "Relation target cannot be ENTITY_INVALID" }
             return Relation(Long.fromLowHigh(kind.data, target.data))
         }
     }

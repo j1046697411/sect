@@ -18,39 +18,45 @@ import cn.jzl.ecs.relation.RelationService
 
 fun World.isActive(entity: Entity): Boolean = entityService.isActive(entity)
 
+@ECSDsl
 fun World.entity(
     configuration: EntityCreateContext.(Entity) -> Unit
 ): Entity = entityService.create(true, configuration)
 
+@ECSDsl
 fun World.entity(
     entityId: Int,
     configuration: EntityCreateContext.(Entity) -> Unit
 ): Entity = entityService.create(entityId, true, configuration)
 
-fun World.entity(entity: Entity, configuration: EntityUpdateContext.(Entity) -> Unit) {
+@ECSDsl
+fun World.editor(entity: Entity, configuration: EntityUpdateContext.(Entity) -> Unit) {
     entityService.configure(entity, true, configuration)
 }
 
+@ECSDsl
 context(worldOwner: WorldOwner)
 fun Entity.editor(configuration: EntityUpdateContext.(Entity) -> Unit): Unit = with(worldOwner) {
-    world.entity(this@editor, configuration)
+    world.editor(this@editor, configuration)
 }
 
+@ECSDsl
 context(worldOwner: WorldOwner)
 fun Entity.childOf(configuration: EntityCreateContext.(Entity) -> Unit): Entity = with(worldOwner){
     return world.childOf(this@childOf, configuration)
 }
-
+@ECSDsl
 fun World.childOf(parent: Entity, configuration: EntityCreateContext.(Entity) -> Unit): Entity = entity {
     configuration(it)
     it.parent(parent)
 }
-
+@ECSDsl
 context(worldOwner: WorldOwner)
 fun Entity.instanceOf(configuration: EntityCreateContext.(Entity) -> Unit): Entity {
     return worldOwner.world.instanceOf(this, configuration)
 }
 
+@ECSDsl
 fun World.instanceOf(prefab: Entity, configuration: EntityCreateContext.(Entity) -> Unit): Entity = entity {
     configuration(it)
     it.addRelation(components.instanceOf, prefab)
@@ -65,6 +71,7 @@ fun Entity.destroy(): Unit = with(worldOwner) {
     world.destroy(this@destroy)
 }
 
+@ECSDsl
 fun <E : EntityQueryContext> World.query(
     factory: World.() -> E
 ): Query<E> {
@@ -109,6 +116,7 @@ val codeAddon = createAddon<Unit>("codeAddon") {
     }
 }
 
+@ECSDsl
 fun world(configuration: WorldSetup.() -> Unit): World {
     val mainBuilder = DIMainBuilder("world")
     val injector = Injector { mainBuilder.it() }

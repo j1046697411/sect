@@ -10,6 +10,7 @@ import cn.jzl.ecs.family.component
 import cn.jzl.ecs.observer.emit
 import cn.jzl.ecs.observer.observe
 import cn.jzl.ecs.query.EntityQueryContext
+import kotlin.jvm.JvmInline
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull

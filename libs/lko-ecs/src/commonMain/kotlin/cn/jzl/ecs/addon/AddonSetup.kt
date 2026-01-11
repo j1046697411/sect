@@ -1,6 +1,7 @@
 package cn.jzl.ecs.addon
 
 import cn.jzl.di.DIMainBuilder
+import cn.jzl.ecs.ECSDsl
 import cn.jzl.ecs.WorldOwner
 
 data class AddonSetup<Configuration>(
@@ -9,10 +10,12 @@ data class AddonSetup<Configuration>(
     @PublishedApi internal val worldSetup: WorldSetup
 ) {
 
+    @ECSDsl
     fun injects(configuration: DIMainBuilder.() -> Unit) {
         worldSetup.injector.inject(configuration)
     }
 
+    @ECSDsl
     inline fun <reified Configuration1, reified Instance> install(
         addon: Addon<Configuration1, Instance>,
         configuration: Configuration1.() -> Unit = {}
