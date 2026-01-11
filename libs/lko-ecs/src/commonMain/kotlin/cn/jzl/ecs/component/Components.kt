@@ -5,6 +5,7 @@ import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.observer.Observer
 
 typealias ComponentId = Entity
+typealias Component = Any
 
 val WorldOwner.components: Components get() = world.components
 

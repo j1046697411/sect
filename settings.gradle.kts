@@ -53,6 +53,7 @@ plugins {
 }
 
 include(":composeApp")
+include(":androidApp")
 includeProject("libs")
 includeProject("benchmarks")
 fun includeProject(path: String) = addPluginLibs(rootDir.toPath().resolve(path))

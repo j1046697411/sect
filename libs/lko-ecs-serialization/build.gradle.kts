@@ -28,20 +28,20 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.kodein.kaverit)
-            api(projects.libs.lkoCore)
-            api(projects.libs.lkoDi)
-            implementation(libs.kotlinx.atomics)
-            implementation(libs.androidx.collection)
+            api(projects.libs.lkoEcs)
+            implementation(libs.kotlinx.serialization.core)
+            implementation(libs.kotlinx.serialization.json)
+            implementation(libs.kotlinx.serialization.cbor)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
         }
     }
 }
 
 android {
-    namespace = "cn.jzl.ecs"
+    namespace = "cn.jzl.ecs.serialization"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 
     packaging {
