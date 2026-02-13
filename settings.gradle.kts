@@ -56,6 +56,11 @@ include(":composeApp")
 include(":androidApp")
 includeProject("libs")
 includeProject("benchmarks")
+include(":business-modules:business-core")
+include(":business-modules:business-disciples")
+include(":business-modules:business-cultivation")
+include(":business-modules:business-quest")
+include(":business-modules:business-engine")
 fun includeProject(path: String) = addPluginLibs(rootDir.toPath().resolve(path))
 fun addPluginLibs(path: java.nio.file.Path) {
     if (!Files.isDirectory(path)) return

@@ -256,8 +256,8 @@ class WorldTest : EntityRelationContext {
     }
 
     data class Pos(val x: Int, val y: Int)
-    data class Health(val value: Int)
-    data class Name(val value: String)
+    @JvmInline value class Health(val value: Int)
+    @JvmInline value class Name(val value: String)
     sealed class OwnerBy
 
     class PosContext(world: World) : EntityQueryContext(world) {

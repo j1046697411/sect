@@ -10,6 +10,15 @@ plugins {
     alias(libs.plugins.composeHotReload)
 }
 
+android {
+    compileSdk = 36
+    namespace = "cn.jzl.sect"
+    
+    defaultConfig {
+        minSdk = 24
+    }
+}
+
 kotlin {
     androidTarget {
         compilerOptions {
@@ -46,6 +55,8 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
 
             implementation(projects.libs.lkoDi)
+            implementation(projects.libs.lkoEcs)
+            implementation(projects.libs.lkoCore)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -59,7 +70,7 @@ kotlin {
 
 compose.desktop {
     application {
-        mainClass = "cn.jzl.sect.MainKt"
+        mainClass = "cn.jzl.sect.demo.DemoMainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)

@@ -112,7 +112,6 @@ class RelationService(override val world: World) : WorldOwner {
         val holdsData =
             operates.asSequence().filterIsInstance<BatchEntityEditor.AddEntityRelationOperateWithData>().iterator()
         var nextData: BatchEntityEditor.AddEntityRelationOperateWithData? = null
-        var currentIndex = 0
 
         if (this.id == newArchetype.id) {
             if (holdsData.hasNext()) {
@@ -129,6 +128,10 @@ class RelationService(override val world: World) : WorldOwner {
             }
             return oldEntityIndex
         }
+        
+        val oldTable = table
+        val oldHoldsDataType = oldTable.holdsDataType
+        val oldSize = oldHoldsDataType.size
         return newArchetype.table.insert(entity) {
             if (nextData == null && holdsData.hasNext()) {
                 nextData = holdsData.next()
@@ -136,13 +139,17 @@ class RelationService(override val world: World) : WorldOwner {
             val newNextData = nextData
             if (newNextData != null && newNextData.relation == this) {
                 nextData = null
-                if (currentIndex < table.holdsDataType.size && table.holdsDataType[currentIndex] == this) {
-                    currentIndex++
-                }
                 newNextData.data
             } else {
-                while (this > table.holdsDataType[currentIndex]) currentIndex++
-                table[oldEntityIndex, currentIndex++]
+                var currentIndex = 0
+                while (currentIndex < oldSize && oldHoldsDataType[currentIndex] < this) {
+                    currentIndex++
+                }
+                if (currentIndex < oldSize && oldHoldsDataType[currentIndex] == this) {
+                    oldTable[oldEntityIndex, currentIndex]
+                } else {
+                    Any()
+                }
             }
         }
     }
