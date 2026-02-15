@@ -1,6 +1,27 @@
 # 宗门修真录 - Agent 项目规范
 
-Kotlin/Gradle 多模块 ECS 游戏项目
+## 关键说明：仅限中文策略（切勿删除此部分）
+
+> **此部分绝不可删除或修改**
+
+### 所有项目交流必须使用中文
+
+| 上下文 | 语言要求 |
+|---------|---------------------|
+| **GitHub Issues** | 仅限中文 |
+| **Pull Requests** | 仅限中文（标题、描述、评论） |
+| **提交信息** | 仅限中文 |
+| **代码注释** | 仅限中文 |
+| **文档** | 仅限中文 |
+| **AGENTS.md 文件** | 仅限中文 |
+
+**如果你不习惯用中文写作，请使用翻译工具。**
+
+---
+
+## 项目概述
+
+Kotlin/Gradle 多模块 ECS 游戏项目。核心架构基于 Entity-Component-System (ECS) 模式。
 
 ## 模块结构
 
@@ -60,20 +81,25 @@ open libs/lko-ecs/build/reports/kover/htmlJvm/index.html
 ./gradlew :benchmarks:lko-ecs-benchmarks:mainBenchmark  # ECS 基准测试
 ```
 
-## 代码风格
+## 代码风格规范
 
-### 命名规范
-- **类/接口**: PascalCase (`World`, `EntityService`)
-- **函数/属性**: camelCase (`getComponent`, `entityId`)
-- **常量**: UPPER_SNAKE_CASE (`ENTITY_INVALID`)
-- **组件**: 名词 (`Health`, `Position`)
-- **标签**: 形容词+Tag (`ActiveTag`)
-- **服务**: 功能+Service (`HealthService`)
+### 命名约定
+- **类/接口**: PascalCase (如 `World`, `EntityService`)
+- **函数/属性**: camelCase (如 `getComponent`, `entityId`)
+- **常量**: UPPER_SNAKE_CASE (如 `MAX_ENTITIES`)
+- **组件 (Component)**: 名词 (如 `Health`, `Position`)
+- **标签 (Tag)**: 形容词+Tag (如 `ActiveTag`, `DeadTag`)
+- **系统/服务**: 功能+System/Service (如 `MovementSystem`)
+
+### 格式化
+- **缩进**: 4 个空格
+- **行宽**: 120 字符
+- **文件编码**: UTF-8
 
 ### 导入顺序
-1. Kotlin 标准库
-2. 第三方库
-3. 项目内部模块
+1. Kotlin/Java 标准库
+2. 第三方库 (Android/Compose 等)
+3. 项目内部模块 (`cn.jzl.*`)
 
 ```kotlin
 import kotlin.jvm.JvmInline
@@ -81,9 +107,10 @@ import androidx.collection.MutableIntList
 import cn.jzl.ecs.World
 ```
 
-### 格式化
-- 缩进: 4 空格
-- 行宽: 120 字符
+### 错误处理
+- 优先使用 Kotlin 标准异常 (`IllegalArgumentException` 等)。
+- 避免吞掉异常，必须记录或重新抛出。
+- 在 ECS 系统中，避免在 `update` 循环中抛出未捕获异常导致游戏崩溃。
 
 ## ECS 核心规范
 
