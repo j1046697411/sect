@@ -25,9 +25,10 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":libs:lko-core"))
-                implementation(project(":libs:lko-ecs"))
+                implementation(libs.kodein.kaverit)
                 implementation(project(":business-modules:business-core"))
+                implementation(project(":libs:lko-ecs"))
+                implementation(project(":libs:lko-core"))
             }
         }
         val commonTest by getting {
@@ -39,6 +40,18 @@ kotlin {
 }
 
 android {
-    namespace = "cn.jzl.sect.engine"
+    namespace = "cn.jzl.sect.ai.goap"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
+    buildTypes {
+        release { isMinifyEnabled = false }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
 }

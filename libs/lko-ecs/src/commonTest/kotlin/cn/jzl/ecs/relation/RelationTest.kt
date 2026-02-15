@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class RelationTest {
 
@@ -28,8 +29,8 @@ class RelationTest {
         val relation = Relation(kind, target)
         
         val str = relation.toString()
-        assert(str.contains("kind"))
-        assert(str.contains("target"))
+        assertTrue(str.contains("kind"))
+        assertTrue(str.contains("target"))
     }
 
     @Test
@@ -83,10 +84,12 @@ class RelationTest {
         assertNotEquals(relation1, relation2)
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testRelationWithInvalidTarget() {
         val kind = ComponentId(1)
         
-        Relation(kind, Entity.ENTITY_INVALID)
+        assertFailsWith<IllegalArgumentException> {
+            Relation(kind, Entity.ENTITY_INVALID)
+        }
     }
 }

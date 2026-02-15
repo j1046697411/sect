@@ -1,0 +1,6 @@
+"opencode": [
+"kimi-k2.5-free",
+"big-pickle",
+"minimax-m2.5-free",
+"gpt-5-nano"
+],

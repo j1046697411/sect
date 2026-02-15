@@ -33,7 +33,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.jzl.sect.squest"
+    namespace = "cn.jzl.sect.squest"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
 }
 // 依赖统一在 kotlin sourceSets 中管理

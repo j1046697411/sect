@@ -27,8 +27,11 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(libs.kodein.kaverit)
+                implementation(project(":business-modules:business-core"))
+                implementation(project(":libs:lko-ecs"))
             }
         }
+
         val commonTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
@@ -38,7 +41,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.jzl.sect.cultivation"
+    namespace = "cn.jzl.sect.cultivation"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     packaging {
         resources {

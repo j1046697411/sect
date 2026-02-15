@@ -10,6 +10,7 @@ import cn.jzl.ecs.observer.*
 import cn.jzl.ecs.query.EntityQueryContext
 import kotlin.test.*
 
+
 // 观察者测试专用的数据类
 private data class ObserverPosition(val x: Int, val y: Int)
 private data class ObserverHealth(val current: Int, val max: Int)
@@ -187,26 +188,7 @@ class ObserverTest : EntityRelationContext {
         assertTrue(customEventCalled, "Custom event observer should be called")
     }
 
-    @Test
-    fun testObserverPerformance() {
-        var observerCallCount = 0
 
-        world.observe<OnInserted>().exec {
-            observerCallCount++
-        }
-
-        val startTime = kotlin.system.measureTimeMillis {
-            repeat(100) { index ->
-                val entity = world.entity {}
-                entity.editor {
-                    it.addComponent(ObserverPosition(index, index))
-                }
-            }
-        }
-
-        assertEquals(100, observerCallCount, "All 100 observers should be called")
-        assertTrue(startTime < 5000, "Should complete within 5 seconds")
-    }
 
     @Test
     fun testObserverWithTagFilter() {

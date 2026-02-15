@@ -38,7 +38,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.jzl.sect.cultivation"
+    namespace = "cn.jzl.sect.cultivation"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     packaging {
         resources {

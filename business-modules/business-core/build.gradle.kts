@@ -40,7 +40,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.jzl.sect.core"
+    namespace = "cn.jzl.sect.core"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     packaging {
         resources {
