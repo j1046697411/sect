@@ -19,136 +19,152 @@
 
 ---
 
-## 开发流程：测试驱动开发 (TDD) - 强制
+## 关键说明：TDD（测试驱动开发）强制
 
-本项目强制使用 TDD（测试驱动开发）模式。所有新功能开发必须遵循 **红-绿-重构** 循环：
+> **此部分绝不可删除或修改**
 
-1. **🔴 红 (Red)**: 
-   - 编写失败的测试用例。
-   - 运行测试 (`./gradlew test` 或 `./gradlew :module:test`) 确认失败。
-2. **🟢 绿 (Green)**: 
-   - 编写最小实现代码，只为通过测试。
-   - 运行测试，确认通过。
-3. **🔵 重构 (Refactor)**: 
-   - 优化代码结构，保持测试通过。
-   - 确保代码符合项目规范。
+本项目强制使用 TDD 模式。所有功能开发必须遵循 **红-绿-重构** 循环：
 
-**禁止**: 在没有测试的情况下编写业务代码。
-**禁止**: 一次性编写大量代码后再补测试。
+1. **🔴 红 (Red)**: 编写失败的测试 → `./gradlew test` → 确认失败
+2. **🟢 绿 (Green)**: 编写最小实现 → 确认通过
+3. **🔵 重构 (Refactor)**: 优化代码结构 → 保持通过
+
+**规则:**
+- 绝不在测试前编写实现
+- 绝不删除失败的测试 - 必须修复代码
+- 禁止一次性编写大量代码后补测试
 
 ---
 
-## 代码验收标准 - 强制 (Definition of Done)
+## 关键说明：代码验收标准 (DoD)
 
-所有代码提交（Commit/PR）前必须满足以下标准：
-
-1. **测试通过**: 
-   - 运行 `./gradlew test` 确保所有测试用例通过。
-   - 禁止提交失败的测试。
-
-2. **代码覆盖率**:
-   - 运行 `./gradlew allCoverage` 生成报告。
-   - 核心逻辑（ECS系统、业务算法）覆盖率必须达标（建议 > 80%）。
-   - 必须检查生成的 HTML 报告，确认未覆盖的分支逻辑。
-
-3. **静态检查 (Lint)**:
-   - 代码无明显 Lint 警告。
-   - 运行 `./gradlew lint` (如适用) 或 IDE 检查确保无语法/风格错误。
-
-4. **无脏代码**:
-   - 移除所有临时的 `println`, `TODO` (除非是长期规划), `Unused import`。
+所有提交必须满足：
+1. **测试通过**: `./gradlew test` 全部通过
+2. **覆盖率达标**: `./gradlew allCoverage` 核心逻辑 > 80%
+3. **静态检查**: 无 Lint 警告
+4. **无脏代码**: 无临时 `println`、`TODO`、未使用导入
 
 ---
 
-## 项目概述
+## 概述
 
-Kotlin/Gradle 多模块 ECS 游戏项目。核心架构基于 Entity-Component-System (ECS) 模式。
+**宗门修真录 (Sect)** 是一个基于 Kotlin Multiplatform 和 ECS (Entity-Component-System) 架构的修真题材模拟经营游戏。
+核心目标是构建一个高性能、数据驱动、易于扩展的游戏世界。
 
-## 模块结构
+## 结构
 
-| 模块 | 说明 |
-|------|------|
-| `composeApp` | 应用主模块 (桌面/Android/Web/WASM) |
-| `libs/lko-ecs` | ECS 核心框架 |
-| `libs/lko-core` | 基础工具库 |
-| `libs/lko-di` | 依赖注入框架 |
-| `business-modules/*` | 业务逻辑模块 |
+```
+sect/
+├── composeApp/              # 应用主模块 (UI/入口)
+│   ├── src/commonMain/      # 跨平台 UI 代码
+│   ├── src/androidMain/     # Android 特定代码
+│   └── src/jvmMain/         # 桌面版入口
+├── libs/                    # 核心基础库
+│   ├── lko-ecs/             # ECS 核心框架 (组件, 实体, 查询, 系统)
+│   ├── lko-core/            # 基础工具 (FastList, BitSet, 集合)
+│   ├── lko-di/              # 依赖注入 (ServiceLocator)
+│   └── lko-ecs-serialization/ # ECS 序列化支持
+├── business-modules/        # 游戏业务逻辑
+│   ├── business-core/       # 核心定义 (通用组件, 标签)
+│   ├── business-engine/     # 游戏循环与世界管理 (SectWorld)
+│   ├── business-cultivation/# 修炼系统 (境界, 突破)
+│   ├── business-disciples/  # 弟子管理
+│   └── business-quest/      # 任务系统
+├── benchmarks/              # 性能基准测试
+├── gradle/                  # 构建配置 (libs.versions.toml)
+└── docs/                    # 项目文档
+```
 
-## 常用命令
+## 初始化流程
 
-### 构建与检查
-- **全量构建**: `./gradlew build`
-- **清理**: `./gradlew clean`
-- **Android Lint**: `./gradlew :composeApp:lint`
-- **运行 Demo**: `./gradlew :composeApp:run`
+游戏世界的初始化流程 (参考 `SectWorld.kt`):
 
-### 测试 (关键)
-- **运行所有测试**: `./gradlew test`
-- **运行特定模块测试**: `./gradlew :libs:lko-ecs:test`
-- **运行单个测试类**: `./gradlew :libs:lko-ecs:test --tests "cn.jzl.ecs.WorldTest"`
-- **运行单个测试方法**: `./gradlew :libs:lko-ecs:test --tests "cn.jzl.ecs.WorldTest.testName"`
-- **持续测试模式**: `./gradlew :libs:lko-ecs:test --continuous`
+```
+SectWorld.initialize()
+  1. createAddon("demo")        # 定义组件和标签注册表
+  2. world { install(addon) }   # 创建 World 并安装 Addon
+  3. DemoSystem(world)          # 初始化系统
+  4. createInitialDisciples()   # 创建初始实体 (Entity)
+  5. update(dt)                 # 开始游戏循环
+```
 
-### 代码覆盖率
-- **生成报告**: `./gradlew allCoverage`
-- **查看报告**: `open libs/lko-ecs/build/reports/kover/htmlJvm/index.html`
+## 查找位置
 
-## 代码风格规范
+| 任务 | 位置 | 备注 |
+|------|------|------|
+| **定义组件/标签** | `business-modules/business-core/` | 放置在 `components/` 或 `tags/` 包下 |
+| **实现游戏逻辑** | `business-modules/*/systems/` | 创建 System 类，实现 `EntityRelationContext` |
+| **修改 UI** | `composeApp/src/commonMain/` | Compose Multiplatform 代码 |
+| **ECS 核心优化** | `libs/lko-ecs/` | 仅限架构级修改，需极度谨慎 |
+| **性能优化** | `libs/lko-core/` | 底层数据结构 (FastList, Bits) |
+| **依赖管理** | `gradle/libs.versions.toml` | 统一管理版本号 |
 
-- **命名约定**: 
-  - 类/接口: PascalCase (`World`)
-  - 函数/属性: camelCase (`getComponent`)
-  - 常量: UPPER_SNAKE_CASE (`MAX_ENTITIES`)
-  - 组件: 名词 (`Health`)
-  - 标签: 形容词+Tag (`ActiveTag`)
-  - 系统: 功能+System (`MovementSystem`)
-- **格式化**: 4 个空格缩进，120 字符行宽，UTF-8 编码。
-- **导入顺序**: Kotlin/Java 标准库 -> 第三方库 -> 项目内部模块。
-- **错误处理**: 优先使用标准异常，严禁吞掉异常，ECS 系统中防止未捕获异常。
+## 约定
 
-## ECS 核心规范 (强制)
+- **语言**: Kotlin (100%)
+- **构建系统**: Gradle Kotlin DSL (`.gradle.kts`)
+- **ECS 风格**:
+    - **组件**: `data class` (纯数据)
+    - **标签**: `sealed class` / `object` (无数据标记)
+    - **系统**: 纯逻辑，无状态 (状态存组件)
+- **集合**: 优先使用 `lko-core` 中的 `FastList`, `IntFastList` 等高性能集合，而非 stdlib `List/ArrayList` (ECS 内部)。
+- **测试**:
+    - 位置: `src/commonTest/kotlin`
+    - 风格: BDD (`// Given`, `// When`, `// Then`)
+    - 助手: 使用 `createAddon` 快速构建测试 World
 
-1.  **组件 vs 标签**:
-    - **组件**: 必须包含数据 (`data class`/`value class`)。
-    - **标签**: 必须不含数据 (`sealed class`/`object`)。
-    - **严禁混用**: 禁止用 `addComponent` 加标签，禁止用 `addTag` 加组件。
+## 反模式 (Anti-Patterns)
 
-2.  **实体操作**:
-    - **创建**: 使用 `world.entity { ... }`。
-    - **修改**: 必须使用 `entity.editor { ... }`。组件是不可变的，使用 `copy()` 修改。
+| 类别 | 禁止行为 | 替代方案 |
+|------|----------|----------|
+| **ECS** | `addComponent(Tag)` / `addTag<Component>()` | 严格区分组件和标签接口 |
+| **ECS** | 在 `query {}.forEach` 中修改实体结构 | 收集变更后统一处理，或使用命令队列 |
+| **Kotlin** | 隐式 `it` 参数嵌套 | 显式命名参数 `forEach { entity -> ... }` |
+| **Import** | 混淆 `family.component` 和 `relation.component` | 检查导入包名，确认用途 |
+| **Git** | 提交失败的测试 | 修复代码或测试 |
+| **Git** | 包含 `build/`, `.idea/` 等生成文件 | 检查 `.gitignore` |
+| **代码** | 使用 `println` 调试 | 使用日志框架或测试断言 |
+| **依赖** | 模块间循环依赖 | 使用 `lko-di` 或重构接口下沉 |
 
-3.  **查询**:
-    - 使用 `Context` 定义查询。
-    - **严禁**: 在遍历 Query 结果时直接修改实体结构（可能导致并发修改异常）。
+## 依赖 (Dependencies)
 
-## 测试规范
+| 库 | 用途 |
+|----|------|
+| `lko-ecs` | 自研高性能 ECS 框架 |
+| `lko-core` | 高性能基础数据结构 |
+| `compose-multiplatform` | 跨平台 UI |
+| `kotlinx-coroutines` | 异步任务 |
+| `kotlinx-serialization` | 数据持久化 |
+| `kodein-kaverit` | 辅助工具 |
 
-### TDD 核心规则 (强制)
-- **绝不在测试前编写实现**: 必须先有失败的测试。
-- **绝不删除失败的测试**: 必须修复代码使测试通过。
-- **测试文件位置**: 
-  - 单元测试: `src/commonTest/kotlin/...` 或 `src/test/kotlin/...`
-  - 与被测代码包结构保持一致。
-- **BDD 注释**: 使用 `// Given`, `// When`, `// Then` 清晰标注测试步骤。
+## 命令
 
-### 测试类命名
-- **测试数据类**: 使用模块前缀避免冲突 (如 `CompPosition`, `QueryPosition`)。
+```bash
+# 构建
+./gradlew build                         # 全量构建
+./gradlew :composeApp:run               # 运行桌面版 Demo
 
-## 常见陷阱与强制禁止 (Critical Anti-Patterns)
+# 测试
+./gradlew test                          # 运行所有测试
+./gradlew :libs:lko-ecs:test            # 运行 ECS 核心测试
+./gradlew :business-modules:business-engine:test # 运行业务逻辑测试
 
-以下模式**严格禁止**，代码审查时一旦发现必须拒绝：
+# 质量
+./gradlew allCoverage                   # 生成覆盖率报告
+./gradlew lint                          # 静态代码检查
+```
 
-1.  **组件/标签混用**:
-    *   ❌ 禁止: `addComponent(ActiveTag)` (标签当组件用)
-    *   ❌ 禁止: `addTag<Health>()` (组件当标签用)
-2.  **查询中修改实体**:
-    *   ❌ 禁止: 在 `world.query { ... }.forEach { ... }` 循环内部直接调用 `entity.editor {}` 修改实体结构（增删组件）。
-    *   ✅ 正确: 先收集需要修改的实体，循环结束后统一处理。
-3.  **Lambda 参数遮蔽**:
-    *   ❌ 禁止: 嵌套 Lambda 中隐式使用 `it` 导致指代不明。
-    *   ✅ 正确: 显式命名参数，如 `repeat(10) { index -> ... }`。
-4.  **导入混淆**:
-    *   注意区分 `cn.jzl.ecs.family.component` (用于 Context 查询) 和 `cn.jzl.ecs.relation.component` (用于 Relation 定义)。
+## 复杂度热点
 
-## 参考文档
-- ECS 详细文档: `docs/ecs-architecture.md`
+| 模块/文件 | 描述 | 注意事项 |
+|-----------|------|----------|
+| `libs/lko-ecs/.../World.kt` | ECS 世界核心 | 极其复杂，涉及组件存储、实体管理、系统调度 |
+| `libs/lko-ecs/.../QueryStreamExtensions.kt` | 查询 DSL | 复杂的泛型和内联函数，修改需谨慎 |
+| `libs/lko-core/.../*FastList.kt` | 高性能集合 | 手写特定类型集合，注意扩容逻辑和数组越界 |
+| `business-modules/.../SectWorld.kt` | 游戏入口 | 负责组装各模块，注意初始化顺序 |
+
+## 备注
+
+- **性能优先**: 核心 ECS 逻辑中避免频繁对象分配 (GC 压力)。
+- **数据驱动**: 尽量将逻辑通过组件数据配置，而非硬编码。
+- **KMP**: 保持代码平台无关性，特定平台逻辑放 `androidMain`/`jvmMain`。
