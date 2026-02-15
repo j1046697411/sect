@@ -1,4 +1,4 @@
-package cn.jzl.sect.demo
+package cn.jzl.sect.engine
 
 import cn.jzl.ecs.*
 import cn.jzl.ecs.World
@@ -9,15 +9,15 @@ import cn.jzl.ecs.component.tag
 import cn.jzl.ecs.entity.*
 import cn.jzl.ecs.query.count
 import cn.jzl.ecs.world
-import cn.jzl.sect.demo.components.Age
-import cn.jzl.sect.demo.components.CultivationProgress
-import cn.jzl.sect.demo.components.CultivationRealm
-import cn.jzl.sect.demo.components.EntityName
-import cn.jzl.sect.demo.services.DemoSystem
-import cn.jzl.sect.demo.services.DiscipleContext
-import cn.jzl.sect.demo.tags.Alive
-import cn.jzl.sect.demo.tags.Cultivating
-import cn.jzl.sect.demo.tags.Idle
+import cn.jzl.sect.core.components.Age
+import cn.jzl.sect.core.components.CultivationProgress
+import cn.jzl.sect.core.components.CultivationRealm
+import cn.jzl.sect.core.components.EntityName
+import cn.jzl.sect.engine.systems.DemoSystem
+import cn.jzl.sect.engine.systems.DiscipleContext
+import cn.jzl.sect.core.tags.Alive
+import cn.jzl.sect.core.tags.Cultivating
+import cn.jzl.sect.core.tags.Idle
 import kotlin.random.Random
 
 object SectWorld {

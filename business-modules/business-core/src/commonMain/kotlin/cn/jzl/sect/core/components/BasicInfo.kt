@@ -1,4 +1,4 @@
-package cn.jzl.sect.demo.components
+package cn.jzl.sect.core.components
 
 // 基础信息组件 - 普通 data class
 data class EntityName(val value: String) {

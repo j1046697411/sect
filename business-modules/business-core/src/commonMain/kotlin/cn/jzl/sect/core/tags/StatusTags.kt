@@ -1,4 +1,4 @@
-package cn.jzl.sect.demo.tags
+package cn.jzl.sect.core.tags
 
 // 生命周期标签 - 使用 sealed class
 sealed class Alive

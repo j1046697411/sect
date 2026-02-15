@@ -1,4 +1,4 @@
-package cn.jzl.sect.demo.services
+package cn.jzl.sect.engine.systems
 
 import cn.jzl.ecs.*
 import cn.jzl.ecs.World
@@ -9,11 +9,11 @@ import cn.jzl.ecs.family.component
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.*
 import cn.jzl.ecs.family.FamilyBuilder
-import cn.jzl.sect.demo.components.Age
-import cn.jzl.sect.demo.components.CultivationProgress
-import cn.jzl.sect.demo.components.CultivationRealm
-import cn.jzl.sect.demo.components.EntityName
-import cn.jzl.sect.demo.tags.Cultivating
+import cn.jzl.sect.core.components.Age
+import cn.jzl.sect.core.components.CultivationProgress
+import cn.jzl.sect.core.components.CultivationRealm
+import cn.jzl.sect.core.components.EntityName
+import cn.jzl.sect.core.tags.Cultivating
 import kotlin.random.Random
 
 // 时间数据类
@@ -128,10 +128,10 @@ class DemoSystem(override val world: World) : EntityRelationContext {
                 val name = entity.name
                 val age = entity.age.years
                 val realm = entity.realm
-                val progress = entity.progress.percentage ?: 0f
+                val progress = entity.progress.percentage
                 val hasCultivating = entity.entity.hasTag<Cultivating>()
                 val state = if (hasCultivating) "修炼中" else "空闲"
-                println("$name | ${age}岁 | $realm | 进度:${"%.1f".format(progress)}% | $state")
+                println("$name | ${age}岁 | $realm | 进度:${(progress * 10).toInt() / 10.0}% | $state")
             }
         }
     }
