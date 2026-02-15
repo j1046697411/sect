@@ -38,6 +38,28 @@
 
 ---
 
+## 代码验收标准 - 强制 (Definition of Done)
+
+所有代码提交（Commit/PR）前必须满足以下标准：
+
+1. **测试通过**: 
+   - 运行 `./gradlew test` 确保所有测试用例通过。
+   - 禁止提交失败的测试。
+
+2. **代码覆盖率**:
+   - 运行 `./gradlew allCoverage` 生成报告。
+   - 核心逻辑（ECS系统、业务算法）覆盖率必须达标（建议 > 80%）。
+   - 必须检查生成的 HTML 报告，确认未覆盖的分支逻辑。
+
+3. **静态检查 (Lint)**:
+   - 代码无明显 Lint 警告。
+   - 运行 `./gradlew lint` (如适用) 或 IDE 检查确保无语法/风格错误。
+
+4. **无脏代码**:
+   - 移除所有临时的 `println`, `TODO` (除非是长期规划), `Unused import`。
+
+---
+
 ## 项目概述
 
 Kotlin/Gradle 多模块 ECS 游戏项目。核心架构基于 Entity-Component-System (ECS) 模式。
