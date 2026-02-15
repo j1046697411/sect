@@ -99,6 +99,44 @@ SectWorld.initialize()
 | **性能优化** | `libs/lko-core/` | 底层数据结构 (FastList, Bits) |
 | **依赖管理** | `gradle/libs.versions.toml` | 统一管理版本号 |
 
+## 模块特定规范
+
+### 1. `lko-ecs` (核心框架)
+- **定位**: ECS 核心架构，所有业务的基础。
+- **约束**:
+  - 严禁引入任何业务逻辑。
+  - 追求极致性能 (Zero Allocation in loops)。
+  - 严禁修改核心接口 (`World`, `Entity`) 除非经过架构评审。
+  - 必须保持 95%+ 的测试覆盖率。
+
+### 2. `lko-core` (基础库)
+- **定位**: 高性能数据结构与工具。
+- **约束**:
+  - 无外部依赖 (除 Kotlin stdlib)。
+  - 所有集合类 (`FastList`) 必须包含边界检查测试。
+  - 优先使用基本类型特化集合 (如 `IntFastList`) 避免装箱。
+
+### 3. `business-core` (业务核心)
+- **定位**: 游戏通用的组件 (`Component`) 和标签 (`Tag`) 定义。
+- **约束**:
+  - 仅包含数据定义 (`data class`, `sealed class`)。
+  - 严禁包含系统逻辑 (`System`)。
+  - 所有新组件必须注册到 `createAddon` 中。
+
+### 4. `business-engine` (游戏引擎)
+- **定位**: 游戏循环、世界初始化、核心系统 (`SectWorld`)。
+- **约束**:
+  - 负责组装其他业务模块。
+  - 它是唯一可以依赖所有其他 `business-*` 模块的地方。
+  - 避免在此处编写具体的玩法逻辑 (如战斗计算)，应委托给专门的 System。
+
+### 5. `business-*` (具体玩法模块)
+- **示例**: `business-cultivation` (修炼), `business-disciples` (弟子)。
+- **约束**:
+  - 每个模块应自包含其特有的 System 和辅助 Component。
+  - 模块间通信应通过 `World` 中的组件状态，而非直接函数调用。
+  - 必须包含针对该玩法的单元测试。
+
 ## 约定
 
 - **语言**: Kotlin (100%)
