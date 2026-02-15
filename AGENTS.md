@@ -134,5 +134,21 @@ Kotlin/Gradle 多模块 ECS 游戏项目。核心架构基于 Entity-Component-S
 ### 测试类命名
 - **测试数据类**: 使用模块前缀避免冲突 (如 `CompPosition`, `QueryPosition`)。
 
+## 常见陷阱与强制禁止 (Critical Anti-Patterns)
+
+以下模式**严格禁止**，代码审查时一旦发现必须拒绝：
+
+1.  **组件/标签混用**:
+    *   ❌ 禁止: `addComponent(ActiveTag)` (标签当组件用)
+    *   ❌ 禁止: `addTag<Health>()` (组件当标签用)
+2.  **查询中修改实体**:
+    *   ❌ 禁止: 在 `world.query { ... }.forEach { ... }` 循环内部直接调用 `entity.editor {}` 修改实体结构（增删组件）。
+    *   ✅ 正确: 先收集需要修改的实体，循环结束后统一处理。
+3.  **Lambda 参数遮蔽**:
+    *   ❌ 禁止: 嵌套 Lambda 中隐式使用 `it` 导致指代不明。
+    *   ✅ 正确: 显式命名参数，如 `repeat(10) { index -> ... }`。
+4.  **导入混淆**:
+    *   注意区分 `cn.jzl.ecs.family.component` (用于 Context 查询) 和 `cn.jzl.ecs.relation.component` (用于 Relation 定义)。
+
 ## 参考文档
 - ECS 详细文档: `docs/ecs-architecture.md`
