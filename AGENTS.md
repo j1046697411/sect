@@ -75,6 +75,20 @@ sect/
 └── docs/                    # 项目文档
 ```
 
+## 文档目录 (Documentation)
+
+| 类别 | 目录/文件 | 说明 |
+|------|-----------|------|
+| **需求** | `docs/文字游戏需求文档_GRD.md` | 游戏核心需求规格说明书 |
+| | `docs/sect_cultivation_core_gameplay.md` | 修仙核心玩法设计 |
+| | `docs/pages/` | UI/UX 页面布局设计文档 |
+| **技术** | `docs/ecs-architecture.md` | ECS 架构详细设计文档 |
+| | `docs/宗门修真录游戏实现规范.md` | 游戏具体实现技术规范 |
+| | `docs/kover-coverage.md` | 代码覆盖率配置说明 |
+| **规划/运维** | `AGENTS.md` | **本项目知识库与 Agent 操作规范 (本文)** |
+| | `docs/CONTRIB.md` | 贡献指南 |
+| | `docs/RUNBOOK.md` | 运维与运行手册 |
+
 ## 初始化流程
 
 游戏世界的初始化流程 (参考 `SectWorld.kt`):
