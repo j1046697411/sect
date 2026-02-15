@@ -66,173 +66,60 @@ Kotlin/Gradle 多模块 ECS 游戏项目。核心架构基于 Entity-Component-S
 
 ## 模块结构
 
-| 模块 | 路径 | 说明 |
-|------|------|------|
-| composeApp | `composeApp/` | 应用主模块 (桌面/Android/Web/WASM) |
-| androidApp | `androidApp/` | Android 原生应用 |
-| lko-core | `libs/lko-core/` | 核心工具库 |
-| lko-di | `libs/lko-di/` | 依赖注入框架 |
-| lko-ecs | `libs/lko-ecs/` | ECS 框架核心 |
-| lko-ecs-serialization | `libs/lko-ecs-serialization/` | ECS 序列化 |
-| business-core | `business-modules/business-core/` | 游戏核心业务 |
-| business-disciples | `business-modules/business-disciples/` | 弟子系统 |
-| business-cultivation | `business-modules/business-cultivation/` | 修炼系统 |
-| business-quest | `business-modules/business-quest/` | 任务系统 |
-| business-engine | `business-modules/business-engine/` | 游戏引擎 |
-| lko-ecs-benchmarks | `benchmarks/lko-ecs-benchmarks/` | 性能基准测试 |
+| 模块 | 说明 |
+|------|------|
+| `composeApp` | 应用主模块 (桌面/Android/Web/WASM) |
+| `libs/lko-ecs` | ECS 核心框架 |
+| `libs/lko-core` | 基础工具库 |
+| `libs/lko-di` | 依赖注入框架 |
+| `business-modules/*` | 业务逻辑模块 |
 
 ## 常用命令
 
-### 构建
-```bash
-./gradlew build                                    # 全项目构建
-./gradlew :composeApp:run                          # 运行 JVM Demo
-./gradlew :composeApp:lint                         # Android 静态检查
-./gradlew :composeApp:assembleDebug                # 构建 Debug APK
-./gradlew clean                                    # 清理构建
-```
+### 构建与检查
+- **全量构建**: `./gradlew build`
+- **清理**: `./gradlew clean`
+- **Android Lint**: `./gradlew :composeApp:lint`
+- **运行 Demo**: `./gradlew :composeApp:run`
 
-### 测试
-```bash
-./gradlew test                                     # 运行所有测试
-./gradlew :libs:lko-ecs:test                       # ECS 模块测试
-./gradlew :libs:lko-ecs:test --tests "cn.jzl.ecs.WorldTest"           # 测试类
-./gradlew :libs:lko-ecs:test --tests "cn.jzl.ecs.WorldTest.testName"  # 单测试
-./gradlew :libs:lko-ecs:test --continuous          # 持续测试
-./gradlew :business-modules:business-core:test    # 业务模块测试
-```
+### 测试 (关键)
+- **运行所有测试**: `./gradlew test`
+- **运行特定模块测试**: `./gradlew :libs:lko-ecs:test`
+- **运行单个测试类**: `./gradlew :libs:lko-ecs:test --tests "cn.jzl.ecs.WorldTest"`
+- **运行单个测试方法**: `./gradlew :libs:lko-ecs:test --tests "cn.jzl.ecs.WorldTest.testName"`
+- **持续测试模式**: `./gradlew :libs:lko-ecs:test --continuous`
 
 ### 代码覆盖率
-```bash
-./gradlew allCoverage                              # 所有模块
-./gradlew ecsCoverage                              # ECS 模块
-./gradlew :libs:lko-ecs:koverHtmlReportJvm
-open libs/lko-ecs/build/reports/kover/htmlJvm/index.html
-```
-
-### 开发模式
-```bash
-./gradlew :composeApp:run                          # 运行桌面版
-./gradlew :composeApp:hotReloadJvmDev              # 热重载开发
-```
-
-### 基准测试
-```bash
-./gradlew benchmark                                # 运行所有基准测试
-./gradlew :benchmarks:lko-ecs-benchmarks:mainBenchmark  # ECS 基准测试
-```
+- **生成报告**: `./gradlew allCoverage`
+- **查看报告**: `open libs/lko-ecs/build/reports/kover/htmlJvm/index.html`
 
 ## 代码风格规范
 
-### 命名约定
-- **类/接口**: PascalCase (如 `World`, `EntityService`)
-- **函数/属性**: camelCase (如 `getComponent`, `entityId`)
-- **常量**: UPPER_SNAKE_CASE (如 `MAX_ENTITIES`)
-- **组件 (Component)**: 名词 (如 `Health`, `Position`)
-- **标签 (Tag)**: 形容词+Tag (如 `ActiveTag`, `DeadTag`)
-- **系统/服务**: 功能+System/Service (如 `MovementSystem`)
+- **命名约定**: 
+  - 类/接口: PascalCase (`World`)
+  - 函数/属性: camelCase (`getComponent`)
+  - 常量: UPPER_SNAKE_CASE (`MAX_ENTITIES`)
+  - 组件: 名词 (`Health`)
+  - 标签: 形容词+Tag (`ActiveTag`)
+  - 系统: 功能+System (`MovementSystem`)
+- **格式化**: 4 个空格缩进，120 字符行宽，UTF-8 编码。
+- **导入顺序**: Kotlin/Java 标准库 -> 第三方库 -> 项目内部模块。
+- **错误处理**: 优先使用标准异常，严禁吞掉异常，ECS 系统中防止未捕获异常。
 
-### 格式化
-- **缩进**: 4 个空格
-- **行宽**: 120 字符
-- **文件编码**: UTF-8
+## ECS 核心规范 (强制)
 
-### 导入顺序
-1. Kotlin/Java 标准库
-2. 第三方库 (Android/Compose 等)
-3. 项目内部模块 (`cn.jzl.*`)
+1.  **组件 vs 标签**:
+    - **组件**: 必须包含数据 (`data class`/`value class`)。
+    - **标签**: 必须不含数据 (`sealed class`/`object`)。
+    - **严禁混用**: 禁止用 `addComponent` 加标签，禁止用 `addTag` 加组件。
 
-```kotlin
-import kotlin.jvm.JvmInline
-import androidx.collection.MutableIntList
-import cn.jzl.ecs.World
-```
+2.  **实体操作**:
+    - **创建**: 使用 `world.entity { ... }`。
+    - **修改**: 必须使用 `entity.editor { ... }`。组件是不可变的，使用 `copy()` 修改。
 
-### 错误处理
-- 优先使用 Kotlin 标准异常 (`IllegalArgumentException` 等)。
-- 避免吞掉异常，必须记录或重新抛出。
-- 在 ECS 系统中，避免在 `update` 循环中抛出未捕获异常导致游戏崩溃。
-
-## ECS 核心规范
-
-### 组件设计
-```kotlin
-data class Health(val current: Int, val max: Int)    // 多属性组件
-@JvmInline value class Level(val value: Int)        // 单属性组件
-sealed class ActiveTag                              // 标签
-```
-
-### 实体操作
-```kotlin
-// 创建
-world.entity {
-    it.addComponent(Health(100, 100))
-    it.addTag<ActiveTag>()
-}
-
-// 更新（不可变，使用 copy）
-entity.editor {
-    it.addComponent(health.copy(current = 50))
-}
-
-// 查询
-world.query { Context(this) }
-```
-
-### 查询上下文
-```kotlin
-class Context(world: World) : EntityQueryContext(world) {
-    val name by component<EntityName>()
-    val health by component<Health>()
-    val equipment by component<Equipment?>()  // 可选组件
-}
-
-// 标签过滤
-class ActiveContext(world: World) : EntityQueryContext(world) {
-    override fun FamilyBuilder.configure() {
-        component<ActiveTag>()
-    }
-}
-```
-
-## 常见陷阱
-
-### 组件 vs 标签
-| 场景 | 正确 | 错误 |
-|------|------|------|
-| 存储数据 | `addComponent(Health(100))` | `addTag<Health>()` |
-| 状态标记 | `addTag<ActiveTag>()` | `addComponent(ActiveTag)` |
-
-### 遍历中修改实体
-```kotlin
-// 错误
-world.query { Context(this) }.forEach { 
-    it.entity.editor { ... }  // 可能异常
-}
-
-// 正确
-val entities = world.query { Context(this) }.map { it.entity }.toList()
-entities.forEach { it.editor { ... } }
-```
-
-### Lambda 参数名冲突
-```kotlin
-// 错误：it 冲突
-repeat(10) {
-    world.entity { it.addComponent(Pos(it, it)) }
-}
-
-// 正确：明确命名
-repeat(10) { index ->
-    world.entity { it.addComponent(Pos(index, index * 2)) }
-}
-```
-
-### 导入冲突
-```kotlin
-import cn.jzl.ecs.family.component      // 用于查询
-import cn.jzl.ecs.relation.component    // 用于创建 Relation
-```
+3.  **查询**:
+    - 使用 `Context` 定义查询。
+    - **严禁**: 在遍历 Query 结果时直接修改实体结构（可能导致并发修改异常）。
 
 ## 测试规范
 
@@ -244,46 +131,8 @@ import cn.jzl.ecs.relation.component    // 用于创建 Relation
   - 与被测代码包结构保持一致。
 - **BDD 注释**: 使用 `// Given`, `// When`, `// Then` 清晰标注测试步骤。
 
-### 测试结构
-```kotlin
-class ComponentTest : EntityRelationContext {
-    override lateinit var world: World
-    
-    @BeforeTest
-    fun setup() {
-        world = world { install(testAddon) }
-    }
-    
-    private val testAddon = createAddon<Unit>("test") {
-        components {
-            world.componentId<TestPosition>()
-            world.componentId<TestActiveTag> { it.tag() }
-        }
-    }
-    
-    @Test
-    fun testComponentAddition() {
-        // Given
-        val x = 10
-        val y = 20
-        
-        // When
-        val entity = world.entity {
-            it.addComponent(TestPosition(x, y))
-        }
-        
-        // Then
-        assertEquals(TestPosition(x, y), entity.getComponent<TestPosition>())
-    }
-}
-```
-
-### 测试数据类命名
-使用模块前缀避免冲突：
-- `CompPosition`, `CompHealth` (ComponentTest)
-- `QueryPosition`, `QueryName` (QuerySystemTest)
+### 测试类命名
+- **测试数据类**: 使用模块前缀避免冲突 (如 `CompPosition`, `QueryPosition`)。
 
 ## 参考文档
-
 - ECS 详细文档: `docs/ecs-architecture.md`
-- 技能文档: `.opencode/skills/learned/`
