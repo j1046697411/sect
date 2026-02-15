@@ -236,6 +236,14 @@ import cn.jzl.ecs.relation.component    // 用于创建 Relation
 
 ## 测试规范
 
+### TDD 核心规则 (强制)
+- **绝不在测试前编写实现**: 必须先有失败的测试。
+- **绝不删除失败的测试**: 必须修复代码使测试通过。
+- **测试文件位置**: 
+  - 单元测试: `src/commonTest/kotlin/...` 或 `src/test/kotlin/...`
+  - 与被测代码包结构保持一致。
+- **BDD 注释**: 使用 `// Given`, `// When`, `// Then` 清晰标注测试步骤。
+
 ### 测试结构
 ```kotlin
 class ComponentTest : EntityRelationContext {
@@ -255,10 +263,17 @@ class ComponentTest : EntityRelationContext {
     
     @Test
     fun testComponentAddition() {
+        // Given
+        val x = 10
+        val y = 20
+        
+        // When
         val entity = world.entity {
-            it.addComponent(TestPosition(10, 20))
+            it.addComponent(TestPosition(x, y))
         }
-        assertEquals(TestPosition(10, 20), entity.getComponent<TestPosition>())
+        
+        // Then
+        assertEquals(TestPosition(x, y), entity.getComponent<TestPosition>())
     }
 }
 ```
