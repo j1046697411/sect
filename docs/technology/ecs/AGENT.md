@@ -10,6 +10,7 @@
 2. **数据驱动** - 状态存储在组件中，系统处理数据
 3. **无状态系统** - System 应为无状态工具类，状态存组件
 4. **类型安全** - 严格区分 Component、Tag、Relation
+5. **结构修改受限** - 所有修改实体结构的操作（如添加/移除组件、标签、关系）必须在 `editor { ... }` 上下文内进行。
 
 ---
 
@@ -60,8 +61,23 @@ world.query { HealthContext(this) }
 ### 4. 关系
 
 ```kotlin
-// 添加关系
-entity.addRelation<OwnerBy>(player)
+// 添加普通关系 (在 editor 上下文内)
+world.editor(entity) {
+    it.addRelation<OwnerBy>(player)
+}
+
+// 添加 Single Relation（单目标约束关系，旧目标自动移除）
+// 假设 HeroHasWeapon 是一个 Single Relation 类型
+world.editor(heroEntity) {
+    // 第一次添加武器
+    it.addRelation<HeroHasWeapon>(swordEntity)
+    // 第二次添加武器，会自动移除 swordEntity，将 longbowEntity 设置为新目标
+    it.addRelation<HeroHasWeapon>(longbowEntity)
+}
+
+// 获取关系
+val owner = entity.getRelation<OwnerBy>(player) // 获取指定目标的关系数据
+val weapon = heroEntity.getRelation<Weapon, HeroHasWeapon>() // 获取 Single Relation 的目标实体
 
 // 父子关系
 val child = parent.childOf { it.addComponent(Position(0, 0)) }
@@ -117,7 +133,10 @@ val instance = prefab.instanceOf { it.addComponent(Level(1)) }
 
 1. 定义 sealed class：`sealed class YourRelation`
 2. 注册：`world.componentId<YourRelation>()`
-3. 使用：`entity.addRelation<YourRelation>(target)`
+3. 使用：
+   - 对于普通关系：`world.editor(entity) { it.addRelation<YourRelation>(target) }`
+   - 对于单目标约束关系：`world.editor(entity) { it.addRelation<YourSingleRelation>(target) }`
+   - 获取单目标约束关系的数据：`entity.getRelation<DataType, YourSingleRelation>()`
 
 ---
 
@@ -141,7 +160,8 @@ val instance = prefab.instanceOf { it.addComponent(Level(1)) }
 
 ## 禁止事项
 
-- ❌ 在 query forEach 中直接修改实体结构
+- ❌ 在 query forEach 中直接修改实体结构 (必须在 `editor { ... }` 中进行)
+- ❌ 在非 `editor` 上下文直接修改实体结构 (例如 `entity.addComponent(...)` 必须是 `world.editor(entity) { it.addComponent(...) }`)
 - ❌ 直接修改组件属性（使用 `copy()`）
 - ❌ 在 Service 中保存状态
 - ❌ 忘记注册 Component/Tag/Relation
