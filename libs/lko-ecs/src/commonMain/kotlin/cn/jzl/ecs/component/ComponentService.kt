@@ -15,7 +15,6 @@ import kotlin.reflect.KClassifier
 class ComponentService(override val world: World) : WorldOwner, ComponentProvider, ComponentStoreFactory<Any> {
     private val componentIdEntities = mutableScatterMapOf<KClassifier, ComponentId>()
     private val componentStoreFactories = mutableIntObjectMapOf<ComponentStoreFactory<*>>()
-    private val userConfiguredFactories = mutableIntObjectMapOf<() -> ComponentStore<Any>>()
 
     @PublishedApi
     internal val entityTags = BitSet()
@@ -30,11 +29,6 @@ class ComponentService(override val world: World) : WorldOwner, ComponentProvide
     fun isShadedComponent(relation: Relation): Boolean = components.sharedOf == relation.target
 
     override fun create(relation: Relation): ComponentStore<Any> {
-        val userFactory = userConfiguredFactories[relation.kind.data]
-        if (userFactory != null) {
-            return userFactory()
-        }
-
         val factory = componentStoreFactories.getOrPut(relation.kind.data) { ComponentStoreFactory.Companion }
         @Suppress("UNCHECKED_CAST")
         return factory.create(relation) as ComponentStore<Any>
@@ -44,7 +38,7 @@ class ComponentService(override val world: World) : WorldOwner, ComponentProvide
         return componentIdEntities.getOrPut(classifier) { world.entityService.create(false) }
     }
 
-    fun configureStoreType(componentId: ComponentId, factory: () -> ComponentStore<Any>) {
-        userConfiguredFactories[componentId.data] = factory
+    fun <C : Component> configureStoreType(componentId: ComponentId, factory: ComponentStoreFactory<C>) {
+        componentStoreFactories[componentId.data] = factory
     }
 }

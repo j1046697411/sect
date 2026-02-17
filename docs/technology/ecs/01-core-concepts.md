@@ -120,11 +120,11 @@ Relation（关系）用于表示实体之间的关联，是 ECS 架构中连接�
 
 ### 4.2 四种 Relation 类型
 
-ECS 框架提供四种关系类型，适用于不同场景：
+ECS 框架提供多种关系类型，适用于不同场景：
 
-**1. 普通 Relation（多对一）**
+**1. 普通 Relation (Many-to-One)**
 
-使用 `addRelation<K>(target)` 添加，适用于一个实体被多个其他实体关联的场景：
+使用 `addRelation<K>(target)` 添加。表示多个源实体可以指向同一个目标实体。这是最常用的关系类型。
 
 ```kotlin
 sealed class OwnerBy
@@ -137,9 +137,9 @@ val shield = world.entity {
 }
 ```
 
-**2. Single Relation（一对一）**
+**2. Single Relation (Single-Target Constraint)**
 
-使用 `addRelation<K>()` 添加，适用于一对一关系，无目标实体时为 `null`：
+使用 `addRelation<K, T>()` 或 `addRelation<K>(target)` 添加（取决于是否标记为 Single）。这类关系约束一个实体对于该类型只能拥有**一个**目标。再次添加会替换原有的关系。
 
 ```kotlin
 sealed class HeldWeapon
@@ -147,25 +147,18 @@ sealed class HeldWeapon
 val player = world.entity {
     it.addRelation<HeldWeapon>(sword)  // 玩家手持剑
 }
-val owner = player.getRelation<HeldWeapon, Entity>()  // 获取目标实体
+// 如果之后执行 it.addRelation<HeldWeapon>(axe)，则会自动替换之前的 sword
 ```
 
 **3. Shared Component（共享组件）**
 
-使用 `addSharedComponent<C>()` 添加，组件在关系双方共享，修改一方会影响另一方：
+使用 `addSharedComponent<C>()` 添加，组件数据在多个实体间共享。
 
 ```kotlin
 data class TeamId(val value: Int)
 
-val team = world.entity {
+val teamMember = world.entity {
     it.addSharedComponent(TeamId(1))
-}
-
-val member1 = world.entity {
-    it.addRelation<componentOf>(team)
-}
-val member2 = world.entity {
-    it.addRelation<componentOf>(team)
 }
 ```
 
@@ -245,13 +238,20 @@ world.query { HealthContext(this) }                // Query DSL
 
 基础接口，提供实体操作能力。
 
+> ⚠️ **重要限制**：任何结构性修改（添加/删除组件、标签、关系）必须在 `editor` 作用域或 `world.entity` 创建作用域内进行。
+
 ```kotlin
 class MySystem : EntityRelationContext {
     override lateinit var world: World
     
-    fun process() {
-        world.entity { it.addComponent(Health(100, 100)) }
-        entity.hasComponent<Health>()
+    fun process(entity: Entity) {
+        // ✅ 结构修改必须在 editor 作用域内
+        world.editor(entity) {
+            it.addComponent(Health(100, 100))
+        }
+        
+        // ❌ 禁止在非 editor 作用域直接修改结构
+        // entity.addComponent(...) // 编译或运行时报错
     }
 }
 ```
@@ -268,7 +268,10 @@ class HealthContext(world: World) : EntityQueryContext(world) {
 // 使用
 world.query { HealthContext(this) }
     .filter { it.health.current > 0 }
-    .forEach { ctx -> println(ctx.health.current) }
+    .forEach { ctx -> 
+        // 这里的 ctx 是 HealthContext，可以访问 health
+        println(ctx.health.current) 
+    }
 ```
 
 ### 查询上下文四种声明方式
@@ -291,10 +294,11 @@ class OptionalGroupContext(world: World) : EntityQueryContext(world) {
     // weapon 或 armor 至少有一个
 }
 
-// 4. 可写组件 - 遍历中可修改
+// 4. 可写组件 - 遍历中可修改数据（非结构）
 class WritableContext(world: World) : EntityQueryContext(world) {
     var velocity: Velocity by component()
-    // 遍历中可修改 ctx.velocity = ...
+    // 允许修改数据: ctx.velocity = Velocity(1, 1)
+    // 但禁止在此修改结构: ctx.entity.addComponent(...)
 }
 ```
 
@@ -302,15 +306,23 @@ class WritableContext(world: World) : EntityQueryContext(world) {
 
 | 特性 | EntityRelationContext | EntityQueryContext |
 |------|----------------------|--------------------|
-| 用途 | 修改操作 | 查询过滤 |
+| 用途 | 修改操作（需配合 editor） | 查询过滤 |
 | 访问 | `getComponent<T>()` | `val x: T by component()` |
 
 ### 选择
 
 ```kotlin
-// 修改 → EntityRelationContext
+// 修改结构 → 使用 editor
 class SpawnSystem : EntityRelationContext {
-    fun spawn() { world.entity { } }
+    fun spawn() { 
+        world.entity { it.addComponent(Name("New Entity")) } 
+    }
+    
+    fun update(entity: Entity) {
+        world.editor(entity) {
+            it.addTag<ActiveTag>()
+        }
+    }
 }
 
 // 查询 → EntityQueryContext
@@ -318,7 +330,12 @@ class DamageSystem : EntityRelationContext {
     fun applyDamage() {
         world.query { HealthContext(this) }
             .filter { it.health.current > 0 }
-            .forEach { ctx -> /* 处理 */ }
+            .forEach { ctx ->
+                // 修改组件数据可以使用 WritableContext 或 editor
+                world.editor(ctx.entity) {
+                    // ... 执行修改
+                }
+            }
     }
 }
 ```
@@ -331,7 +348,7 @@ class DamageSystem : EntityRelationContext {
 2. 注册不可忘：所有 Component/Tag 必须在 `createAddon` 中注册
 3. 修改用 copy：Component 不可变，更新必须 `copy()`
 4. Tag 语义：状态用 `hasTag()`，数据用 `hasComponent()`
-5. Context 选择：修改用 `EntityRelationContext`，查询用 `EntityQueryContext`
+5. Context 选择：修改结构用 `editor`，修改数据用 `WritableContext` 或 `editor`，查询用 `EntityQueryContext`
 
 ---
 

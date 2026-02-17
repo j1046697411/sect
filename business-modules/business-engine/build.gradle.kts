@@ -25,14 +25,15 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(project(":libs:lko-core"))
-                implementation(project(":libs:lko-ecs"))
-                implementation(project(":business-modules:business-core"))
+                api(project(":libs:lko-core"))
+                api(project(":libs:lko-ecs"))
+                api(project(":business-modules:business-core"))
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(project(":libs:lko-ecs"))
             }
         }
     }

@@ -10,48 +10,26 @@
 
 Relation（关系）是 ECS 框架中用于表达实体之间关联的特殊机制。它将两个实体通过一种「关系类型」连接起来，就像现实世界中人与人之间的「朋友关系」或「上下级关系」一样。
 
-在代码层面，`Relation` 是一个包含 `kind`（关系类型）和 `target`（目标实体）的数据结构：
+在代码层面，`Relation` 是一个包含 `kind`（关系类型）和 `target`（目标实体）的数据结构。它既可以表示纯粹的引用关系，也可以携带数据。
 
-```kotlin
-value class Relation @PublishedApi internal constructor(val data: Long) : Comparable<Relation> {
-    val kind: ComponentId get() = Entity(data.low)
-    val target: Entity get() = Entity(data.high)
-}
-```
+简单来说，Relation = 关系类型 + 目标实体 [+ 关系数据]。
 
-简单来说，Relation = 关系类型 + 目标实体。
 
 ### 1.2 与 Component/Tag 的本质区别
 
 | 特性 | Component | Tag | Relation |
 |------|-----------|-----|----------|
 | 存储位置 | 实体自身 | 位图标记 | 实体自身 |
-| 数据内容 | 任意数据 | 无数据 | 目标实体 ID |
-| 数量限制 | 同一类型仅一个 | 无限制 | 无限制 |
+| 数据内容 | 任意数据 | 无数据 | 目标实体 ID / 任意数据 |
+| 数量限制 | 同一类型仅一个 | 无限制 | 同一类型可有多个目标（除非是 Single-Target Constraint） |
 | 查询能力 | 通过 Family | 通过 Family | 通过 Relation 查询 |
 
-关键区别在于：Component 和 Tag 是实体「拥有的数据」，而 Relation 是实体「指向其他实体」的关联。这种设计使得我们可以表达复杂的关系网络，而不仅仅是孤立的实体状态。
+### 1.3 核心术语
 
-### 1.3 设计原理
-
-Relation 系统的设计基于以下几个核心原则：
-
-1. **关系类型即组件**：Relation 使用 `ComponentId` 作为关系类型，这意味着我们可以像注册组件一样注册关系类型，保持类型系统的一致性。
-
-2. **目标实体存储**：Relation 将目标实体的 ID 直接编码在数据结构中，通过 `Long` 类型的低位存储关系类型，高位存储目标实体，实现高效的内存布局。
-
-3. **Archetype 集成**：Relation 作为一种特殊的组件参与 Archetype 切换，这使得关系的变化能够触发 Observer 事件系统。
-
-```kotlin
-// Relation 的创建过程
-sealed class OwnerBy  // 定义关系类型（sealed class）
-
-val sword = world.entity {
-    it.addRelation<OwnerBy>(player)  // 添加关系：sword 被 player 拥有
-}
-
-// 内部实现：Relation(kind=OwnerBy, target=player)
-```
+- **Relation Kind (关系类型)**：类似于组件类型，定义关系的含义（如 `OwnedBy`）。
+- **Relation Target (关系目标)**：关系指向的实体。
+- **Relation Data (关系数据)**：附加在关系上的额外数据。
+- **Relation (完整关系)**：关系类型 + 关系目标的组合。
 
 ---
 
@@ -59,63 +37,65 @@ val sword = world.entity {
 
 ### 2.1 普通 Relation
 
-普通 Relation 是最基本的关系类型，包含关系类型和目标实体。它用于表达「A 拥有 B」或「A 引用 B」这样的关联。
+普通 Relation 是最基本的关系类型，将一个实体指向另一个目标实体。它用于表达「A 拥有 B」或「A 引用 B」这样的关联。
 
 ```kotlin
 sealed class OwnerBy
 sealed class EquippedBy
 
 // 添加普通 Relation
-val sword = world.entity {
-    it.addRelation<OwnerBy>(player)
-    it.addRelation<EquippedBy>(player)
+world.editor(sword) {
+    addRelation<OwnerBy>(player)
+    addRelation<EquippedBy>(player)
 }
 
-// 获取 Relation 数据
-val owner = sword.getRelation<OwnerBy>()
+// 获取 Relation 目标的数据
+val targetData = sword.getRelation<OwnerBy>(player)
 ```
 
 带数据的 Relation 允许在关系中附加额外信息：
 
 ```kotlin
 // 方式一：泛型指定数据类型
-entity.addRelation<OwnerBy, Name>("倚天剑")
+world.editor(entity) {
+    addRelation<OwnerBy, Name>("倚天剑")
+}
 
 // 方式二：参数传递数据
-entity.addRelation<OwnerBy>(player, "倚天剑")
+world.editor(entity) {
+    addRelation<OwnerBy>(player, "倚天剑")
+}
 
 // 获取数据
-val name: String = entity.getRelation<OwnerBy, Name>()
+val name: String = entity.getRelation<Name, OwnerBy>()
 ```
 
-### 2.2 Single Relation
+### 2.2 单目标约束关系 (Single-Target Constraint Relation)
 
-Single Relation（无目标 Relation）用于标记实体具有某种属性或状态，但不指向任何具体实体。这类似于 Tag，但可以参与 Observer 事件系统。
+单目标约束关系是一种特殊的 Relation，通过在注册时声明，确保该类型的关系在同一实体上**只能有一个目标**。
+
+- **行为**：当添加该类型的新目标时，系统会自动移除旧的目标。
+- **用途**：表达排他性关系，如「主武器」、「当前选中的目标」等。
 
 ```kotlin
-sealed class IsEquipped
-sealed class IsVisible
-sealed class IsLocked
+sealed class MainWeapon
 
-// 添加 Single Relation
-val sword = world.entity {
-    it.addRelation<IsEquipped>()
-    it.addRelation<IsVisible>()
+// 第一次设置
+world.editor(player) {
+    addRelation<MainWeapon>(sword)
 }
 
-// 检查状态
-if (sword.hasRelation(relations.kind<IsEquipped>())) {
-    // 武器已装备
+// 第二次设置：会自动移除与 sword 的 MainWeapon 关系
+world.editor(player) {
+    addRelation<MainWeapon>(shield)
 }
+
+// 获取单目标关系的数据（通常用于 Single Relation 模式）
+val data = player.getRelation<WeaponData, MainWeapon>()
 ```
 
-Single Relation 的典型用途包括：
-
-- 实体状态标记（已装备、可见、锁定）
-- 临时状态管理
-- 需要被 Observer 监听的状态变化
-
 ### 2.3 Shared Component
+
 
 Shared Component（共享组件）是一种特殊的 Relation，它不存储在实体自身，而是存储在全局的 Component 表中。所有引用同一 Shared Component 的实体共享同一份数据，实现类似「全局配置」的效果。
 
@@ -133,10 +113,14 @@ data class GlobalConfig(
 
 // 添加 Shared Component（使用已有实例）
 val config = GlobalConfig("https://api.game.com", true)
-entity.addSharedComponent(config)
+world.editor(entity) {
+    addSharedComponent(config)
+}
 
 // 添加 Shared Component（自动创建默认实例）
-entity.addSharedComponent<GlobalConfig>()
+world.editor(entity) {
+    addSharedComponent<GlobalConfig>()
+}
 
 // 获取 Shared Component
 val retrievedConfig = entity.getSharedComponent<GlobalConfig>()
@@ -176,55 +160,52 @@ sealed class NoInherit  // 标记不继承关系
 
 ### 3.1 EntityCreateContext（添加 Relation）
 
-`EntityCreateContext` 提供了在创建实体时添加 Relation 的能力。它继承自 `EntityRelationContext`，因此同时具备查询功能。
+`EntityCreateContext` 提供了在创建实体时添加 Relation 的能力。
 
 ```kotlin
 // 创建实体并添加 Relation
 val sword = world.entity {
     // 普通 Relation（指向目标实体）
-    it.addRelation<OwnerBy>(player)
+    addRelation<OwnerBy>(player)
     
     // 带数据的 Relation
-    it.addRelation<OwnerBy>(player, "倚天剑")
-    it.addRelation<OwnerBy, Name>("屠龙刀")
+    addRelation<OwnerBy>(player, "倚天剑")
+    addRelation<OwnerBy, Name>("屠龙刀")
     
-    // Single Relation（无目标）
-    it.addRelation<IsEquipped>()
+    // Single-Target Constraint Relation (单目标约束)
+    addRelation<MainWeapon>(sword)
     
     // Shared Component
-    it.addSharedComponent<GlobalConfig>(config)
-    it.addSharedComponent<GameConfig>()  // 使用默认实例
+    addSharedComponent<GlobalConfig>(config)
+    addSharedComponent<GameConfig>()  // 使用默认实例
     
     // 组件和 Tag
-    it.addComponent(WeaponData(50, 100))
-    it.addTag<ActiveTag>()
+    addComponent(WeaponData(50, 100))
+    addTag<ActiveTag>()
     
     // 父子关系快捷方式
-    it.parent(parentEntity)
+    parent(parentEntity)
 }
 ```
 
 完整的添加 API 列表：
 
 ```kotlin
-// 普通 Relation
-entity.addRelation<K>(target)                              // 无数据
-entity.addRelation<K>(target, data)                        // 带数据
-entity.addRelation<K, T>(data)                             // 带数据类型声明
-
-// Single Relation
-entity.addRelation<K, T>()                                 // 无目标
+// 在 world.entity { ... } 或 world.editor(entity) { ... } 中使用
+addRelation<K>(target)                              // 无数据
+addRelation<K>(target, data)                        // 带数据
+addRelation<K, T>(data)                             // 带数据类型声明
 
 // Shared Component
-entity.addSharedComponent<C>(component)                    // 使用实例
-entity.addSharedComponent<C>()                             // 使用默认实例
+addSharedComponent<C>(component)                    // 使用实例
+addSharedComponent<C>()                             // 使用默认实例
 
 // 组件和 Tag
-entity.addComponent<C>(component)
-entity.addTag<C>()
+addComponent<C>(component)
+addTag<C>()
 
 // 父子关系
-entity.parent(parent)
+parent(parent)
 ```
 
 ### 3.2 EntityUpdateContext（删除 Relation）
@@ -259,8 +240,8 @@ class MySystem : EntityRelationContext {
     
     fun process(entity: Entity) {
         // 获取 Relation 数据
-        val owner: OwnerBy = entity.getRelation<OwnerBy>(player)
-        val name: String = entity.getRelation<OwnerBy, Name>()
+        val ownerData: OwnerBy = entity.getRelation<OwnerBy>(player)
+        val name: String = entity.getRelation<Name, OwnerBy>()
         
         // 获取组件
         val health: Health = entity.getComponent<Health>()
@@ -308,12 +289,12 @@ sealed class ContainedBy
 // 玩家创建武器
 val player = world.entity { }
 val sword = world.entity {
-    it.addComponent(WeaponData(50, 100))
-    it.addRelation<OwnerBy>(player)
+    addComponent(WeaponData(50, 100))
+    addRelation<OwnerBy>(player)
 }
 val shield = world.entity {
-    it.addComponent(DefenseData(30))
-    it.addRelation<OwnerBy>(player)
+    addComponent(DefenseData(30))
+    addRelation<OwnerBy>(player)
 }
 
 // 查询玩家拥有的所有武器
@@ -330,11 +311,11 @@ world.query { OwnerByQueryContext(this, player) }.forEach { ctx, entity ->
 
 // 物品栏系统
 val inventory = world.entity {
-    it.addComponent(InventoryData(10))
+    addComponent(InventoryData(10))
 }
 val potion = world.entity {
-    it.addComponent(ItemData("生命药水"))
-    it.addRelation<ContainedBy>(inventory)
+    addComponent(ItemData("生命药水"))
+    addRelation<ContainedBy>(inventory)
 }
 ```
 
@@ -345,17 +326,17 @@ val potion = world.entity {
 ```kotlin
 // 方式一：使用 parent() 方法
 val player = world.entity {
-    it.addComponent(Transform())
+    addComponent(Transform())
 }
 val weapon = player.childOf {
-    it.addComponent(Transform())
-    it.addComponent(WeaponData(100, 50))
+    addComponent(Transform())
+    addComponent(WeaponData(100, 50))
 }
 
 // 方式二：使用 addRelation
 val armor = world.entity {
-    it.addComponent(DefenseData(50))
-    it.addRelation(components.childOf, player)
+    addComponent(DefenseData(50))
+    addRelation(components.childOf, player)
 }
 
 // 遍历子实体
@@ -403,22 +384,22 @@ Prefab 用于创建可复用的实体模板，然后通过实例化创建具体�
 ```kotlin
 // 定义怪物预制体
 val goblinPrefab = world.entity {
-    it.addComponent(Health(50, 50))
-    it.addComponent(AttackData(10))
-    it.addComponent(MoveSpeed(5f))
-    it.addTag<EnemyTag>()
+    addComponent(Health(50, 50))
+    addComponent(AttackData(10))
+    addComponent(MoveSpeed(5f))
+    addTag<EnemyTag>()
 }
-world.entity { it.addTag<Prefab>() }  // 标记为预制体
+world.entity { addTag<Prefab>() }  // 标记为预制体
 
 // 实例化预制体
 val goblin1 = goblinPrefab.instanceOf {
-    it.addComponent(Position(10, 20))
-    it.addComponent(Level(1))
+    addComponent(Position(10, 20))
+    addComponent(Level(1))
 }
 
 val goblin2 = goblinPrefab.instanceOf {
-    it.addComponent(Position(30, 40))
-    it.addComponent(Level(2))
+    addComponent(Position(30, 40))
+    addComponent(Level(2))
 }
 
 // 查询所有实例
@@ -438,7 +419,7 @@ val allGoblins = world.query { InstanceOfQueryContext(this, goblinPrefab) }
 // instanceOf 内部实现
 fun World.instanceOf(prefab: Entity, configuration: EntityCreateContext.(Entity) -> Unit): Entity = entity {
     configuration(it)
-    it.addRelation(components.instanceOf, prefab)  // 添加 InstanceOf Relation
+    addRelation(components.instanceOf, prefab)  // 添加 InstanceOf Relation
 }
 ```
 
@@ -467,8 +448,8 @@ val sceneConfig = SceneConfig(1, "battle.mp3", "rain")
 
 // 在实体上添加 Shared Component
 val gameWorld = world.entity {
-    it.addSharedComponent(gameConfig)
-    it.addSharedComponent(sceneConfig)
+    addSharedComponent(gameConfig)
+    addSharedComponent(sceneConfig)
 }
 
 // 获取配置
@@ -618,7 +599,7 @@ Relation 类型的命名应遵循以下规范：
 
 2. **命名模式**：
    - 描述所有关系：`OwnedBy`、`ContainedBy`、`MountedOn`
-   - 描述状态：`IsEquipped`、`IsVisible`、`IsActive`
+   - 描述排他性关系：`MainWeapon`、`TargetOf`
    - 描述实例：`InstanceOf`、`ChildOf`
 
 ```kotlin
@@ -626,7 +607,7 @@ Relation 类型的命名应遵循以下规范：
 sealed class OwnerBy           // 被谁拥有
 sealed class ContainedBy       // 被谁包含
 sealed class EquippedBy        // 被谁装备
-sealed class IsEquipped        // 已装备状态
+sealed class MainWeapon        // 主武器（单目标约束）
 sealed class InstanceOf        // 实例化自
 
 // 不好的命名
@@ -684,8 +665,11 @@ relationRemovals.forEach { (entity, relation) ->
    // 错误：使用 addComponent 添加关系
    entity.addComponent(OwnerBy(player))
    
-   // 正确：使用 addRelation
-   entity.addRelation<OwnerBy>(player)
+// 正确：使用 addRelation
+world.editor(entity) {
+    addRelation<OwnerBy>(player)
+}
+
    ```
 
 2. **忘记 Relation 的目标可能无效**：
@@ -718,9 +702,12 @@ relationRemovals.forEach { (entity, relation) ->
    val config = entity.getSharedComponent<GameConfig>()
    config.maxPlayers = 100  // 错误：组件是不可变的
    
-   // 正确：创建新的实例
-   val newConfig = config.copy(maxPlayers = 100)
-   entity.addSharedComponent(newConfig)
+// 正确：创建新的实例
+val newConfig = config.copy(maxPlayers = 100)
+world.editor(entity) {
+    addSharedComponent(newConfig)
+}
+
    ```
 
 ---
@@ -733,19 +720,19 @@ relationRemovals.forEach { (entity, relation) ->
 
 | 场景 | 代码 |
 |------|------|
-| 普通 Relation | `entity.addRelation<OwnerBy>(player)` |
-| 带数据 | `entity.addRelation<OwnerBy>(player, "名称")` |
-| Single Relation | `entity.addRelation<IsEquipped>()` |
-| Shared Component | `entity.addSharedComponent<Config>(config)` |
-| 父子关系 | `entity.parent(parent)` |
+| 普通 Relation | `addRelation<OwnerBy>(player)` |
+| 带数据 | `addRelation<OwnerBy>(player, "名称")` |
+| 单目标约束 | `addRelation<MainWeapon>(sword)` |
+| Shared Component | `addSharedComponent<Config>(config)` |
+| 父子关系 | `parent(parent)` |
 | 实例化 | `prefab.instanceOf { }` |
 
 #### 查询 Relation
 
 | 场景 | 代码 |
 |------|------|
-| 获取目标 | `entity.getRelation<OwnerBy>(player)` |
-| 获取数据 | `entity.getRelation<OwnerBy, Name>()` |
+| 获取指定目标的数据 | `entity.getRelation<OwnerBy>(player)` |
+| 获取单目标数据 | `entity.getRelation<T, K>()` |
 | 获取组件 | `entity.getComponent<Health>()` |
 | 获取 Shared | `entity.getSharedComponent<Config>()` |
 | 检查存在 | `entity.hasRelation(relation)` |

@@ -36,6 +36,6 @@ fun ComponentId.singleRelation(): Unit = with(context) {
 }
 
 context(context: ComponentConfigureContext)
-fun ComponentId.store(factory: () -> ComponentStore<Any>): Unit = with(context) {
+fun <C : Component> ComponentId.store(factory: ComponentStoreFactory<C>): Unit = with(context) {
     world.componentService.configureStoreType(this@store, factory)
 }

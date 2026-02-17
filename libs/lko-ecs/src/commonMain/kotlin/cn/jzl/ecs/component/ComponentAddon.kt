@@ -12,6 +12,12 @@ val componentAddon = createAddon<Unit>("componentAddon") {
         this bind singleton { new(::Components) }
     }
     components {
+
+        world.componentId<Double> { it.store { doubleStore() } }
+        world.componentId<Float> { it.store { floatStore() } }
+        world.componentId<Int> { it.store { intStore() } }
+        world.componentId<Long> { it.store { longStore() } }
+
         world.componentId<Any> { it.tag() }
         world.componentId<ComponentOf> { it.tag() }
         world.componentId<SharedOf> { it.tag() }
