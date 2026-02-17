@@ -151,9 +151,9 @@ class QueryTest {
         }
         
         // 查询并验证
-        val positions = world.query { PositionContext(this) }
-            .map { it.position }
-            .toList()
+        val positions = mutableListOf<Position>()
+        world.query { PositionContext(this) }
+            .forEach { ctx -> positions.add(ctx.position) }
         
         assertEquals(3, positions.size)
     }
@@ -174,10 +174,10 @@ class QueryTest {
             val position: Position by component()
         }
         
-        val filtered = world.query { PositionContext(this) }
+        val filtered = mutableListOf<Position>()
+        world.query { PositionContext(this) }
             .filter { it.position.x > 5 }
-            .map { it.position }
-            .toList()
+            .forEach { ctx -> filtered.add(ctx.position) }
         
         assertEquals(2, filtered.size)
     }

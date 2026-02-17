@@ -246,13 +246,11 @@ world.query { DiscipleContext(this) }.forEach { ctx ->
 
 **解决方案**:
 ```kotlin
-// 正确：先收集实体，再修改
-val entities = world.query { DiscipleContext(this) }
-    .map { it.entity }
-    .toList()
-entities.forEach { entity ->
-    entity.editor { it.addComponent(newHealth) }
-}
+// 正确：直接遍历处理
+world.query { DiscipleContext(this) }
+    .forEach { ctx ->
+        ctx.entity.editor { it.addComponent(newHealth) }
+    }
 ```
 
 ### 问题 5: 组件查询返回空结果

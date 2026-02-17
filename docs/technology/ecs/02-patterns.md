@@ -98,7 +98,7 @@ class HealthService : EntityRelationContext {
     override lateinit var world: World
     
     private class HealthContext(world: World) : EntityQueryContext(world) {
-        val health: Health by component()
+        val health: Health by component<Health>()
     }
     
     fun healAll(amount: Int) {
@@ -126,16 +126,16 @@ class HealthService : EntityRelationContext {
 
 ### 实现方式
 
-继承 `EntityQueryContext`，使用 `by component()` 委托。
+继承 `EntityQueryContext`，使用 `by component<T>()` 委托。
 
 ```kotlin
 class PositionContext(world: World) : EntityQueryContext(world) {
-    val position: Position by component()
+    val position: Position by component<Position>()
 }
 
 class ActivePlayerContext(world: World) : EntityQueryContext(world) {
-    val name: PlayerName by component()
-    val level: PlayerLevel by component()
+    val name: PlayerName by component<PlayerName>()
+    val level: PlayerLevel by component<PlayerLevel>()
     
     override fun FamilyBuilder.configure() {
         component<ActiveTag>()
@@ -144,9 +144,9 @@ class ActivePlayerContext(world: World) : EntityQueryContext(world) {
 }
 
 // 使用
-val positions = world.query { PositionContext(this) }
+world.query { PositionContext(this) }
     .filter { it.position.y > 0 }
-    .toList()
+    .forEach { ctx -> println(ctx.position) }
 
 world.query { ActivePlayerContext(this) }
     .forEach { ctx -> println(ctx.name.value) }
@@ -182,25 +182,22 @@ class GameService : EntityRelationContext {
 
 ### 实现方式
 
-先收集实体到列表，再批量修改。
+直接在遍历中处理，不需要收集结果。
 
 ```kotlin
-// ✅ 正确：先收集再修改
+// ✅ 正确：直接遍历处理
 fun healAllTeam() {
-    val entities = world.query { HealthContext(this) }
+    world.query { HealthContext(this) }
         .filter { it.health.current < it.health.max }
-        .map { it.entity }
-        .toList()  // 关键：先收集
-    
-    entities.forEach { entity ->
-        val health = entity.getComponent<Health>()!!
-        entity.editor {
-            it.addComponent(health.copy(current = health.current + 50))
+        .forEach { ctx ->
+            val health = ctx.health
+            ctx.entity.editor {
+                it.addComponent(health.copy(current = health.current + 50))
+            }
         }
-    }
 }
 
-// ❌ 错误：迭代中修改
+// ❌ 错误：迭代中直接修改（会锁定实体结构）
 fun bad() {
     world.query { HealthContext(this) }.forEach { ctx ->
         ctx.entity.editor { }  // 可能异常
@@ -324,14 +321,11 @@ class DiscipleService : EntityRelationContext {
     }
     
     fun promoteReady() {
-        val ready = world.query { DiscipleContext(this) }
+        world.query { DiscipleContext(this) }
             .filter { it.cultivation.current >= it.cultivation.max }
-            .map { it.entity }
-            .toList()
-        
-        ready.forEach { disciple ->
-            disciple.editor { it.addComponent(Cultivation(0, 200)) }
-        }
+            .forEach { ctx ->
+                ctx.entity.editor { it.addComponent(Cultivation(0, 200)) }
+            }
     }
 }
 ```
@@ -370,13 +364,25 @@ val shield = world.entity {
 
 // 查询玩家拥有的所有实体
 class OwnerByContext(world: World, val player: Entity) : EntityQueryContext(world) {
-    val ownerBy: OwnerBy by relation(player)
+    val ownerBy: Entity by relation(player)
     
     override fun FamilyBuilder.configure() {
-        relation<OwnerBy>(player)
+        relation(relations.kind<OwnerBy>())
+        relation(relations.target(player))
     }
 }
 val ownedByPlayer = world.query { OwnerByContext(this, player) }
+
+// 反向查询：查询被某玩家拥有的所有实体
+class ReverseOwnerByContext(world: World, val target: Entity) : EntityQueryContext(world) {
+    val owner: Entity by relationUp<OwnerBy>()
+    
+    override fun FamilyBuilder.configure() {
+        relation(relations.kind<OwnerBy>())
+        relation(relations.target(target))
+    }
+}
+val ownedByPlayer2 = world.query { ReverseOwnerByContext(this, player) }
 
 // 玩家丢弃武器时删除关系
 fun dropItem(item: Entity, owner: Entity) {
@@ -411,26 +417,26 @@ val armor = world.entity {
 
 // 遍历所有子实体
 class ChildrenContext(world: World, val parent: Entity) : EntityQueryContext(world) {
-    val childOf: ChildOf by relation(parent)
+    val childOf: Entity by relation(parent)
     
     override fun FamilyBuilder.configure() {
-        relation<ChildOf>(parent)
+        relation(relations.kind<ChildOf>())
+        relation(relations.target(parent))
     }
 }
-fun getChildren(parent: Entity): List<Entity> {
-    return world.query { ChildrenContext(this, parent) }
-        .map { it.second }
-        .toList()
+fun getChildren(parent: Entity, action: (Entity) -> Unit) {
+    world.query { ChildrenContext(this, parent) }
+        .forEach { ctx -> action(ctx.second) }
 }
 
 // 层级变换传播系统
 class TransformChildContext(world: World) : EntityQueryContext(world) {
-    var transform: Transform by component()
-    val childOf: ChildOf by relation()
+    var transform: Transform by component<Transform>()
+    val childOf: Entity by relation<ChildOf>()
     
     override fun FamilyBuilder.configure() {
         component<Transform>()
-        component<ChildOf>()
+        relation(relations.kind<ChildOf>())
     }
 }
 
@@ -477,10 +483,11 @@ val goblin2 = goblinPrefab.instanceOf {
 
 // 查询所有实例
 class InstanceOfContext(world: World, val prefab: Entity) : EntityQueryContext(world) {
-    val instanceOf: InstanceOf by relation(prefab)
+    val instanceOf: Entity by relation(prefab)
     
     override fun FamilyBuilder.configure() {
-        relation<InstanceOf>(prefab)
+        relation(relations.kind<InstanceOf>())
+        relation(relations.target(prefab))
     }
 }
 val allGoblins = world.query { InstanceOfContext(this, goblinPrefab) }
@@ -519,13 +526,23 @@ data class SceneConfig(
     val weather: String
 )
 
-// 添加 Shared Component（使用已有实例）
+// 添加 Shared Component（首次添加需要实例）
 val config = GameConfig(maxPlayers = 8, enablePvP = false)
 val sceneConfig = SceneConfig(1, "battle.mp3", "rain")
 
 val gameWorld = world.entity {
     it.addSharedComponent(config)
     it.addSharedComponent(sceneConfig)
+}
+
+// 后续添加不需要实例（使用已存在的共享组件）
+val gameWorld2 = world.entity {
+    it.addSharedComponent<GameConfig>()
+}
+
+// 更新共享组件（所有引用该组件的实体都会被更新）
+val gameWorld3 = world.entity {
+    it.addSharedComponent(GameConfig(maxPlayers = 16))
 }
 
 // 获取配置
@@ -552,10 +569,10 @@ class GameConfigService : EntityRelationContext {
         val newConfig = current.copy(maxPlayers = maxPlayers)
         
         class SharedOfContext(world: World) : EntityQueryContext(world) {
-            val sharedOf: SharedOf by relation<SharedOf, GameConfig>()
+            val sharedConfig: GameConfig by component<GameConfig>()
             
             override fun FamilyBuilder.configure() {
-                relation<SharedOf, GameConfig>()
+                relation(relations.sharedComponent<GameConfig>())
             }
         }
         

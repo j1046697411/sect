@@ -22,10 +22,11 @@ Query 迭代时锁定实体结构,直接修改会触发异常。
 ### ✅ 正确做法
 ```kotlin
 fun healAll() {
-    val entities = world.query { HealthContext(this) }.map { it.entity }.toList()
-    entities.forEach { entity ->
-        val health = entity.getComponent<Health>() ?: return@forEach
-        entity.editor { it.addComponent(health.copy(current = health.current + 50)) }
+    world.query { HealthContext(this) }.forEach { ctx ->
+        val health = ctx.health
+        ctx.entity.editor {
+            it.addComponent(health.copy(current = health.current + 50))
+        }
     }
 }
 ```

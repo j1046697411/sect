@@ -106,27 +106,13 @@ entities.forEach { entity ->
     entity.editor { it.addComponent(health.copy(current = health.current + 10)) }
 }
 
-// ✅ 正确：收集后批量处理
-val targets = entities.toList()  // 收集到列表
-targets.forEach { entity ->
-    val health = entity.getComponent<Health>() ?: return@forEach
-    entity.editor { it.addComponent(health.copy(current = health.current + 10)) }
-}
-
-// ✅ 最佳：使用 BatchEntityEditor
+// ✅ 正确：直接遍历处理，不需要收集
 class BuffSystem : EntityRelationContext {
-    private val editorPool by lazy { BatchEntityEditorPool(world) }
-    
     fun batchAddBuff(entities: List<Entity>, buff: Buff) {
-        val editor = editorPool.obtain()
-        try {
-            entities.forEach { entity ->
-                editor.entity = entity
-                editor.addComponent(buff)
+        entities.forEach { entity ->
+            entity.editor {
+                it.addComponent(buff)
             }
-            editor.apply()
-        } finally {
-            editorPool.release(editor)
         }
     }
 }
@@ -204,26 +190,17 @@ class BadSystem : EntityRelationContext {
     }
 }
 
-// ✅ 正确：分离读写
+// ✅ 正确：直接遍历处理
 class HealthSystem : EntityRelationContext {
-    // 读取：收集需要处理的实体
-    fun findLowHealth(): List<Entity> {
-        return world.query { HealthContext(this) }
+    fun applyDamage(damage: Int) {
+        world.query { HealthContext(this) }
             .filter { it.health.current > 0 }
-            .map { it.entity }
-            .toList()
-    }
-    
-    // 写入：批量处理
-    fun applyDamage(entities: List<Entity>, damage: Int) {
-        entities.forEach { entity ->
-            val health = entity.getComponent<Health>() ?: return@forEach
-            entity.editor {
-                it.addComponent(health.copy(
-                    current = maxOf(0, health.current - damage)
-                ))
+            .forEach { ctx ->
+                val newHealth = maxOf(0, ctx.health.current - damage)
+                ctx.entity.editor {
+                    it.addComponent(Health(newHealth, ctx.health.max))
+                }
             }
-        }
     }
 }
 ```
@@ -234,8 +211,7 @@ class HealthSystem : EntityRelationContext {
 // ❌ 错误：每帧全量计算
 class ExpensiveSystem : EntityRelationContext {
     fun update() {
-        val allEntities = world.query { TransformContext(this) }.toList()
-        allEntities.forEach { ctx ->
+        world.query { TransformContext(this) }.forEach { ctx ->
             // 复杂计算
         }
     }

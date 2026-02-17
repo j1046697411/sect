@@ -42,7 +42,7 @@ player.getComponent<Health>()  // null 或异常
 |------|----------|------|
 | `data class` | 多属性 | `Health(current, max)` |
 | `@JvmInline value class` | 单属性高性能 | `Level(val value: Int)` |
-| `sealed class` | Tag | `ActiveTag` |
+| `sealed class` | Tag 或 Relation Kind | `ActiveTag`, `OwnedBy` |
 
 ### 使用示例
 
@@ -197,8 +197,15 @@ world.query<OwnerBy>().forEach { entity ->
     val owner = entity.getRelation<OwnerBy, Name>()
 }
 
-// 反向查询：查找关联到当前实体的所有实体
-world.query<OwnerBy>().filter { it.getRelation<OwnerBy, Entity>() == player }
+// 反向查询：查找关联到当前实体的所有实体（使用 relationUp）
+class ReverseQueryContext(world: World, val target: Entity) : EntityQueryContext(world) {
+    val owner: Entity by relationUp<OwnerBy>()
+    
+    override fun FamilyBuilder.configure() {
+        relation(relations.kind<OwnerBy>())
+        relation(relations.target(target))
+    }
+}
 
 // 条件查询：查找特定目标的关系
 world.query<OwnerBy>().filter { relation ->
@@ -277,26 +284,26 @@ world.query { HealthContext(this) }
 ### 查询上下文四种声明方式
 
 ```kotlin
-// 1. 基础组件 - 必须存在
+// 1. 基础组件 - 必须存在（使用泛型指定类型）
 class PositionContext(world: World) : EntityQueryContext(world) {
-    val position: Position by component()  // 必须有 Position
+    val position: Position by component<Position>()  // 必须有 Position
 }
 
-// 2. 可选组件 - 可以不存在
+// 2. 可选组件 - 可以不存在（可空类型）
 class OptionalContext(world: World) : EntityQueryContext(world) {
-    val nickname: Nickname? by component()  // 可以不存在
+    val nickname: Nickname? by component<Nickname?>()  // 可以不存在
 }
 
 // 3. 可选组 - 同组至少满足一个
 class OptionalGroupContext(world: World) : EntityQueryContext(world) {
-    val weapon: Weapon? by component(OptionalGroup.One)
-    val armor: Armor? by component(OptionalGroup.One)
+    val weapon: Weapon? by component<Weapon?>(optionalGroup = OptionalGroup.One)
+    val armor: Armor? by component<Armor?>(optionalGroup = OptionalGroup.One)
     // weapon 或 armor 至少有一个
 }
 
 // 4. 可写组件 - 遍历中可修改数据（非结构）
 class WritableContext(world: World) : EntityQueryContext(world) {
-    var velocity: Velocity by component()
+    var velocity: Velocity by component<Velocity>()
     // 允许修改数据: ctx.velocity = Velocity(1, 1)
     // 但禁止在此修改结构: ctx.entity.addComponent(...)
 }

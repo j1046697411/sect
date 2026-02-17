@@ -195,8 +195,8 @@ class EnemyFactory : EntityRelationContext {
 // 文件: src/systems/MovementSystem.kt
 class MovementSystem : EntityRelationContext {
     private class PositionContext(world: World) : EntityQueryContext(world) {
-        val position: Position by component()
-        val velocity: Velocity by component()
+        val position: Position by component<Position>()
+        val velocity: Velocity by component<Velocity>()
     }
 
     fun processMovement() {
@@ -210,8 +210,10 @@ class MovementSystem : EntityRelationContext {
             }
     }
 
-    // 收集结果
-    fun findAll(): List<Entity> = world.query { PositionContext(this) }.map { it.entity }.toList()
+    fun forEach(action: (Entity) -> Unit) {
+        world.query { PositionContext(this) }.forEach { ctx -> action(ctx.entity) }
+    }
+
     fun count(): Int = world.query { PositionContext(this) }.count()
 }
 ```
@@ -224,8 +226,8 @@ class MovementSystem : EntityRelationContext {
 // 文件: src/systems/CombatSystem.kt
 class CombatSystem : EntityRelationContext {
     private class ActivePlayerContext(world: World) : EntityQueryContext(world) {
-        val health: Health by component()
-        val level: Level by component()
+        val health: Health by component<Health>()
+        val level: Level by component<Level>()
 
         override fun FamilyBuilder.configure() {
             component<PlayerTag>()
@@ -233,17 +235,23 @@ class CombatSystem : EntityRelationContext {
         }
     }
 
-    fun findNeedHeal(): List<Entity> = world.query { ActivePlayerContext(this) }
-        .filter { it.health.current < it.health.max }
-        .map { it.entity }.toList()
+    fun findNeedHeal(action: (Entity) -> Unit) {
+        world.query { ActivePlayerContext(this) }
+            .filter { it.health.current < it.health.max }
+            .forEach { ctx -> action(ctx.entity) }
+    }
 
-    fun findFullHealth(): List<Entity> = world.query { ActivePlayerContext(this) }
-        .filter { it.health.current >= it.health.max }
-        .map { it.entity }.toList()
+    fun findFullHealth(action: (Entity) -> Unit) {
+        world.query { ActivePlayerContext(this) }
+            .filter { it.health.current >= it.health.max }
+            .forEach { ctx -> action(ctx.entity) }
+    }
 
-    fun findHighLevel(threshold: Int): List<Entity> = world.query { ActivePlayerContext(this) }
-        .filter { it.level.value >= threshold }
-        .map { it.entity }.toList()
+    fun findHighLevel(threshold: Int, action: (Entity) -> Unit) {
+        world.query { ActivePlayerContext(this) }
+            .filter { it.level.value >= threshold }
+            .forEach { ctx -> action(ctx.entity) }
+    }
 }
 ```
 
@@ -255,19 +263,17 @@ class CombatSystem : EntityRelationContext {
 // 文件: src/systems/BuffSystem.kt
 class BuffSystem : EntityRelationContext {
     private class HealthContext(world: World) : EntityQueryContext(world) {
-        val health: Health by component()
+        val health: Health by component<Health>()
     }
 
     fun batchHeal(amount: Int) {
-        val entities = world.query { HealthContext(this) }
+        world.query { HealthContext(this) }
             .filter { it.health.current < it.health.max }
-            .map { it.entity }
-            .toList()
-
-        entities.forEach { entity ->
-            val health = entity.getComponent<Health>() ?: return@forEach
-            entity.editor {
-                it.addComponent(health.copy(current = minOf(health.current + amount, health.max)))
+            .forEach { ctx ->
+                val health = ctx.health
+                ctx.entity.editor {
+                    it.addComponent(health.copy(current = minOf(health.current + amount, health.max)))
+                }
             }
         }
     }

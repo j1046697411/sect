@@ -93,16 +93,17 @@ import cn.jzl.ecs.family.component
 import cn.jzl.ecs.family.relation
 
 class PlayerItemsContext(world: World) : EntityQueryContext(world) {
-    val itemName: ItemName by component()
-    val likes: Likes by relation(player)
+    val itemName: ItemName by component<ItemName>()
+    val likes: Entity by relation<Likes>(player)
     
     override fun FamilyBuilder.configure() {
-        relation<BelongsTo>(player)
+        relation(relations.kind<BelongsTo>())
+        relation(relations.target(player))
     }
 }
 
 world.query { PlayerItemsContext(this) }.forEach { ctx, entity ->
-    println("物品: ${ctx.itemName.name}, 喜欢等级: ${ctx.likes.level}")
+    println("物品: ${ctx.itemName.name}")
 }
 ```
 
@@ -115,19 +116,25 @@ world.query { PlayerItemsContext(this) }.forEach { ctx, entity ->
 ```kotlin
 class MyQueryContext(world: World) : EntityQueryContext(world) {
     
-    // 1. 基础组件 - 必须存在
-    val position: Position by component()
-    val health: Health by component()
+    // 1. 基础组件 - 必须存在（使用泛型指定类型）
+    val position: Position by component<Position>()
+    val health: Health by component<Health>()
     
     // 2. 可选组件 - 可以不存在（可空类型）
-    val nickname: Nickname? by component()
+    val nickname: Nickname? by component<Nickname?>()
     
     // 3. 可选组 - 同组内至少满足一个
-    val weapon1: Weapon? by component(OptionalGroup.One)
-    val weapon2: Armor? by component(OptionalGroup.One)
+    val weapon1: Weapon? by component<Weapon?>(optionalGroup = OptionalGroup.One)
+    val weapon2: Armor? by component<Armor?>(optionalGroup = OptionalGroup.One)
     
     // 4. 可写组件 - 遍历过程中可修改
-    var velocity: Velocity by component()
+    var velocity: Velocity by component<Velocity>()
+    
+    // 5. 关系查询 - 正向查询（当前实体指向的目标）
+    val target: Entity by relation<BelongsTo>()
+    
+    // 6. 关系查询 - 反向查询（指向当前实体的源）
+    val owner: Entity by relationUp<OwnedBy>()
     
 }
 ```
@@ -138,20 +145,20 @@ class MyQueryContext(world: World) : EntityQueryContext(world) {
 class GameQueryContext(world: World) : EntityQueryContext(world) {
     
     // ========== 基础条件（必须存在）==========
-    val position: Position by component()
-    val health: Health by component()
+    val position: Position by component<Position>()
+    val health: Health by component<Health>()
     
     // ========== 可选组件（可以不存在）==========
-    val nickname: Nickname? by component()
-    val buff: Buff? by component()
+    val nickname: Nickname? by component<Nickname?>()
+    val buff: Buff? by component<Buff?>()
     
     // ========== 可选组（至少满足一个）==========
-    val weapon: Weapon? by component(OptionalGroup.One)
-    val armor: Armor? by component(OptionalGroup.One)
+    val weapon: Weapon? by component<Weapon?>(optionalGroup = OptionalGroup.One)
+    val armor: Armor? by component<Armor?>(optionalGroup = OptionalGroup.One)
     
     // ========== 可写组件（遍历中可修改）==========
-    var velocity: Velocity by component()
-    var mana: Mana by component()
+    var velocity: Velocity by component<Velocity>()
+    var mana: Mana by component<Mana>()
     
 }
 ```
@@ -161,8 +168,8 @@ class GameQueryContext(world: World) : EntityQueryContext(world) {
 | 类型 | 语法 | 行为 |
 |------|------|------|
 | **必须存在** | `val x: T by component<T>()` | 实体必须有 T 组件 |
-| **可选（可空）** | `val x: T? by component<T>()` | T 组件可以不存在，返回 null |
-| **可选组** | `val x: T? by component<T>(OptionalGroup.One)` | 同组内至少满足一个 |
+| **可选（可空）** | `val x: T? by component<T?>()` | T 组件可以不存在，返回 null |
+| **可选组** | `val x: T? by component<T?>(optionalGroup = OptionalGroup.One)` | 同组内至少满足一个 |
 | **可写** | `var x: T by component<T>()` | 必须存在，且可修改 |
 
 ---
@@ -183,10 +190,9 @@ class InventorySystem(override val world: World) : EntityRelationContext {
         }
     }
     
-    fun getPlayerItems(player: Entity): List<Entity> {
-        return world.query { PlayerInventoryQuery(this, player) }
-            .map { it.second }
-            .toList()
+    fun getPlayerItems(player: Entity, action: (Entity) -> Unit) {
+        world.query { PlayerInventoryQuery(this, player) }
+            .forEach { ctx -> action(ctx.second) }
     }
 }
 ```
@@ -222,14 +228,17 @@ data class Health(val current: Int, val max: Int)
 data class Level(val value: Int)
 ```
 
-### 2. relation 必须指定 target
+### 2. relation 需要使用正确的查询方式
 
 ```kotlin
-// ❌ 错误
-val likes: Likes by relation<Likes>()
+// 正向查询：查询当前实体指向的目标
+val target: Entity by relation<BelongsTo>()  // 查询 BelongsTo 关系的目标实体
 
-// ✅ 正确
-val likes: Likes by relation(targetEntity)
+// 反向查询：查询指向当前实体的源（被谁拥有）
+val owner: Entity by relationUp<OwnedBy>()   // 查询拥有当前实体的实体
+
+// 带泛型的查询
+val targetWithData: Entity by relation<Likes, LikeData>()
 ```
 
 ### 3. 可选组的使用场景

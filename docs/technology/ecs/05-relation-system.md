@@ -77,8 +77,20 @@ val name: String = entity.getRelation<Name, OwnerBy>()
 - **行为**：当添加该类型的新目标时，系统会自动移除旧的目标。
 - **用途**：表达排他性关系，如「主武器」、「当前选中的目标」等。
 
+**注册方式**（使用 `singleRelation()`）：
+
 ```kotlin
 sealed class MainWeapon
+sealed class OwnerBy
+
+// 注册时使用 singleRelation()
+world.componentId<MainWeapon> { it.singleRelation() }
+
+// OwnerBy 同时作为 Tag 和 Single Relation
+world.componentId<OwnedBy> {
+    it.tag()
+    it.singleRelation()
+}
 
 // 第一次设置
 world.editor(player) {
@@ -95,7 +107,6 @@ val data = player.getRelation<WeaponData, MainWeapon>()
 ```
 
 ### 2.3 Shared Component
-
 
 Shared Component（共享组件）是一种特殊的 Relation，它不存储在实体自身，而是存储在全局的 Component 表中。所有引用同一 Shared Component 的实体共享同一份数据，实现类似「全局配置」的效果。
 
@@ -131,6 +142,33 @@ Shared Component 的特点：
 - 数据存储在全局表中，不随实体迁移 Archetype
 - 多个实体共享同一份数据，修改会影响所有引用者
 - 适合存储全局配置、缓存数据等
+
+**首次添加 vs 后续添加的行为差异**：
+
+```kotlin
+val entity1 = world.entity {
+    // 首次添加共享组件，必须提供实例对象
+    it.addSharedComponent<GameConfig>(GameConfig(1, 2))
+}
+
+val entity2 = world.entity {
+    // 后续添加相同类型的共享组件，无需再次提供实例
+    // 系统会自动复用已存在的共享组件数据
+    it.addSharedComponent<GameConfig>()
+}
+
+val entity3 = world.entity {
+    // 再次添加并提供新实例，会更新共享组件数据
+    // 所有引用该共享组件的实体都会受到影响
+    it.addSharedComponent<GameConfig>(GameConfig(2, 3))
+}
+```
+
+| 场景 | 代码 | 行为 |
+|------|------|------|
+| 首次添加 | `addSharedComponent<T>(instance)` | 创建新的共享组件实例 |
+| 后续添加 | `addSharedComponent<T>()` | 复用已存在的实例 |
+| 更新添加 | `addSharedComponent<T>(newInstance)` | 更新所有引用者的数据 |
 
 ### 2.4 内置类型
 
@@ -258,6 +296,46 @@ class MySystem : EntityRelationContext {
 }
 ```
 
+### 3.4 EntityQueryContext（查询上下文）
+
+`EntityQueryContext` 提供委托语法用于查询，使用 `component<T>()` 泛型方法指定组件类型：
+
+```kotlin
+class MyQueryContext(world: World) : EntityQueryContext(world) {
+    // 基础组件 - 必须存在
+    val health: Health by component<Health>()
+    val position: Position by component<Position>()
+    
+    // 可选组件 - 可以不存在（可空类型）
+    val nickname: Nickname? by component<Nickname?>()
+    
+    // 可选组 - 同组内至少满足一个
+    val weapon: Weapon? by component<Weapon?>(optionalGroup = OptionalGroup.One)
+    val armor: Armor? by component<Armor?>(optionalGroup = OptionalGroup.One)
+    
+    // 可写组件 - 遍历过程中可修改
+    var velocity: Velocity by component<Velocity>()
+    
+    // 关系查询 - 正向查询（当前实体指向的目标）
+    val targetEntity: Entity by relation<OwnedBy>()
+    
+    // 关系查询 - 反向查询（指向当前实体的源）
+    val ownerEntity: Entity by relationUp<OwnedBy>()
+    
+    override fun FamilyBuilder.configure() {
+        // 在此处配置 Family 过滤条件
+        component<Health>()
+        relation(relations.kind<OwnedBy>())
+    }
+}
+
+// 使用
+world.query { MyQueryContext(this) }.forEach { ctx, entity ->
+    println("健康值: ${ctx.health.current}")
+    ctx.velocity = Velocity(1, 1)  // 修改可写组件
+}
+```
+
 查询 API 速查：
 
 ```kotlin
@@ -272,6 +350,14 @@ entity.hasRelation(relation)           // 检查 Relation 是否存在
 entity.hasComponent<C>()              // 检查组件是否存在
 entity.hasTag<C>()                    // 检查 Tag 是否存在
 entity.hasSharedComponent<C>()        // 检查 Shared Component 是否存在
+
+// EntityQueryContext 委托语法
+by component<C>()                      // 必须存在
+by component<C?>()                    // 可选（可空）
+by component<C?>(OptionalGroup.One)   // 可选组
+var by component<C>()                 // 可写
+by relation<K>()                      // 正向关系查询
+by relationUp<K>()                    // 反向关系查询
 ```
 
 ---
@@ -348,10 +434,9 @@ class ChildrenQueryContext(world: World, val parent: Entity) : EntityQueryContex
     }
 }
 
-fun getChildren(parent: Entity): List<Entity> {
-    return world.query { ChildrenQueryContext(this, parent) }
-        .map { it.second }
-        .toList()
+fun getChildren(parent: Entity, action: (Entity) -> Unit) {
+    world.query { ChildrenQueryContext(this, parent) }
+        .forEach { ctx -> action(ctx.second) }
 }
 
 // 层级变换传播
@@ -468,21 +553,22 @@ Family 查询系统可以与 Relation 深度集成，实现复杂的关系查询
 ```kotlin
 // 查询某个玩家拥有的所有实体
 class PlayerOwnedQuery(world: World, val player: Entity) : EntityQueryContext(world) {
-    val ownerBy: OwnerBy by relation(player)
+    val ownerBy: Entity by relation(player)
     
     override fun FamilyBuilder.configure() {
-        relation<OwnerBy>(player)
+        relation(relations.kind<OwnerBy>())
+        relation(relations.target(player))
     }
 }
 val playerItems = world.query { PlayerOwnedQuery(this, player) }
 
 // 查询所有装备了武器的角色
 class EquippedWeaponQuery(world: World) : EntityQueryContext(world) {
-    val ownerBy: OwnerBy by relation()
-    var weaponData: WeaponData by component()
+    val ownerBy: Entity by relation()
+    var weaponData: WeaponData by component<WeaponData>()
     
     override fun FamilyBuilder.configure() {
-        relation<OwnerBy>()
+        relation(relations.kind<OwnerBy>())
         component<WeaponData>()
     }
 }
@@ -493,26 +579,49 @@ val equippedCharacters = world.query { EquippedWeaponQuery(this) }
 
 // 查询父子层级中的所有子实体
 class ChildrenQuery2(world: World, val parent: Entity) : EntityQueryContext(world) {
-    val childOf: ChildOf by relation(parent)
+    val childOf: Entity by relation(parent)
     
     override fun FamilyBuilder.configure() {
-        relation<ChildOf>(parent)
+        relation(relations.kind<ChildOf>())
+        relation(relations.target(parent))
     }
 }
 val allChildren = world.query { ChildrenQuery2(this, parentEntity) }
 
 // 复合查询：玩家的武器且已装备
 class PlayerEquippedWeaponQuery(world: World, val player: Entity) : EntityQueryContext(world) {
-    val ownerBy: OwnerBy by relation(player)
-    var weaponData: WeaponData by component()
+    val ownerBy: Entity by relation(player)
+    var weaponData: WeaponData by component<WeaponData>()
     
     override fun FamilyBuilder.configure() {
-        relation<OwnerBy>(player)
+        relation(relations.kind<OwnerBy>())
+        relation(relations.target(player))
         component<IsEquipped>()
         component<WeaponData>()
     }
 }
 val equippedWeapons = world.query { PlayerEquippedWeaponQuery(this, player) }
+
+// 查询 Shared Component
+class SharedConfigQuery(world: World) : EntityQueryContext(world) {
+    val config: GameConfig by component<GameConfig>()
+    
+    override fun FamilyBuilder.configure() {
+        relation(relations.sharedComponent<GameConfig>())
+    }
+}
+val configs = world.query { SharedConfigQuery(this) }
+
+// 反向查询：查询拥有特定目标的关系（如查询被 entity2 拥有的所有实体）
+class OwnedByTargetQuery(world: World, val target: Entity) : EntityQueryContext(world) {
+    val owner: Entity by relationUp<OwnedBy>()
+    
+    override fun FamilyBuilder.configure() {
+        relation(relations.kind<OwnedBy>())
+        relation(relations.target(target))
+    }
+}
+val ownedEntities = world.query { OwnedByTargetQuery(this, entity2) }
 ```
 
 ### 5.2 Observer 事件

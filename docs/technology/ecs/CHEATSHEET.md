@@ -76,12 +76,11 @@ world.query { PositionHealthContext(this) }
 ``` |
 | 过滤 | `.filter { it.current > 50 }` |
 | 映射 | `.map { it.current }` |
-| 链式操作 | ```kotlin
+| 遍历 | ```kotlin
 world.query { HealthContext(this) }
     .filter { it.health.current > 0 }
-    .toList()
+    .forEach { ctx -> ... }
 ``` |
-| 遍历 | `.forEach { entity -> ... }` |
 
 ### 关系操作
 
@@ -194,7 +193,6 @@ class HealthContext(world: World) : EntityQueryContext(world) {
 }
 world.query { HealthContext(this) }
     .filter { it.health.current > 0 }
-    .toList()
     .forEach { ctx ->
         // 处理逻辑
     }
