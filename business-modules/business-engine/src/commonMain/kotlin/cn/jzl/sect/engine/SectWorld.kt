@@ -18,6 +18,10 @@ import cn.jzl.sect.core.sect.Position
 import cn.jzl.sect.core.sect.PositionComponent
 import cn.jzl.sect.core.sect.SectComponent
 import cn.jzl.sect.core.sect.SectResourceComponent
+import cn.jzl.sect.core.time.TimeComponent
+import cn.jzl.sect.core.resource.ResourceProductionComponent
+import cn.jzl.sect.core.resource.ResourceType
+import cn.jzl.sect.core.disciple.LoyaltyComponent
 
 import cn.jzl.ecs.entity
 
@@ -43,6 +47,12 @@ object SectWorld {
                 spiritStones = 1000L,
                 contributionPoints = 0L
             ))
+            it.addComponent(TimeComponent(
+                year = 1,
+                month = 1,
+                day = 1,
+                hour = 0
+            ))
         }
 
         // 掌门
@@ -62,6 +72,7 @@ object SectWorld {
             ))
             it.addComponent(PositionComponent(position = Position.LEADER))
             it.addComponent(BehaviorStateComponent(currentBehavior = BehaviorType.CULTIVATE))
+            it.addComponent(LoyaltyComponent(value = 100))
         }
 
         // 长老（2 名）
@@ -80,6 +91,7 @@ object SectWorld {
                 ))
                 it.addComponent(PositionComponent(position = Position.ELDER))
                 it.addComponent(BehaviorStateComponent(currentBehavior = BehaviorType.CULTIVATE))
+                it.addComponent(LoyaltyComponent(value = 90))
             }
         }
 
@@ -100,6 +112,7 @@ object SectWorld {
                 ))
                 it.addComponent(PositionComponent(position = Position.DISCIPLE_OUTER))
                 it.addComponent(BehaviorStateComponent(currentBehavior = BehaviorType.CULTIVATE))
+                it.addComponent(LoyaltyComponent(value = 80))
             }
         }
 
@@ -118,6 +131,16 @@ object SectWorld {
                 level = 1,
                 capacity = 20,
                 efficiency = 1.0f
+            ))
+        }
+
+        // 灵石矿脉（资源生产设施）
+        world.entity {
+            it.addComponent(ResourceProductionComponent(
+                type = ResourceType.SPIRIT_STONE,
+                baseOutput = 50L,        // 每天产出50灵石
+                efficiency = 1.0f,
+                isActive = true
             ))
         }
 
