@@ -28,6 +28,10 @@ kotlin {
                 api(project(":libs:lko-core"))
                 api(project(":libs:lko-ecs"))
                 api(project(":business-modules:business-core"))
+                api(project(":business-modules:business-cultivation"))
+                api(project(":business-modules:business-disciples"))
+                api(project(":business-modules:business-resource"))
+                api(project(":business-modules:business-facility"))
             }
         }
         val commonTest by getting {

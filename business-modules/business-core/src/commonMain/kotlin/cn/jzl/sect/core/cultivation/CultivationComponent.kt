@@ -1,6 +1,6 @@
 package cn.jzl.sect.core.cultivation
 
-data class CultivationComponent(
+data class Cultivation(
     val realm: Realm = Realm.MORTAL,
     val layer: Int = 1,
     val cultivation: Long = 0L,

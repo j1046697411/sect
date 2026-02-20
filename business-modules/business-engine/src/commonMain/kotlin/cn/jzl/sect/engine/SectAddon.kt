@@ -4,30 +4,31 @@ import cn.jzl.ecs.addon.createAddon
 import cn.jzl.ecs.addon.components
 import cn.jzl.ecs.component.componentId
 import cn.jzl.ecs.component.tag
-import cn.jzl.sect.core.sect.SectComponent
-import cn.jzl.sect.core.sect.SectResourceComponent
-import cn.jzl.sect.core.cultivation.CultivationComponent
-import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.disciple.AttributeComponent
-import cn.jzl.sect.core.sect.PositionComponent
-import cn.jzl.sect.core.facility.FacilityComponent
-import cn.jzl.sect.core.facility.FacilityType
-import cn.jzl.sect.core.ai.BehaviorStateComponent
+import cn.jzl.sect.core.sect.Sect
+import cn.jzl.sect.core.sect.SectResource
+import cn.jzl.sect.core.cultivation.Cultivation
+import cn.jzl.sect.core.disciple.Attribute
+import cn.jzl.sect.core.sect.Position
+import cn.jzl.sect.core.facility.Facility
+import cn.jzl.sect.core.ai.BehaviorState
+import cn.jzl.sect.core.disciple.Loyalty
+import cn.jzl.sect.core.time.GameTime
+import cn.jzl.sect.core.resource.ResourceProduction
 
 // 集中注册第一阶段所需的组件类型
 object SectAddon {
     val addon = createAddon<Unit>("sect") {
         components {
-            world.componentId<SectComponent>()
-            world.componentId<SectResourceComponent>()
-            world.componentId<CultivationComponent>()
-            // 允许通过 Realm 作为标签来区分境界
-            world.componentId<Realm> { it.tag() }
-            world.componentId<AttributeComponent>()
-            world.componentId<PositionComponent>()
-            world.componentId<FacilityComponent>()
-            world.componentId<FacilityType> { it.tag() }
-            world.componentId<BehaviorStateComponent>()
+            world.componentId<Sect>()
+            world.componentId<SectResource>()
+            world.componentId<Cultivation>()
+            world.componentId<Attribute>()
+            world.componentId<Position>()
+            world.componentId<Facility>()
+            world.componentId<BehaviorState>()
+            world.componentId<Loyalty>()
+            world.componentId<GameTime>()
+            world.componentId<ResourceProduction>()
         }
     }
 }

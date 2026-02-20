@@ -2,12 +2,16 @@ package cn.jzl.sect.engine.demo
 
 import cn.jzl.ecs.World
 import cn.jzl.sect.engine.SectWorld
-import cn.jzl.sect.engine.systems.CultivationSystem
-import cn.jzl.sect.engine.systems.ResourceConsumptionSystem
-import cn.jzl.sect.engine.systems.ResourceProductionSystem
-import cn.jzl.sect.engine.systems.SectDissolutionSystem
-import cn.jzl.sect.engine.systems.SectInfoSystem
+import cn.jzl.sect.engine.SectSystems
 import cn.jzl.sect.engine.systems.TimeSystem
+import cn.jzl.sect.cultivation.systems.CultivationSystem
+import cn.jzl.sect.disciples.systems.DiscipleInfoSystem
+import cn.jzl.sect.resource.systems.ResourceProductionSystem
+import cn.jzl.sect.resource.systems.ResourceConsumptionSystem
+import cn.jzl.sect.facility.systems.SectStatusSystem
+import cn.jzl.sect.facility.systems.SectStatus
+import cn.jzl.sect.core.sect.SectPosition
+import cn.jzl.sect.core.time.toDisplayString
 
 /**
  * 宗门修真录 - 修炼系统Demo（纯自动运行版）
@@ -24,29 +28,21 @@ import cn.jzl.sect.engine.systems.TimeSystem
 class CultivationDemo {
 
     private lateinit var world: World
-    private lateinit var cultivationSystem: CultivationSystem
+    private lateinit var systems: SectSystems
     private lateinit var timeSystem: TimeSystem
-    private lateinit var sectInfoSystem: SectInfoSystem
-    private lateinit var resourceProductionSystem: ResourceProductionSystem
-    private lateinit var resourceConsumptionSystem: ResourceConsumptionSystem
-    private lateinit var sectDissolutionSystem: SectDissolutionSystem
 
     fun initialize(sectName: String = "青云宗") {
         println("正在初始化宗门世界...")
         world = SectWorld.create(sectName)
-        cultivationSystem = CultivationSystem(world)
+        systems = SectWorld.getSystems(world)
         timeSystem = TimeSystem(world)
-        sectInfoSystem = SectInfoSystem(world)
-        resourceProductionSystem = ResourceProductionSystem(world)
-        resourceConsumptionSystem = ResourceConsumptionSystem(world)
-        sectDissolutionSystem = SectDissolutionSystem(world)
         println("宗门世界初始化完成！\n")
     }
 
     fun run() {
         println("╔════════════════════════════════════════════════╗")
-        println("║      欢迎来到《宗门修真录》修炼系统Demo         ║")
-        println("║              （纯自动运行模式）                  ║")
+        println("║          欢迎来到《宗门修真录》修炼系统Demo         ║")
+        println("║               （纯自动运行模式）                  ║")
         println("╚════════════════════════════════════════════════╝")
         println()
 
@@ -65,26 +61,26 @@ class CultivationDemo {
         while (monthCount < 12) {
             monthCount++
             println("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-            println("【第 ${monthCount} 个月】")
+            println("【第 $monthCount 个月】")
             println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
             // 检查宗门状态
-            val sectStatus = sectDissolutionSystem.checkSectStatus()
+            val sectStatus = systems.sectStatusSystem.checkSectStatus()
             if (!sectStatus.isOperational()) {
-                println("\n💀 ${sectStatus.message}")
+                println("\n💀 ${sectStatus.description}")
                 println("宗门已解散，模拟结束！")
                 break
             }
 
-            if (sectStatus is SectDissolutionSystem.SectStatus.CRITICAL) {
-                println("\n⚠️ ${sectStatus.message}")
+            if (sectStatus == SectStatus.CRITICAL) {
+                println("\n⚠️ ${sectStatus.description}")
             }
 
             // 推进30天（一个月）
             advanceTimeLarge()
 
             // 每月显示一次弟子状态
-            if (monthCount % 3 == 0 || sectStatus is SectDissolutionSystem.SectStatus.WARNING) {
+            if (monthCount % 3 == 0 || sectStatus == SectStatus.WARNING) {
                 println("\n【季度弟子状态报告】")
                 showDiscipleList()
                 showFinancialSummary()
@@ -106,20 +102,20 @@ class CultivationDemo {
 
     private fun showSectOverview() {
         println()
-        val overview = sectInfoSystem.getSectOverview()
-        println(overview.toDisplayString())
+        val statistics = systems.discipleInfoSystem.getDiscipleStatistics()
+        println(statistics.toDisplayString())
         println()
     }
 
     private fun showFinancialSummary() {
-        val summary = sectDissolutionSystem.getFinancialSummary()
+        val summary = systems.sectStatusSystem.getFinancialSummary()
         println(summary.toDisplayString())
         println()
     }
 
     private fun showDiscipleList() {
         println()
-        val disciples = sectInfoSystem.getDiscipleList()
+        val disciples = systems.discipleInfoSystem.getAllDisciples()
 
         println("╔══════════════════════════════════════════════════════════════════════════════════════╗")
         println("║                                    弟子列表                                           ║")
@@ -144,7 +140,7 @@ class CultivationDemo {
         println(timeInfo.toDisplayString())
 
         // 触发修炼更新
-        val breakthroughs = cultivationSystem.update(24)
+        val breakthroughs = systems.cultivationSystem.update(24)
 
         // 显示突破信息
         if (breakthroughs.isNotEmpty()) {
@@ -162,31 +158,25 @@ class CultivationDemo {
         val allBreakthroughs = mutableListOf<CultivationSystem.BreakthroughEvent>()
 
         // 先进行资源产出（30天）
-        val productionResults = resourceProductionSystem.monthlyProduction()
+        val productionSummary = systems.resourceProductionSystem.monthlyProduction()
 
         // 分30次推进，每次24小时
         repeat(30) {
             timeSystem.advance(24)
-            val breakthroughs = cultivationSystem.update(24)
+            val breakthroughs = systems.cultivationSystem.update(24)
             allBreakthroughs.addAll(breakthroughs)
         }
 
         // 进行资源消耗结算
-        val consumptionResult = resourceConsumptionSystem.monthlyConsumption()
+        val consumptionResult = systems.resourceConsumptionSystem.monthlyConsumption()
 
         val currentTime = timeSystem.getCurrentTime()
         println("时间推进至：${currentTime?.toDisplayString()}")
 
         // 显示资源产出
-        if (productionResults.isNotEmpty()) {
-            println()
-            println("💰 本月资源产出：")
-            productionResults.forEach { result ->
-                if (result.amount > 0) {
-                    println("   ${result.toDisplayString()}")
-                }
-            }
-        }
+        println()
+        println("💰 本月资源产出：")
+        println("   灵石：+${productionSummary.spiritStones}")
 
         // 显示资源消耗
         println()
@@ -215,13 +205,12 @@ class CultivationDemo {
 /**
  * 职务显示名称扩展
  */
-private val cn.jzl.sect.core.sect.Position.displayName: String
+private val SectPosition.displayName: String
     get() = when (this) {
-        cn.jzl.sect.core.sect.Position.DISCIPLE_OUTER -> "外门弟子"
-        cn.jzl.sect.core.sect.Position.DISCIPLE_INNER -> "内门弟子"
-        cn.jzl.sect.core.sect.Position.DISCIPLE_CORE -> "亲传弟子"
-        cn.jzl.sect.core.sect.Position.ELDER -> "长老"
-        cn.jzl.sect.core.sect.Position.LEADER -> "掌门"
+        SectPosition.DISCIPLE_OUTER -> "外门弟子"
+        SectPosition.DISCIPLE_INNER -> "内门弟子"
+        SectPosition.ELDER -> "长老"
+        SectPosition.LEADER -> "掌门"
     }
 
 /**

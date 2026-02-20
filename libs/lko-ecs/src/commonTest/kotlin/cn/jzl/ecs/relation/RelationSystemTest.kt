@@ -27,15 +27,12 @@ sealed class TestTag
 @JvmInline
 value class Test1Data(val data: Int)
 
-@JvmInline
 data class Test2Data(val data1: Int, val data2: Long)
 
 data class GameConfig(val x: Int, val data2: Int)
 
 class RelationSystemTest : EntityRelationContext {
-    override val world: World = world {
-        install(relationAddon)
-    }
+
 
     private val relationAddon = createAddon("relationAddon") {
         components {
@@ -51,6 +48,10 @@ class RelationSystemTest : EntityRelationContext {
 
             world.componentId<GameConfig>()
         }
+    }
+
+    override val world: World = world {
+        install(relationAddon)
     }
 
     @Test
@@ -110,42 +111,5 @@ class RelationSystemTest : EntityRelationContext {
 
         // 移除拥有者关系，
         entity1.editor { it.removeRelation<OwnedBy>(entity3)}
-    }
-
-    class TestQueryContext(world: World) : EntityQueryContext(world) {
-
-        // 查询 所有者关系（必定存在）
-        val owner: Entity by relationUp<OwnedBy>()
-
-        // 必定存在组件Test1Data
-        val component3 by component<Test1Data>()
-
-        // 必须存在组件Test2Data，并且可以修改和赋值
-        var test2 by component<Test2Data>()
-
-        // 可能存在存在组件Test2Data，并且可以修改和赋值
-        var test3 by component<Test2Data?>()
-
-        // 可能存在组件Test1Data
-        val component by component<Test1Data?>()
-
-        // Test2Data 或者Test1Data 组件中至少存在一个以上
-        val component2 by component<Test2Data?>(optionalGroup = OptionalGroup.One)
-        val component1 by component<Test1Data?>(optionalGroup = OptionalGroup.One)
-
-        override fun FamilyBuilder.configure() {
-
-            // 存在共享组件GameConfig
-            relation(relations.sharedComponent<GameConfig>())
-
-            //存在组件Test1Data
-            relation(relations.component<Test1Data>())
-
-            // 存在目标是target的关系，kind没有限制
-            relation(relations.target(target = target))
-
-            // 存在类型是kind的关系，target没有限制
-            relation(relations.kind(kind = kind))
-        }
     }
 }

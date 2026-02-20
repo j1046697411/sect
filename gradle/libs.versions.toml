@@ -22,6 +22,7 @@ kotlinx-atomics = "0.29.0"
 kaverit = "2.10.0"
 kotlinx-benchmark = "0.4.9"
 kover = "0.9.1"
+dokka = "2.0.0"
 
 
 [libraries]
@@ -58,3 +59,4 @@ kotlinxBenchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotl
 kotlinJvm = {id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 pluginAllopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

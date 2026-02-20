@@ -15,23 +15,72 @@ import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityService
 import kotlin.text.get
 
+/**
+ * 关系服务，管理实体间的关系和组件数据
+ *
+ * RelationService 是 ECS 框架中处理关系和组件操作的核心服务，负责：
+ * - 检查实体是否拥有特定关系/组件
+ * - 获取组件数据
+ * - 批量更新关系和组件（实体原型迁移）
+ * - 触发组件变更事件
+ *
+ * ## 工作原理
+ * 当实体的组件发生变化时，RelationService 负责：
+ * 1. 计算新的原型（Archetype）
+ * 2. 迁移组件数据到新原型
+ * 3. 更新实体记录
+ * 4. 触发相应的事件通知
+ *
+ * @param world 关联的 ECS 世界
+ * @property entityService 实体服务，用于实体操作
+ */
 class RelationService(override val world: World) : WorldOwner {
     private val entityService by world.instance<EntityService>()
 
+    /**
+     * 检查实体是否拥有指定关系
+     *
+     * @param entity 目标实体
+     * @param relation 关系对象
+     * @return 如果实体拥有该关系返回 true
+     */
     fun hasRelation(entity: Entity, relation: Relation): Boolean = entityService.runOn(entity) {
         entityType.indexOf(relation) != -1
     }
 
+    /**
+     * 获取实体的关系数据
+     *
+     * @param entity 目标实体
+     * @param relation 关系对象
+     * @return 关系数据，如果不存在返回 null
+     */
     fun getRelation(entity: Entity, relation: Relation): Any? = entityService.runOn(entity) {
         val componentIndex = getComponentIndex(entity, relation) ?: return@runOn null
         if (entity == componentIndex.entity) return@runOn table[it, componentIndex.index]
         entityService.runOn(componentIndex.entity) { entityIndex -> table[entityIndex, componentIndex.index] }
     }
 
+    /**
+     * 获取组件索引
+     *
+     * @param entity 目标实体
+     * @param relation 关系对象
+     * @return 组件索引，如果不存在返回 null
+     */
     fun getComponentIndex(entity: Entity, relation: Relation): ComponentIndex? = entityService.runOn(entity) {
         getComponentIndex(entity, relation)
     }
 
+    /**
+     * 获取关系数据（内部优化版本）
+     *
+     * @param archetype 实体所在原型
+     * @param relation 关系对象
+     * @param entityIndex 实体在原型表中的索引
+     * @param componentIndex 组件索引
+     * @return 关系数据
+     */
     @Suppress("NOTHING_TO_INLINE")
     internal inline fun getRelation(
         archetype: Archetype,
@@ -44,6 +93,15 @@ class RelationService(override val world: World) : WorldOwner {
         return world.entityService.runOn(componentIndex.entity) { table[it, componentIndex.index] }
     }
 
+    /**
+     * 批量更新实体的关系和组件
+     *
+     * 处理添加/移除组件的操作，执行原型迁移并触发事件
+     *
+     * @param entity 目标实体
+     * @param operates 操作集合
+     * @param event 是否触发事件
+     */
     fun updateRelations(entity: Entity, operates: SortSet<EntityRelationOperate>, event: Boolean) {
         if (operates.isEmpty()) return
         entityService.runOn(entity) { entityIndex ->
@@ -54,7 +112,11 @@ class RelationService(override val world: World) : WorldOwner {
         }
     }
 
-
+    /**
+     * 触发组件变更事件
+     *
+     * 根据组件变化类型触发 OnInserted、OnRemoved 或 OnUpdated 事件
+     */
     private fun emitComponentModifyEvent(
         entity: Entity,
         oldArchetype: Archetype,
@@ -94,6 +156,11 @@ class RelationService(override val world: World) : WorldOwner {
         }
     }
 
+    /**
+     * 计算新的原型
+     *
+     * 根据操作集合计算实体应该迁移到的新原型
+     */
     private fun Archetype.calculateNewArchetype(operates: SortSet<EntityRelationOperate>): Archetype {
         return operates.fold(this) { acc, operate ->
             when (operate) {
@@ -103,6 +170,11 @@ class RelationService(override val world: World) : WorldOwner {
         }
     }
 
+    /**
+     * 迁移实体数据到新原型
+     *
+     * 将实体的组件数据从旧原型迁移到新原型
+     */
     private fun Archetype.migrateEntityData(
         entity: Entity,
         oldEntityIndex: Int,
@@ -154,6 +226,11 @@ class RelationService(override val world: World) : WorldOwner {
         }
     }
 
+    /**
+     * 更新实体记录
+     *
+     * 在原型迁移后更新实体的记录信息
+     */
     private fun Archetype.updateEntityRecords(
         entity: Entity,
         oldEntityIndex: Int,

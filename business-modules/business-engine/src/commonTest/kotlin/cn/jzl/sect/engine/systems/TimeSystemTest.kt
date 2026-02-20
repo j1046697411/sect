@@ -3,6 +3,7 @@ package cn.jzl.sect.engine.systems
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.engine.SectWorld
+import cn.jzl.sect.core.time.toDisplayString
 import kotlin.test.*
 
 /**

@@ -7,13 +7,13 @@ import cn.jzl.ecs.component.componentId
 import cn.jzl.ecs.entity.*
 import kotlin.test.*
 
-class SectComponentTest : EntityRelationContext {
+class SectTest : EntityRelationContext {
     override lateinit var world: World
 
     private val testAddon = createAddon<Unit>("test") {
         components {
-            world.componentId<SectComponent>()
-            world.componentId<SectResourceComponent>()
+            world.componentId<Sect>()
+            world.componentId<SectResource>()
         }
     }
 
@@ -23,16 +23,16 @@ class SectComponentTest : EntityRelationContext {
     }
 
     @Test
-    fun testSectComponentCreation() {
+    fun testSectCreation() {
         val entity = world.entity {
-            it.addComponent(SectComponent(
+            it.addComponent(Sect(
                 name = "青云宗",
                 leaderId = 1,
                 foundedYear = 1
             ))
         }
 
-        val sect = entity.getComponent<SectComponent>()
+        val sect = entity.getComponent<Sect>()
         assertEquals("青云宗", sect.name)
         assertEquals(1, sect.leaderId)
     }
@@ -40,13 +40,13 @@ class SectComponentTest : EntityRelationContext {
     @Test
     fun testResourceComponent() {
         val entity = world.entity {
-            it.addComponent(SectResourceComponent(
+            it.addComponent(SectResource(
                 spiritStones = 1000L,
                 contributionPoints = 500L
             ))
         }
 
-        val resource = entity.getComponent<SectResourceComponent>()
+        val resource = entity.getComponent<SectResource>()
         assertEquals(1000L, resource.spiritStones)
     }
 }

@@ -7,12 +7,12 @@ import cn.jzl.ecs.component.componentId
 import cn.jzl.ecs.entity.*
 import kotlin.test.*
 
-class PositionComponentTest : EntityRelationContext {
+class PositionTest : EntityRelationContext {
     override lateinit var world: World
 
     private val testAddon = createAddon<Unit>("test") {
         components {
-            world.componentId<PositionComponent>()
+            world.componentId<Position>()
         }
     }
 
@@ -23,18 +23,17 @@ class PositionComponentTest : EntityRelationContext {
 
     @Test
     fun testPositionEnumValues() {
-        assertEquals(Position.LEADER, Position.valueOf("LEADER"))
-        assertEquals(Position.ELDER, Position.valueOf("ELDER"))
-        assertEquals(Position.DISCIPLE_CORE, Position.valueOf("DISCIPLE_CORE"))
+        assertEquals(SectPosition.LEADER, SectPosition.valueOf("LEADER"))
+        assertEquals(SectPosition.ELDER, SectPosition.valueOf("ELDER"))
     }
 
     @Test
-    fun testPositionComponentCreation() {
+    fun testPositionCreation() {
         val entity = world.entity {
-            it.addComponent(PositionComponent(position = Position.DISCIPLE_OUTER))
+            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
         }
 
-        val pos = entity.getComponent<PositionComponent>()
-        assertEquals(Position.DISCIPLE_OUTER, pos.position)
+        val pos = entity.getComponent<Position>()
+        assertEquals(SectPosition.DISCIPLE_OUTER, pos.position)
     }
 }

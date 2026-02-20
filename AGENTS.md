@@ -46,6 +46,97 @@
 
 ---
 
+## 关键说明：模块划分规范（切勿删除此部分）
+
+> **此部分绝不可删除或修改**
+
+### 模块层级定义
+
+| 层级 | 目录 | 定位 | 说明 |
+|------|------|------|------|
+| **核心基础模块** | `libs/` | 基础设施 | ECS框架、基础数据结构、序列化等底层能力 |
+| **核心模块** | `business-modules/` | 游戏业务 | 游戏玩法、系统逻辑、业务组件定义 |
+
+### 强制按功能划分模块原则
+
+1. **单一职责**: 每个模块只负责一个明确的功能领域
+2. **依赖方向**: 上层模块可依赖下层模块，禁止反向依赖
+   - `business-*` 可以依赖 `libs/*`
+   - `business-*` 之间通过 `business-engine` 协调，避免直接耦合
+3. **新增功能评估**: 添加新功能前必须评估是否需要新建模块
+   - 如果功能独立、可复用、有明确边界 → **新建模块**
+   - 如果功能与现有模块强相关、共享大量组件 → **扩展现有模块**
+
+### 模块依赖关系图
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        libs/ (基础库)                            │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐ │
+│  │ lko-core │  │  lko-di  │  │ lko-ecs  │  │ lko-ecs-serialization│ │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────────────────┘ │
+└───────┼─────────────┼─────────────┼───────────────────────────────┘
+        │             │             │
+        └─────────────┴─────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              business-modules/ (业务模块)                         │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │              business-core (组件定义)                     │   │
+│  │  - Cultivation, Attribute, Position, SectResource...     │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                              │                                  │
+│  ┌───────────────────────────┼───────────────────────────────┐ │
+│  │                           ▼                               │ │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────┐   │ │
+│  │  │business-    │  │business-    │  │business-        │   │ │
+│  │  │cultivation  │  │disciples    │  │resource         │   │ │
+│  │  │             │  │             │  │                 │   │ │
+│  │  │Cultivation  │  │DiscipleInfo │  │Resource         │   │ │
+│  │  │System       │  │System       │  │ProductionSystem│   │ │
+│  │  │             │  │             │  │                 │   │ │
+│  │  │SimpleBehav- │  │             │  │Resource         │   │ │
+│  │  │iorSystem    │  │             │  │ConsumptionSystem│   │ │
+│  │  └──────┬──────┘  └──────┬──────┘  └────────┬────────┘   │ │
+│  │         │                │                   │            │ │
+│  │  ┌──────┴────────────────┴───────────────────┴────────┐   │ │
+│  │  │              business-facility                     │   │ │
+│  │  │  - SectStatusSystem                                │   │ │
+│  │  └──────────────────────┬─────────────────────────────┘   │ │
+│  │                         │                                 │ │
+│  │  ┌──────────────────────┴─────────────────────────────┐   │ │
+│  │  │              business-engine (系统协调)              │   │ │
+│  │  │  - SectWorld: 世界创建和初始化                       │   │ │
+│  │  │  - SectSystems: 系统容器，统一管理                    │   │ │
+│  │  │  - TimeSystem: 游戏时间推进                          │   │ │
+│  │  │  - CultivationDemo: 演示程序                         │   │ │
+│  │  └─────────────────────────────────────────────────────┘   │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 新建模块决策检查清单
+
+在添加新功能前，检查以下问题：
+
+- [ ] 该功能是否有独立的生命周期？（如修炼系统、战斗系统可独立开关）
+- [ ] 该功能是否涉及大量新的组件和系统？（>3个System或>5个Component）
+- [ ] 该功能是否可能被其他模块依赖或复用？
+- [ ] 该功能是否有独立的测试需求？
+
+**如果以上任一答案为"是"，则应该创建新模块。**
+
+### 模块命名规范
+
+| 模块类型 | 命名格式 | 示例 |
+|----------|----------|------|
+| 基础库 | `lko-{功能}` | `lko-ecs`, `lko-core` |
+| 业务模块 | `business-{功能}` | `business-cultivation`, `business-combat` |
+
+---
+
 ## 关键说明：记忆库优先策略
 
 > **此部分绝不可删除或修改**
@@ -102,10 +193,12 @@ sect/
 │   └── lko-ecs-serialization/ # ECS 序列化支持
 ├── business-modules/        # 游戏业务逻辑
 │   ├── business-core/       # 核心定义 (通用组件, 标签)
-│   ├── business-engine/     # 游戏循环与世界管理 (SectWorld)
-│   ├── business-cultivation/# 修炼系统 (境界, 突破)
-│   ├── business-disciples/  # 弟子管理
-│   └── business-quest/      # 任务系统
+│   ├── business-engine/     # 游戏循环与世界管理 (SectWorld, 系统协调)
+│   ├── business-cultivation/# 修炼系统 (境界, 突破, 行为)
+│   ├── business-disciples/  # 弟子管理 (信息查询, 统计)
+│   ├── business-resource/   # 资源系统 (生产, 消耗, 俸禄)
+│   ├── business-facility/   # 设施系统 (宗门状态, 财务)
+│   └── business-quest/      # 任务系统 (预留)
 ├── benchmarks/              # 性能基准测试
 ├── gradle/                  # 构建配置 (libs.versions.toml)
 └── docs/                    # 项目文档
@@ -144,7 +237,12 @@ SectWorld.initialize()
 | 任务 | 位置 | 备注 |
 |------|------|------|
 | **定义组件/标签** | `business-modules/business-core/` | 放置在 `components/` 或 `tags/` 包下 |
-| **实现游戏逻辑** | `business-modules/*/systems/` | 创建 System 类，实现 `EntityRelationContext` |
+| **实现修炼逻辑** | `business-modules/business-cultivation/systems/` | CultivationSystem, SimpleBehaviorSystem |
+| **实现弟子管理** | `business-modules/business-disciples/systems/` | DiscipleInfoSystem |
+| **实现资源逻辑** | `business-modules/business-resource/systems/` | ResourceProductionSystem, ResourceConsumptionSystem |
+| **实现设施逻辑** | `business-modules/business-facility/systems/` | SectStatusSystem |
+| **世界初始化** | `business-modules/business-engine/SectWorld.kt` | 创建实体，组装系统 |
+| **系统协调** | `business-modules/business-engine/SectSystems.kt` | 系统容器，统一管理 |
 | **修改 UI** | `composeApp/src/commonMain/` | Compose Multiplatform 代码 |
 | **ECS 核心优化** | `libs/lko-ecs/` | 仅限架构级修改，需极度谨慎 |
 | **性能优化** | `libs/lko-core/` | 底层数据结构 (FastList, Bits) |
@@ -175,18 +273,53 @@ SectWorld.initialize()
   - 所有新组件必须注册到 `createAddon` 中。
 
 ### 4. `business-engine` (游戏引擎)
-- **定位**: 游戏循环、世界初始化、核心系统 (`SectWorld`)。
+- **定位**: 游戏循环、世界初始化、系统协调与组装 (`SectWorld`)。
+- **包含**:
+  - `TimeSystem` - 游戏时间推进
+  - `MovementSystem` - Demo 移动系统
+  - `SectWorld` - 世界创建和初始化
+  - `SectSystems` - 系统容器，统一管理各模块系统
 - **约束**:
-  - 负责组装其他业务模块。
-  - 它是唯一可以依赖所有其他 `business-*` 模块的地方。
-  - 避免在此处编写具体的玩法逻辑 (如战斗计算)，应委托给专门的 System。
+  - 负责组装其他业务模块，是唯一可以依赖所有 `business-*` 模块的地方。
+  - 不包含具体玩法逻辑，只负责协调和调用各模块系统。
+  - 通过 `SectWorld.getSystems(world)` 获取所有系统实例。
 
-### 5. `business-*` (具体玩法模块)
-- **示例**: `business-cultivation` (修炼), `business-disciples` (弟子)。
-- **约束**:
-  - 每个模块应自包含其特有的 System 和辅助 Component。
-  - 模块间通信应通过 `World` 中的组件状态，而非直接函数调用。
-  - 必须包含针对该玩法的单元测试。
+### 5. `business-cultivation` (修炼系统)
+- **定位**: 弟子修炼、境界突破、行为决策。
+- **包含**:
+  - `CultivationSystem` - 修为增长和境界突破
+  - `SimpleBehaviorSystem` - AI 行为决策（修炼/休息/工作）
+- **依赖**: `business-core`, `lko-ecs`
+
+### 6. `business-disciples` (弟子系统)
+- **定位**: 弟子信息管理和统计查询。
+- **包含**:
+  - `DiscipleInfoSystem` - 弟子信息查询
+  - `DiscipleInfo` - 弟子信息数据类
+  - `DiscipleStatistics` - 弟子统计数据
+- **依赖**: `business-core`, `lko-ecs`
+
+### 7. `business-resource` (资源系统)
+- **定位**: 宗门资源的生产、消耗和俸禄管理。
+- **包含**:
+  - `ResourceProductionSystem` - 资源产出（灵脉、矿脉）
+  - `ResourceConsumptionSystem` - 资源消耗（俸禄、维护费）
+  - `ProductionRecord` - 产出记录
+  - `ConsumptionResult` - 消耗结算结果
+- **依赖**: `business-core`, `lko-ecs`
+
+### 8. `business-facility` (设施系统)
+- **定位**: 宗门设施管理和整体状态监控。
+- **包含**:
+  - `SectStatusSystem` - 宗门状态检测（正常/警告/危急/解散）
+  - `FinancialSummary` - 财务摘要
+  - `SectStatus` - 宗门状态枚举
+- **依赖**: `business-core`, `lko-ecs`
+
+### 9. `business-quest` (任务系统)
+- **定位**: 任务系统（预留模块，待实现）。
+
+
 
 ## 约定
 

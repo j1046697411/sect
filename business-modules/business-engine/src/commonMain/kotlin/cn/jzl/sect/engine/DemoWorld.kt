@@ -13,9 +13,9 @@ import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.world
 import cn.jzl.sect.core.demo.ActiveTag
-import cn.jzl.sect.core.demo.NameComponent
-import cn.jzl.sect.core.demo.PositionComponent
-import cn.jzl.sect.core.demo.VelocityComponent
+import cn.jzl.sect.core.demo.Name
+import cn.jzl.sect.core.demo.Position
+import cn.jzl.sect.core.demo.Velocity
 import cn.jzl.sect.engine.systems.MovementSystem
 
 /**
@@ -35,9 +35,9 @@ object DemoWorld {
      */
     val demoAddon = createAddon<Unit>("demo") {
         components {
-            world.componentId<PositionComponent>()
-            world.componentId<VelocityComponent>()
-            world.componentId<NameComponent>()
+            world.componentId<Position>()
+            world.componentId<Velocity>()
+            world.componentId<Name>()
             world.componentId<ActiveTag> { it.tag() }
         }
     }
@@ -53,22 +53,22 @@ object DemoWorld {
 
         // 创建移动实体 - 向右上方移动
         val entity1 = world.entity {
-            it.addComponent(NameComponent("小球1"))
-            it.addComponent(PositionComponent(x = 0f, y = 0f))
-            it.addComponent(VelocityComponent(vx = 10f, vy = 5f))
+            it.addComponent(Name("小球1"))
+            it.addComponent(Position(x = 0f, y = 0f))
+            it.addComponent(Velocity(vx = 10f, vy = 5f))
         }
 
         // 创建移动实体 - 向右下方移动
         val entity2 = world.entity {
-            it.addComponent(NameComponent("小球2"))
-            it.addComponent(PositionComponent(x = 10f, y = 20f))
-            it.addComponent(VelocityComponent(vx = 5f, vy = -3f))
+            it.addComponent(Name("小球2"))
+            it.addComponent(Position(x = 10f, y = 20f))
+            it.addComponent(Velocity(vx = 5f, vy = -3f))
         }
 
         // 创建静止实体（只有位置，没有速度）
         val staticEntity = world.entity {
-            it.addComponent(NameComponent("静止点"))
-            it.addComponent(PositionComponent(x = 50f, y = 50f))
+            it.addComponent(Name("静止点"))
+            it.addComponent(Position(x = 50f, y = 50f))
         }
 
         // 初始化移动系统

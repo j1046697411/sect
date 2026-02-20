@@ -128,8 +128,7 @@ class ArchetypeTest : EntityRelationContext {
         assertNotEquals(archetype1.id, archetype2.id, "Entity with tag should be in different archetype")
     }
 
-    @Test
-    @Ignore  // ECS框架removeComponent功能有待修复
+    @Test// ECS框架removeComponent功能有待修复
     fun testArchetypeAfterComponentRemoval() {
         val entity = world.entity {
             it.addComponent(ArchePosition(10, 20))
@@ -186,8 +185,7 @@ class ArchetypeTest : EntityRelationContext {
         assertNotEquals(archetype1.id, archetype2.id, "Entity should move to new archetype after adding component")
     }
 
-    @Test
-    @Ignore  // ECS框架removeComponent功能有待修复
+    @Test// ECS框架removeComponent功能有待修复
     fun testArchetypeEdgeRemoval() {
         val entity = world.entity {
             it.addComponent(ArchePosition(10, 20))
@@ -222,8 +220,7 @@ class ArchetypeTest : EntityRelationContext {
         }
     }
 
-    @Test
-    @Ignore  // ECS框架removeComponent功能有待修复
+    @Test // ECS框架removeComponent功能有待修复
     fun testMultipleComponentArchetypeMigration() {
         val entity = world.entity {}
 

@@ -7,12 +7,12 @@ import cn.jzl.ecs.component.componentId
 import cn.jzl.ecs.entity.*
 import kotlin.test.*
 
-class FacilityComponentTest : EntityRelationContext {
+class FacilityTest : EntityRelationContext {
     override lateinit var world: World
 
     private val testAddon = createAddon<Unit>("test") {
         components {
-            world.componentId<FacilityComponent>()
+            world.componentId<Facility>()
         }
     }
 
@@ -27,9 +27,9 @@ class FacilityComponentTest : EntityRelationContext {
     }
 
     @Test
-    fun testFacilityComponentCreation() {
+    fun testFacilityCreation() {
         val entity = world.entity {
-            it.addComponent(FacilityComponent(
+            it.addComponent(Facility(
                 type = FacilityType.CULTIVATION_ROOM,
                 level = 1,
                 capacity = 5,
@@ -37,7 +37,7 @@ class FacilityComponentTest : EntityRelationContext {
             ))
         }
 
-        val facility = entity.getComponent<FacilityComponent>()
+        val facility = entity.getComponent<Facility>()
         assertEquals(FacilityType.CULTIVATION_ROOM, facility.type)
         assertEquals(1, facility.level)
     }

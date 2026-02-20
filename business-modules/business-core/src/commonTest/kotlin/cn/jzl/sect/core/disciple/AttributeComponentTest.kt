@@ -7,12 +7,12 @@ import cn.jzl.ecs.component.componentId
 import cn.jzl.ecs.entity.*
 import kotlin.test.*
 
-class AttributeComponentTest : EntityRelationContext {
+class AttributeTest : EntityRelationContext {
     override lateinit var world: World
 
     private val testAddon = createAddon<Unit>("test") {
         components {
-            world.componentId<AttributeComponent>()
+            world.componentId<Attribute>()
         }
     }
 
@@ -22,9 +22,9 @@ class AttributeComponentTest : EntityRelationContext {
     }
 
     @Test
-    fun testAttributeComponentCreation() {
+    fun testAttributeCreation() {
         val entity = world.entity {
-            it.addComponent(AttributeComponent(
+            it.addComponent(Attribute(
                 physique = 50,
                 comprehension = 60,
                 fortune = 40,
@@ -41,7 +41,7 @@ class AttributeComponentTest : EntityRelationContext {
             ))
         }
 
-        val attr = entity.getComponent<AttributeComponent>()
+        val attr = entity.getComponent<Attribute>()
         assertEquals(50, attr.physique)
         assertEquals(60, attr.comprehension)
         assertEquals(20, attr.age)

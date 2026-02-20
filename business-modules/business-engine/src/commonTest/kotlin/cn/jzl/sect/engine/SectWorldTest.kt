@@ -6,15 +6,15 @@ import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.family.component
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.cultivation.CultivationComponent
+import cn.jzl.sect.core.cultivation.Cultivation
 import cn.jzl.sect.core.cultivation.Realm
+import cn.jzl.sect.core.sect.SectPosition
 import cn.jzl.sect.core.sect.Position
-import cn.jzl.sect.core.sect.PositionComponent
-import cn.jzl.sect.core.sect.SectComponent
-import cn.jzl.sect.core.sect.SectResourceComponent
-import cn.jzl.sect.core.facility.FacilityComponent
+import cn.jzl.sect.core.sect.Sect
+import cn.jzl.sect.core.sect.SectResource
+import cn.jzl.sect.core.facility.Facility
 import cn.jzl.sect.core.facility.FacilityType
-import cn.jzl.sect.core.disciple.AttributeComponent
+import cn.jzl.sect.core.disciple.Attribute
 import cn.jzl.ecs.family.FamilyBuilder
 import kotlin.test.*
 
@@ -47,7 +47,7 @@ class SectWorldTest : EntityRelationContext {
         val query = world.query { LeaderQueryContext(world) }
         var count = 0
         query.forEach {
-            if (it.position.position == Position.LEADER) count++
+            if (it.position.position == SectPosition.LEADER) count++
         }
         assertEquals(1, count, "Should have one leader")
     }
@@ -80,26 +80,26 @@ class SectWorldTest : EntityRelationContext {
     }
 
     class SectQueryContext(world: World) : EntityQueryContext(world) {
-        val sectComponent: SectComponent by component()
+        val sectComponent: Sect by component()
     }
 
     class DiscipleQueryContext(world: World) : EntityQueryContext(world) {
-        val position: PositionComponent by component()
-        val cultivation: CultivationComponent by component()
+        val position: Position by component()
+        val cultivation: Cultivation by component()
     }
 
     class LeaderQueryContext(world: World) : EntityQueryContext(world) {
-        val position: PositionComponent by component()
+        val position: Position by component()
         override fun FamilyBuilder.configure() {
-            component<PositionComponent>()
+            component<Position>()
         }
     }
 
     class ResourceQueryContext(world: World) : EntityQueryContext(world) {
-        val sectResource: SectResourceComponent by component()
+        val sectResource: SectResource by component()
     }
 
     class FacilityQueryContext(world: World) : EntityQueryContext(world) {
-        val facility: FacilityComponent by component()
+        val facility: Facility by component()
     }
 }

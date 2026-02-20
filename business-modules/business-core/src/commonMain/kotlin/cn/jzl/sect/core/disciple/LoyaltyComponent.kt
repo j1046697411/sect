@@ -3,30 +3,10 @@ package cn.jzl.sect.core.disciple
 /**
  * 忠诚度组件 - 表示弟子对宗门的忠诚程度
  */
-data class LoyaltyComponent(
+data class Loyalty(
     val value: Int = 100,           // 忠诚度值 (0-100)
     val consecutiveUnpaidMonths: Int = 0  // 连续未发放俸禄月数
-) {
-    /**
-     * 获取忠诚度等级
-     */
-    fun getLevel(): LoyaltyLevel {
-        return when {
-            value >= 80 -> LoyaltyLevel.DEVOTED      // 忠心耿耿
-            value >= 60 -> LoyaltyLevel.LOYAL        // 忠诚
-            value >= 40 -> LoyaltyLevel.NEUTRAL      // 中立
-            value >= 20 -> LoyaltyLevel.DISCONTENT   // 不满
-            else -> LoyaltyLevel.REBELLIOUS          // 叛逆
-        }
-    }
-
-    /**
-     * 是否可能叛逃
-     */
-    fun mayDefect(): Boolean {
-        return value <= 10 || consecutiveUnpaidMonths >= 6
-    }
-}
+)
 
 /**
  * 忠诚度等级
@@ -50,3 +30,23 @@ val LoyaltyLevel.displayName: String
         LoyaltyLevel.DISCONTENT -> "不满"
         LoyaltyLevel.REBELLIOUS -> "叛逆"
     }
+
+/**
+ * 获取忠诚度等级
+ */
+fun Loyalty.getLevel(): LoyaltyLevel {
+    return when {
+        value >= 80 -> LoyaltyLevel.DEVOTED      // 忠心耿耿
+        value >= 60 -> LoyaltyLevel.LOYAL        // 忠诚
+        value >= 40 -> LoyaltyLevel.NEUTRAL      // 中立
+        value >= 20 -> LoyaltyLevel.DISCONTENT   // 不满
+        else -> LoyaltyLevel.REBELLIOUS          // 叛逆
+    }
+}
+
+/**
+ * 是否可能叛逃
+ */
+fun Loyalty.mayDefect(): Boolean {
+    return value <= 10 || consecutiveUnpaidMonths >= 6
+}

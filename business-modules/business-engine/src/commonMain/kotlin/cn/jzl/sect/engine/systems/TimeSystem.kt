@@ -6,75 +6,68 @@ import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.sect.core.time.GameTime
 import cn.jzl.sect.core.time.Season
-import cn.jzl.sect.core.time.TimeComponent
+import cn.jzl.sect.core.time.toDisplayString
+import cn.jzl.sect.engine.state.GameState
+import cn.jzl.sect.engine.state.TimeChangeInfo as StateTimeChangeInfo
 
 /**
  * 时间系统 - 管理游戏时间流逝和季节变化
+ * 使用全局 GameState 管理时间状态
  */
 class TimeSystem(private val world: World) {
+
+    private val gameState = GameState.getInstance()
+
+    init {
+        // 注册时间变更监听器，同步更新 ECS 世界
+        gameState.addTimeChangeListener { timeChangeInfo: StateTimeChangeInfo ->
+            syncTimeToECS(timeChangeInfo.newTime)
+        }
+    }
 
     /**
      * 推进游戏时间
      * @param hours 要推进的小时数
      * @return 时间变化信息
      */
-    fun advance(hours: Int): TimeChangeInfo {
-        val timeQuery = world.query { TimeQueryContext(this) }
-        var oldTime: TimeComponent? = null
-        var newTime: TimeComponent? = null
-        var targetEntity: cn.jzl.ecs.entity.Entity? = null
-
-        // 先收集信息
-        timeQuery.forEach { ctx ->
-            oldTime = ctx.time
-            newTime = ctx.time.addHours(hours)
-            targetEntity = ctx.entity
-        }
-
-        // 再应用更新
-        if (targetEntity != null && newTime != null) {
-            world.editor(targetEntity!!) {
-                it.addComponent(newTime!!)
-            }
-        }
-
-        val oldSeason = oldTime?.let { getSeason(it.month) }
-        val newSeason = newTime?.let { getSeason(it.month) }
-        val seasonChanged = oldSeason != newSeason
-
+    fun advance(hours: Int): cn.jzl.sect.engine.systems.TimeChangeInfo {
+        // 使用 GameState 推进时间
+        val stateInfo = gameState.advanceTime(hours)
         return TimeChangeInfo(
-            oldTime = oldTime ?: TimeComponent(),
-            newTime = newTime ?: TimeComponent(),
-            hoursPassed = hours,
-            seasonChanged = seasonChanged,
-            newSeason = newSeason
+            oldTime = stateInfo.oldTime,
+            newTime = stateInfo.newTime,
+            hoursPassed = stateInfo.hoursAdvanced,
+            seasonChanged = stateInfo.seasonChanged,
+            newSeason = stateInfo.newSeason
         )
     }
 
     /**
      * 获取当前时间
      */
-    fun getCurrentTime(): TimeComponent? {
-        val timeQuery = world.query { TimeQueryContext(this) }
-        var currentTime: TimeComponent? = null
-        
-        timeQuery.forEach { ctx ->
-            currentTime = ctx.time
-        }
-        
-        return currentTime
+    fun getCurrentTime(): GameTime {
+        return gameState.currentTime
     }
 
     /**
-     * 根据月份获取季节
+     * 获取当前季节
      */
-    private fun getSeason(month: Int): Season {
-        return when (month) {
-            in 3..5 -> Season.SPRING
-            in 6..8 -> Season.SUMMER
-            in 9..11 -> Season.AUTUMN
-            else -> Season.WINTER
+    fun getCurrentSeason(): Season {
+        return gameState.currentSeason
+    }
+
+    /**
+     * 同步时间到 ECS 世界
+     */
+    private fun syncTimeToECS(time: GameTime) {
+        val timeQuery = world.query { TimeQueryContext(this) }
+
+        timeQuery.forEach { ctx ->
+            world.editor(ctx.entity) {
+                it.addComponent(time)
+            }
         }
     }
 
@@ -82,26 +75,26 @@ class TimeSystem(private val world: World) {
      * 查询上下文 - 时间
      */
     class TimeQueryContext(world: World) : EntityQueryContext(world) {
-        val time: TimeComponent by component()
+        val time: GameTime by component()
     }
+}
 
-    /**
-     * 时间变化信息
-     */
-    data class TimeChangeInfo(
-        val oldTime: TimeComponent,
-        val newTime: TimeComponent,
-        val hoursPassed: Int,
-        val seasonChanged: Boolean,
-        val newSeason: Season?
-    ) {
-        fun toDisplayString(): String {
-            return buildString {
-                appendLine("时间推进：${oldTime.toDisplayString()} → ${newTime.toDisplayString()}")
-                appendLine("经过：${hoursPassed}小时")
-                if (seasonChanged && newSeason != null) {
-                    appendLine("季节变化：${newSeason.displayName}")
-                }
+/**
+ * 时间变化信息（兼容旧代码）
+ */
+data class TimeChangeInfo(
+    val oldTime: GameTime,
+    val newTime: GameTime,
+    val hoursPassed: Int,
+    val seasonChanged: Boolean,
+    val newSeason: Season?
+) {
+    fun toDisplayString(): String {
+        return buildString {
+            appendLine("时间推进：${oldTime.toDisplayString()} → ${newTime.toDisplayString()}")
+            appendLine("经过：${hoursPassed}小时")
+            if (seasonChanged && newSeason != null) {
+                appendLine("季节变化：${newSeason.displayName}")
             }
         }
     }

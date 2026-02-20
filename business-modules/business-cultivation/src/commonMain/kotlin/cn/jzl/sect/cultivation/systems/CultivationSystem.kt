@@ -1,4 +1,4 @@
-package cn.jzl.sect.engine.systems
+package cn.jzl.sect.cultivation.systems
 
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
@@ -6,15 +6,19 @@ import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.cultivation.CultivationComponent
+import cn.jzl.sect.core.config.GameConfig
+import cn.jzl.sect.core.cultivation.Cultivation
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.disciple.AttributeComponent
-import cn.jzl.sect.core.sect.PositionComponent
+import cn.jzl.sect.core.disciple.Attribute
+import cn.jzl.sect.core.sect.Position
+import cn.jzl.sect.core.sect.SectPosition
 
 /**
  * 修炼系统 - 处理弟子的修为增长和境界突破
  */
 class CultivationSystem(private val world: World) {
+
+    private val config = GameConfig.getInstance()
 
     /**
      * 更新修炼状态
@@ -86,7 +90,7 @@ class CultivationSystem(private val world: World) {
         updates.forEach { data ->
             world.editor(data.entity) {
                 it.addComponent(
-                    CultivationComponent(
+                    Cultivation(
                         realm = data.newRealm,
                         layer = data.newLayer,
                         cultivation = data.newCultivation,
@@ -102,10 +106,10 @@ class CultivationSystem(private val world: World) {
     /**
      * 计算修为增长
      */
-    private fun calculateCultivationGain(attr: AttributeComponent, hours: Int): Long {
+    private fun calculateCultivationGain(attr: Attribute, hours: Int): Long {
         // 基础增长 = 悟性 * 根骨 / 100 * 时间系数
         val baseGain = (attr.comprehension * attr.physique) / 100.0
-        val timeMultiplier = hours * 10 // 每小时10点基础修为
+        val timeMultiplier = hours * config.cultivation.baseCultivationGainPerHour
         return (baseGain * timeMultiplier).toLong().coerceAtLeast(1)
     }
 
@@ -115,16 +119,14 @@ class CultivationSystem(private val world: World) {
     private fun tryBreakthrough(
         currentRealm: Realm,
         currentLayer: Int,
-        attr: AttributeComponent
+        attr: Attribute
     ): BreakthroughResult {
         // 计算突破成功率
-        val baseSuccessRate = when (currentRealm) {
-            Realm.MORTAL -> 1.0
-            Realm.QI_REFINING -> 0.8 + (attr.fortune * 0.002) // 福缘影响成功率
-            Realm.FOUNDATION -> 0.6 + (attr.fortune * 0.003)
-        }
+        val baseSuccessRate = config.cultivation.getBaseBreakthroughSuccessRate(currentRealm)
+        val fortuneBonus = attr.fortune * config.cultivation.fortuneEffectOnBreakthrough
+        val finalSuccessRate = (baseSuccessRate + fortuneBonus).coerceIn(0.1, 0.95)
 
-        val success = Math.random() < baseSuccessRate.coerceIn(0.1, 0.95)
+        val success = Math.random() < finalSuccessRate
 
         return if (success) {
             val (newRealm, newLayer) = getNextRealmLayer(currentRealm, currentLayer)
@@ -149,10 +151,10 @@ class CultivationSystem(private val world: World) {
      */
     private fun getNextRealmLayer(realm: Realm, layer: Int): Pair<Realm, Int> {
         return when {
-            layer < 9 -> realm to (layer + 1)
+            layer < config.cultivation.maxLayerPerRealm -> realm to (layer + 1)
             realm == Realm.MORTAL -> Realm.QI_REFINING to 1
             realm == Realm.QI_REFINING -> Realm.FOUNDATION to 1
-            else -> realm to 9 // 已达最高
+            else -> realm to config.cultivation.maxLayerPerRealm // 已达最高
         }
     }
 
@@ -160,20 +162,16 @@ class CultivationSystem(private val world: World) {
      * 获取境界最大修为值
      */
     private fun getMaxCultivation(realm: Realm, layer: Int): Long {
-        return when (realm) {
-            Realm.MORTAL -> 1000L * layer
-            Realm.QI_REFINING -> 5000L * layer
-            Realm.FOUNDATION -> 10000L * layer
-        }
+        return config.cultivation.getMaxCultivation(realm, layer)
     }
 
     /**
      * 查询上下文 - 修炼者
      */
     class CultivatorQueryContext(world: World) : EntityQueryContext(world) {
-        val cultivation: CultivationComponent by component()
-        val attribute: AttributeComponent by component()
-        val position: PositionComponent by component()
+        val cultivation: Cultivation by component()
+        val attribute: Attribute by component()
+        val position: Position by component()
     }
 
     /**
@@ -181,7 +179,7 @@ class CultivationSystem(private val world: World) {
      */
     private data class CultivatorUpdateData(
         val entity: cn.jzl.ecs.entity.Entity,
-        val oldCultivation: CultivationComponent,
+        val oldCultivation: Cultivation,
         val newCultivation: Long,
         val newRealm: Realm,
         val newLayer: Int,
@@ -207,7 +205,7 @@ class CultivationSystem(private val world: World) {
         val oldLayer: Int,
         val newRealm: Realm,
         val newLayer: Int,
-        val position: cn.jzl.sect.core.sect.Position
+        val position: SectPosition
     ) {
         fun toDisplayString(): String {
             return "${position.displayName} 突破成功！${oldRealm.displayName}${oldLayer}层 → ${newRealm.displayName}${newLayer}层"
@@ -228,11 +226,10 @@ private val Realm.displayName: String
 /**
  * 职务显示名称扩展
  */
-private val cn.jzl.sect.core.sect.Position.displayName: String
+private val SectPosition.displayName: String
     get() = when (this) {
-        cn.jzl.sect.core.sect.Position.DISCIPLE_OUTER -> "外门弟子"
-        cn.jzl.sect.core.sect.Position.DISCIPLE_INNER -> "内门弟子"
-        cn.jzl.sect.core.sect.Position.DISCIPLE_CORE -> "亲传弟子"
-        cn.jzl.sect.core.sect.Position.ELDER -> "长老"
-        cn.jzl.sect.core.sect.Position.LEADER -> "掌门"
+        SectPosition.DISCIPLE_OUTER -> "外门弟子"
+        SectPosition.DISCIPLE_INNER -> "内门弟子"
+        SectPosition.ELDER -> "长老"
+        SectPosition.LEADER -> "掌门"
     }

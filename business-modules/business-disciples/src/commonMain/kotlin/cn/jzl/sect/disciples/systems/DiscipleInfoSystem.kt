@@ -1,0 +1,214 @@
+package cn.jzl.sect.disciples.systems
+
+import cn.jzl.ecs.World
+import cn.jzl.ecs.query
+import cn.jzl.ecs.query.EntityQueryContext
+import cn.jzl.ecs.query.forEach
+import cn.jzl.sect.core.cultivation.Cultivation
+import cn.jzl.sect.core.cultivation.Realm
+import cn.jzl.sect.core.disciple.Attribute
+import cn.jzl.sect.core.disciple.Loyalty
+import cn.jzl.sect.core.sect.Position
+import cn.jzl.sect.core.sect.SectPosition
+
+/**
+ * 弟子信息系统 - 管理和查询弟子信息
+ */
+class DiscipleInfoSystem(private val world: World) {
+
+    /**
+     * 获取所有弟子列表
+     */
+    fun getAllDisciples(): List<DiscipleInfo> {
+        val disciples = mutableListOf<DiscipleInfo>()
+        val query = world.query { DiscipleQueryContext(this) }
+
+        query.forEach { ctx ->
+            disciples.add(
+                DiscipleInfo(
+                    entity = ctx.entity,
+                    position = ctx.position.position,
+                    realm = ctx.cultivation.realm,
+                    layer = ctx.cultivation.layer,
+                    cultivation = ctx.cultivation.cultivation,
+                    maxCultivation = ctx.cultivation.maxCultivation,
+                    progress = calculateProgress(ctx.cultivation),
+                    health = ctx.attribute.health,
+                    maxHealth = ctx.attribute.maxHealth,
+                    spirit = ctx.attribute.spirit,
+                    maxSpirit = ctx.attribute.maxSpirit,
+                    age = ctx.attribute.age,
+                    physique = ctx.attribute.physique,
+                    comprehension = ctx.attribute.comprehension,
+                    fortune = ctx.attribute.fortune,
+                    charm = ctx.attribute.charm,
+                    loyalty = ctx.loyalty.value,
+                    loyaltyLevel = ctx.loyalty.getLevel()
+                )
+            )
+        }
+
+        // 按职位等级排序
+        return disciples.sortedBy { it.position.sortOrder }
+    }
+
+    /**
+     * 按职位筛选弟子
+     */
+    fun getDisciplesByPosition(position: SectPosition): List<DiscipleInfo> {
+        return getAllDisciples().filter { it.position == position }
+    }
+
+    /**
+     * 获取弟子统计信息
+     */
+    fun getDiscipleStatistics(): DiscipleStatistics {
+        val allDisciples = getAllDisciples()
+
+        return DiscipleStatistics(
+            totalCount = allDisciples.size,
+            leaderCount = allDisciples.count { it.position == SectPosition.LEADER },
+            elderCount = allDisciples.count { it.position == SectPosition.ELDER },
+            innerCount = allDisciples.count { it.position == SectPosition.DISCIPLE_INNER },
+            outerCount = allDisciples.count { it.position == SectPosition.DISCIPLE_OUTER },
+            mortalCount = allDisciples.count { it.realm == Realm.MORTAL },
+            qiRefiningCount = allDisciples.count { it.realm == Realm.QI_REFINING },
+            foundationCount = allDisciples.count { it.realm == Realm.FOUNDATION },
+            averageLoyalty = if (allDisciples.isNotEmpty()) {
+                allDisciples.map { it.loyalty }.average().toInt()
+            } else 0,
+            rebelliousCount = allDisciples.count { it.loyaltyLevel == LoyaltyLevel.REBELLIOUS }
+        )
+    }
+
+    /**
+     * 计算修炼进度百分比
+     */
+    private fun calculateProgress(cultivation: Cultivation): Float {
+        return (cultivation.cultivation.toFloat() / cultivation.maxCultivation.toFloat())
+            .coerceIn(0f, 1f)
+    }
+
+    /**
+     * 查询上下文 - 弟子
+     */
+    class DiscipleQueryContext(world: World) : EntityQueryContext(world) {
+        val position: Position by component()
+        val cultivation: Cultivation by component()
+        val attribute: Attribute by component()
+        val loyalty: Loyalty by component()
+    }
+}
+
+/**
+ * 弟子信息数据类
+ */
+data class DiscipleInfo(
+    val entity: cn.jzl.ecs.entity.Entity,
+    val position: SectPosition,
+    val realm: Realm,
+    val layer: Int,
+    val cultivation: Long,
+    val maxCultivation: Long,
+    val progress: Float,
+    val health: Int,
+    val maxHealth: Int,
+    val spirit: Int,
+    val maxSpirit: Int,
+    val age: Int,
+    val physique: Int,
+    val comprehension: Int,
+    val fortune: Int,
+    val charm: Int,
+    val loyalty: Int,
+    val loyaltyLevel: LoyaltyLevel
+) {
+    fun toDisplayString(): String {
+        val progressBar = buildProgressBar(progress, 20)
+        return "${position.displayName} | ${realm.displayName}${layer}层 | " +
+               "修为: ${cultivation}/${maxCultivation} ${progressBar} | " +
+               "气血: ${health}/${maxHealth} | 灵力: ${spirit}/${maxSpirit} | " +
+               "年龄: ${age} | 忠诚: ${loyalty}(${loyaltyLevel.displayName})"
+    }
+}
+
+/**
+ * 弟子统计数据类
+ */
+data class DiscipleStatistics(
+    val totalCount: Int,
+    val leaderCount: Int,
+    val elderCount: Int,
+    val innerCount: Int,
+    val outerCount: Int,
+    val mortalCount: Int,
+    val qiRefiningCount: Int,
+    val foundationCount: Int,
+    val averageLoyalty: Int,
+    val rebelliousCount: Int
+) {
+    fun toDisplayString(): String {
+        return """
+            弟子统计:
+            总人数: $totalCount
+            掌门: $leaderCount | 长老: $elderCount
+            内门: $innerCount | 外门: $outerCount
+            凡人: $mortalCount | 炼气: $qiRefiningCount | 筑基: $foundationCount
+            平均忠诚: $averageLoyalty | 叛逆风险: $rebelliousCount
+        """.trimIndent()
+    }
+}
+
+/**
+ * 构建进度条
+ */
+private fun buildProgressBar(progress: Float, length: Int): String {
+    val filled = (progress * length).toInt()
+    val empty = length - filled
+    return "[" + "█".repeat(filled) + "░".repeat(empty) + "]"
+}
+
+/**
+ * 境界显示名称扩展
+ */
+private val Realm.displayName: String
+    get() = when (this) {
+        Realm.MORTAL -> "凡人"
+        Realm.QI_REFINING -> "炼气期"
+        Realm.FOUNDATION -> "筑基期"
+    }
+
+/**
+ * 职务显示名称扩展
+ */
+private val SectPosition.displayName: String
+    get() = when (this) {
+        SectPosition.DISCIPLE_OUTER -> "外门弟子"
+        SectPosition.DISCIPLE_INNER -> "内门弟子"
+        SectPosition.ELDER -> "长老"
+        SectPosition.LEADER -> "掌门"
+    }
+
+/**
+ * 忠诚度等级
+ */
+enum class LoyaltyLevel(val displayName: String, val minValue: Int, val maxValue: Int) {
+    DEVOTED("忠心耿耿", 80, 100),
+    LOYAL("忠诚", 60, 79),
+    NEUTRAL("中立", 40, 59),
+    DISCONTENT("不满", 20, 39),
+    REBELLIOUS("叛逆", 0, 19);
+
+    companion object {
+        fun fromValue(value: Int): LoyaltyLevel {
+            return values().find { value in it.minValue..it.maxValue } ?: NEUTRAL
+        }
+    }
+}
+
+/**
+ * 获取忠诚度等级扩展
+ */
+private fun cn.jzl.sect.core.disciple.Loyalty.getLevel(): LoyaltyLevel {
+    return LoyaltyLevel.fromValue(this.value)
+}

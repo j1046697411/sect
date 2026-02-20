@@ -6,9 +6,9 @@ import cn.jzl.ecs.family.component
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.demo.NameComponent
-import cn.jzl.sect.core.demo.PositionComponent
-import cn.jzl.sect.core.demo.VelocityComponent
+import cn.jzl.sect.core.demo.Name
+import cn.jzl.sect.core.demo.Position
+import cn.jzl.sect.core.demo.Velocity
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -179,26 +179,26 @@ class DemoWorldTest : EntityRelationContext {
 
     // 查询上下文定义
     class AllEntitiesQueryContext(world: World) : EntityQueryContext(world) {
-        val name: NameComponent? by component<NameComponent?>()
-        val position: PositionComponent by component()
-        val velocity: VelocityComponent? by component<VelocityComponent?>()
+        val name: Name? by component<Name?>()
+        val position: Position by component()
+        val velocity: Velocity? by component<Velocity?>()
     }
 
     class MovableEntitiesQueryContext(world: World) : EntityQueryContext(world) {
-        val name: NameComponent? by component<NameComponent?>()
-        val position: PositionComponent by component()
-        val velocity: VelocityComponent by component()
+        val name: Name? by component<Name?>()
+        val position: Position by component()
+        val velocity: Velocity by component()
     }
 
     class NamedEntityQueryContext(world: World) : EntityQueryContext(world) {
-        val name: NameComponent by component()
-        val position: PositionComponent by component()
+        val name: Name by component()
+        val position: Position by component()
     }
 
     // 数据类用于存储实体信息
     data class EntityData(
-        val name: NameComponent?,
-        val position: PositionComponent,
-        val velocity: VelocityComponent?
+        val name: Name?,
+        val position: Position,
+        val velocity: Velocity?
     )
 }

@@ -8,14 +8,14 @@ import cn.jzl.ecs.family.component
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.demo.NameComponent
-import cn.jzl.sect.core.demo.PositionComponent
-import cn.jzl.sect.core.demo.VelocityComponent
+import cn.jzl.sect.core.demo.Name
+import cn.jzl.sect.core.demo.Position
+import cn.jzl.sect.core.demo.Velocity
 
 /**
  * 移动系统 - 根据速度更新实体位置
  *
- * 查询所有同时具有 PositionComponent 和 VelocityComponent 的实体，
+ * 查询所有同时具有 Position 和 Velocity 的实体，
  * 并根据速度和时间增量更新位置。
  */
 class MovementSystem(private val world: World) {
@@ -44,7 +44,7 @@ class MovementSystem(private val world: World) {
         // 应用更新
         updates.forEach { data ->
             world.editor(data.entity) {
-                it.addComponent(PositionComponent(data.newX, data.newY))
+                it.addComponent(Position(data.newX, data.newY))
             }
         }
     }
@@ -56,8 +56,8 @@ class MovementSystem(private val world: World) {
     )
 
     class MovementQueryContext(world: World) : EntityQueryContext(world) {
-        val position: PositionComponent by component()
-        val velocity: VelocityComponent by component()
-        val name: NameComponent? by component<NameComponent?>()
+        val position: Position by component()
+        val velocity: Velocity by component()
+        val name: Name? by component<Name?>()
     }
 }

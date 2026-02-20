@@ -7,7 +7,7 @@ package cn.jzl.sect.core.demo
 /**
  * 位置组件 - 存储实体的二维坐标
  */
-data class PositionComponent(
+data class Position(
     val x: Float,
     val y: Float
 )
@@ -15,7 +15,7 @@ data class PositionComponent(
 /**
  * 速度组件 - 存储实体的移动速度
  */
-data class VelocityComponent(
+data class Velocity(
     val vx: Float,
     val vy: Float
 )
@@ -23,7 +23,7 @@ data class VelocityComponent(
 /**
  * 名称组件 - 存储实体的显示名称
  */
-data class NameComponent(
+data class Name(
     val name: String
 )
 
