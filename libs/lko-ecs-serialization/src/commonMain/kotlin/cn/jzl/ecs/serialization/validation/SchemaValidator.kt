@@ -2,8 +2,19 @@ package cn.jzl.ecs.serialization.validation
 
 import cn.jzl.ecs.component.Component
 import cn.jzl.ecs.serialization.core.SerializationContext
+import cn.jzl.ecs.serialization.error.ErrorSeverity
+import cn.jzl.ecs.serialization.error.ValidationError
 import kotlin.reflect.KClass
+import kotlin.reflect.full.memberProperties
 
+/**
+ * 模式定义
+ *
+ * @param kClass 组件类
+ * @param requiredFields 必需字段列表
+ * @param optionalFields 可选字段列表
+ * @param validators 字段验证器映射
+ */
 data class Schema(
     val kClass: KClass<*>,
     val requiredFields: List<String> = emptyList(),
@@ -11,8 +22,13 @@ data class Schema(
     val validators: Map<String, DataValidator<*>> = emptyMap()
 )
 
+/**
+ * 模式验证器
+ *
+ * 根据预定义的模式验证组件数据
+ */
 class SchemaValidator(
-    private val schemas: Map<KClass<*>, Schema>,
+    private val schemas: MutableMap<KClass<*>, Schema>,
     private val context: SerializationContext
 ) : DataValidator<Any> {
     override fun validate(data: Any): ValidationResult {
@@ -56,9 +72,9 @@ class SchemaValidator(
 
     private fun getFieldValue(data: Any, fieldName: String): Any? {
         return try {
-            val property = data::class.members.find { it.name == fieldName }
+            val property = data::class.memberProperties.find { it.name == fieldName }
             if (property != null) {
-                property.call(data)
+                property.get(data)
             } else {
                 null
             }

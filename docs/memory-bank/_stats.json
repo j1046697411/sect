@@ -31,12 +31,15 @@
     "conventions:战斗系统设计战斗机制与类型.md": 0,
     "solutions:战斗系统设计战斗结果与ai.md": 1,
     "conventions:角色层级ai控制范围定义.md": 0,
-    "conventions:弟子晋升选拔机制.md": 0
+    "conventions:弟子晋升选拔机制.md": 0,
+    "conventions:外门弟子晋升选拔机制-任务制.md": 0,
+    "conventions:选拔任务执行机制-带ai角色.md": 0,
+    "conventions:选拔任务奖励机制.md": 0
   },
   "relations": {
     "conventions:游戏可玩性设计混合型政策体系.md": [
       "solutions:ecs-query-性能优化.md"
     ]
   },
-  "updated": "2026-02-21T21:12:55.001826"
+  "updated": "2026-02-21T22:14:04.036312"
 }

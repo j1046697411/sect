@@ -1,9 +1,13 @@
 package cn.jzl.sect.facility.systems
 
+import cn.jzl.ecs.ECSDsl
 import cn.jzl.ecs.World
+import cn.jzl.ecs.addon.WorldSetup
+import cn.jzl.ecs.addon.createAddon
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
-import cn.jzl.ecs.entity.entity
+import cn.jzl.ecs.entity
+import cn.jzl.ecs.world
 import cn.jzl.sect.core.ai.BehaviorState
 import cn.jzl.sect.core.ai.BehaviorType
 import cn.jzl.sect.core.cultivation.Cultivation
@@ -14,6 +18,7 @@ import cn.jzl.sect.core.sect.Sect
 import cn.jzl.sect.core.sect.SectPosition
 import cn.jzl.sect.core.sect.SectResource
 import cn.jzl.sect.engine.SectWorld
+import cn.jzl.sect.engine.SectAddon
 import kotlin.test.*
 
 /**
@@ -32,6 +37,18 @@ class SectStatusSystemTest : EntityRelationContext {
     @Test
     fun testNormalStatus() {
         // Given: 正常状态的宗门（有足够资源，弟子忠诚）
+        world = createCleanWorld(spiritStones = 10000L)
+        // 添加一些忠诚的弟子
+        with(world) {
+            repeat(4) {
+                entity {
+                    it.addComponent(Cultivation(realm = Realm.QI_REFINING, layer = 1, cultivation = 100L, maxCultivation = 1000L))
+                    it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
+                    it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+                    it.addComponent(Loyalty(value = 80, consecutiveUnpaidMonths = 0))
+                }
+            }
+        }
         val system = SectStatusSystem(world)
 
         // When: 检查宗门状态
@@ -218,29 +235,52 @@ class SectStatusSystemTest : EntityRelationContext {
     // ==================== 辅助方法 ====================
 
     /**
+     * 创建一个干净的世界，只包含宗门实体和指定资源
+     */
+    @OptIn(ECSDsl::class)
+    private fun createCleanWorld(spiritStones: Long = 10000L): World {
+        val testWorld = world {
+            WorldSetupInstallHelper.install(this, SectAddon.addon)
+        }
+
+        // 创建宗门实体
+        testWorld.entity {
+            it.addComponent(Sect(name = "测试宗门", leaderId = 0, foundedYear = 1))
+            it.addComponent(SectResource(spiritStones = spiritStones, contributionPoints = 0L))
+        }
+
+        return testWorld
+    }
+
+    /**
      * 创建有叛逆弟子的测试世界
      */
+    @OptIn(ECSDsl::class)
     private fun createWorldWithRebelliousDisciples(rebelliousCount: Int, totalCount: Int): World {
-        val testWorld = SectWorld.create("测试宗门")
+        val testWorld = createCleanWorld(spiritStones = 10000L)
 
         // 添加有叛逃风险的弟子
         repeat(rebelliousCount) {
-            testWorld.entity {
-                it.addComponent(Cultivation(realm = Realm.QI_REFINING, layer = 1, cultivation = 100L, maxCultivation = 1000L))
-                it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-                it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
-                // 忠诚度<=10 会叛逃
-                it.addComponent(Loyalty(value = 5, consecutiveUnpaidMonths = 0))
+            with(testWorld) {
+                entity {
+                    it.addComponent(Cultivation(realm = Realm.QI_REFINING, layer = 1, cultivation = 100L, maxCultivation = 1000L))
+                    it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
+                    it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+                    // 忠诚度<=10 会叛逃
+                    it.addComponent(Loyalty(value = 5, consecutiveUnpaidMonths = 0))
+                }
             }
         }
 
         // 添加正常弟子
         repeat(totalCount - rebelliousCount) {
-            testWorld.entity {
-                it.addComponent(Cultivation(realm = Realm.QI_REFINING, layer = 1, cultivation = 100L, maxCultivation = 1000L))
-                it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-                it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
-                it.addComponent(Loyalty(value = 80, consecutiveUnpaidMonths = 0))
+            with(testWorld) {
+                entity {
+                    it.addComponent(Cultivation(realm = Realm.QI_REFINING, layer = 1, cultivation = 100L, maxCultivation = 1000L))
+                    it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
+                    it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+                    it.addComponent(Loyalty(value = 80, consecutiveUnpaidMonths = 0))
+                }
             }
         }
 
@@ -250,13 +290,17 @@ class SectStatusSystemTest : EntityRelationContext {
     /**
      * 创建无宗门实体的世界
      */
+    @OptIn(ECSDsl::class)
     private fun createWorldWithoutSect(): World {
-        // 创建一个没有宗门实体的世界
-        // 使用 SectWorld.create 创建后再清除宗门实体
-        val testWorld = SectWorld.create("测试宗门")
-        // 由于 ECS 不支持删除实体，我们创建一个新世界但不添加宗门实体
-        return cn.jzl.ecs.world {
+        return world {
             // 不安装任何 addon，创建一个空世界
+        }
+    }
+
+    private object WorldSetupInstallHelper {
+        @Suppress("UNCHECKED_CAST")
+        fun install(ws: WorldSetup, addon: cn.jzl.ecs.addon.Addon<*, *>) {
+            ws.install(addon as cn.jzl.ecs.addon.Addon<Any, Any>) {}
         }
     }
 }

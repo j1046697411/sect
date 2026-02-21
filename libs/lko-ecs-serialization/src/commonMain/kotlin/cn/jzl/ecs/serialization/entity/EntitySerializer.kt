@@ -1,10 +1,12 @@
 package cn.jzl.ecs.serialization.entity
 
 import cn.jzl.ecs.component.Component
-import cn.jzl.ecs.entity
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.addComponent
+import cn.jzl.ecs.entity.EntityCreateContext
+import cn.jzl.ecs.relation.kind
 import cn.jzl.ecs.serialization.core.SerializationContext
+import cn.jzl.ecs.serialization.internal.WorldServices
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.descriptors.SerialDescriptor
@@ -24,10 +26,10 @@ class EntitySerializer(
         val world = context.world
         val components = componentSerializer.deserialize(decoder)
 
-        return world.entity {
+        return world.entity { entity ->
             components.forEach { component ->
-                set(component)
-                setPersisting(component)
+                entity.addComponent(component)
+                entity.setPersisting(this@EntitySerializer.context, component)
             }
         }
     }
@@ -39,13 +41,13 @@ class EntitySerializer(
 
     private fun getAllPersistingComponents(entity: Entity): List<Component> {
         val persistingComponents = mutableListOf<Component>()
-        val persistableComponentId = context.world.components.id<Persistable>()
+        val services = WorldServices(context.world)
+        val persistableComponentId = services.components.id<Persistable>()
 
-        context.world.entityService.runOn(entity) { entityIndex ->
-            val archetype = context.world.archetypeService.getArchetype(entityIndex)
-            archetype.archetypeType.forEach { relation ->
+        services.entityService.runOn(entity) { entityIndex ->
+            archetypeType.forEach { relation ->
                 if (relation.kind == persistableComponentId) {
-                    val component = context.world.relationService.getRelation(entity, relation)
+                    val component = services.relationService.getRelation(entity, relation)
                     if (component != null) {
                         persistingComponents.add(component as Component)
                     }
@@ -55,4 +57,14 @@ class EntitySerializer(
 
         return persistingComponents
     }
+}
+
+/**
+ * 在实体创建上下文中设置持久化组件（简化版本，用于反序列化）
+ */
+context(context: EntityCreateContext)
+fun Entity.setPersisting(serializationContext: SerializationContext, component: Component): Component {
+    addComponent(component)
+    Persistable().updateHash(component)
+    return component
 }

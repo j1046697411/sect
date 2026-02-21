@@ -2,10 +2,17 @@ package cn.jzl.ecs.serialization.performance
 
 import cn.jzl.ecs.component.Component
 import cn.jzl.ecs.serialization.core.SerializationContext
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializerOrNull
 import kotlin.reflect.KClass
 
+/**
+ * 序列化对象池
+ *
+ * 用于复用序列化相关的对象，减少内存分配
+ */
 class SerializationObjectPool(
     private val maxPoolSize: Int = 1000,
     private val context: SerializationContext
@@ -14,6 +21,7 @@ class SerializationObjectPool(
     private val jsonPools = mutableMapOf<Boolean, MutableList<Json>>()
     private val bufferPools = mutableMapOf<Int, MutableList<ByteArray>>()
 
+    @OptIn(InternalSerializationApi::class)
     fun <T : Component> acquireSerializer(kClass: KClass<T>): KSerializer<T> {
         val pool = serializerPools.getOrPut(kClass) { mutableListOf() }
         @Suppress("UNCHECKED_CAST")

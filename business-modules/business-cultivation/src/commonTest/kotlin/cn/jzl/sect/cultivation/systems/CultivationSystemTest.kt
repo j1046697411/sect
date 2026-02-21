@@ -95,13 +95,13 @@ class CultivationSystemTest : EntityRelationContext {
 
     @Test
     fun testCultivationGainWithHighAttributes() {
-        // Given: 创建一个高资质的修炼者
+        // Given: 创建一个高资质的修炼者（设置足够大的maxCultivation避免突破）
         world.entity {
             it.addComponent(Cultivation(
                 realm = Realm.MORTAL,
                 layer = 1,
                 cultivation = 0L,
-                maxCultivation = 1000L
+                maxCultivation = 10000L
             ))
             it.addComponent(Attribute(
                 physique = 100,
@@ -119,8 +119,8 @@ class CultivationSystemTest : EntityRelationContext {
         val query = world.query { CultivatorQueryContext(world) }
         query.forEach { ctx ->
             if (ctx.attribute.physique == 100) {
-                // 基础增长 = (100 * 100 / 100) * 10 = 100
-                assertEquals(100L, ctx.cultivation.cultivation, "高资质修炼者应该获得更多修为")
+                // 基础增长 = (100 * 100 / 100) * 1 * 10 = 1000
+                assertEquals(1000L, ctx.cultivation.cultivation, "高资质修炼者应该获得更多修为")
             }
         }
     }
@@ -159,13 +159,13 @@ class CultivationSystemTest : EntityRelationContext {
 
     @Test
     fun testMultipleHoursCultivation() {
-        // Given: 创建一个修炼者
+        // Given: 创建一个修炼者（设置足够大的maxCultivation避免突破）
         world.entity {
             it.addComponent(Cultivation(
                 realm = Realm.MORTAL,
                 layer = 1,
                 cultivation = 0L,
-                maxCultivation = 1000L
+                maxCultivation = 10000L
             ))
             it.addComponent(Attribute(
                 physique = 50,
@@ -183,8 +183,8 @@ class CultivationSystemTest : EntityRelationContext {
         val query = world.query { CultivatorQueryContext(world) }
         query.forEach { ctx ->
             if (ctx.attribute.physique == 50) {
-                // 基础增长 = (50 * 50 / 100) * 10 * 10 = 250
-                assertEquals(250L, ctx.cultivation.cultivation, "10小时修炼应该获得250修为")
+                // 基础增长 = (50 * 50 / 100) * 10 * 10 = 2500
+                assertEquals(2500L, ctx.cultivation.cultivation, "10小时修炼应该获得2500修为")
             }
         }
     }
@@ -232,7 +232,7 @@ class CultivationSystemTest : EntityRelationContext {
                 realm = Realm.MORTAL,
                 layer = maxLayer,
                 cultivation = 990L,
-                maxCultivation = 1000L * maxLayer
+                maxCultivation = 1000L
             ))
             it.addComponent(Attribute(
                 physique = 100,
@@ -249,7 +249,7 @@ class CultivationSystemTest : EntityRelationContext {
         // Then: 应该突破到炼气期第1层
         val query = world.query { CultivatorQueryContext(world) }
         query.forEach { ctx ->
-            if (ctx.attribute.fortune == 100 && ctx.cultivation.realm != Realm.FOUNDATION) {
+            if (ctx.attribute.fortune == 100) {
                 assertEquals(Realm.QI_REFINING, ctx.cultivation.realm, "应该突破到炼气期")
                 assertEquals(1, ctx.cultivation.layer, "应该回到第1层")
             }

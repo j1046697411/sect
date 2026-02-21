@@ -1,22 +1,30 @@
 package cn.jzl.ecs.serialization.performance
 
-import cn.jzl.ecs.World
 import cn.jzl.ecs.archetype.Archetype
 import cn.jzl.ecs.component.Component
 import cn.jzl.ecs.entity.Entity
+import cn.jzl.ecs.relation.kind
 import cn.jzl.ecs.serialization.core.SerializationContext
-import kotlinx.serialization.KSerializer
+import cn.jzl.ecs.serialization.entity.EntitySerializer
+import cn.jzl.ecs.serialization.internal.WorldServices
+import kotlinx.serialization.json.Json
 
+/**
+ * 原型感知序列化器
+ *
+ * 根据实体的原型类型进行分组序列化，提高性能
+ */
 class ArchetypeAwareSerializer(
     private val context: SerializationContext
 ) {
     private val archetypeCache = mutableMapOf<Int, ArchetypeSerializer>()
     private val entityCache = mutableMapOf<Entity, List<Component>>()
+    private val services = WorldServices(context.world)
 
     fun serializeEntities(entities: List<Entity>): List<ByteArray> {
         val archetypes = entities.groupBy { entity ->
-            context.world.entityService.runOn(entity) { entityIndex ->
-                context.world.archetypeService.getArchetype(entityIndex).id
+            services.entityService.runOn(entity) { entityIndex ->
+                id
             }
         }
 
@@ -31,13 +39,13 @@ class ArchetypeAwareSerializer(
     fun deserializeEntities(dataList: List<ByteArray>): List<Entity> {
         return dataList.map { data ->
             val serializer = EntitySerializer(context)
-            kotlinx.serialization.json.Json.decodeFromString(serializer, data.decodeToString())
+            Json.decodeFromString(serializer, data.decodeToString())
         }
     }
 
     private fun getArchetypeSerializer(archetypeId: Int): ArchetypeSerializer {
         return archetypeCache.getOrPut(archetypeId) {
-            val archetype = context.world.archetypeService.getArchetypeById(archetypeId)
+            val archetype = services.archetypeService[archetypeId]
             ArchetypeSerializer(context, archetype)
         }
     }
@@ -60,35 +68,31 @@ class ArchetypeAwareSerializer(
     )
 }
 
+/**
+ * 原型序列化器
+ *
+ * 针对特定原型优化的序列化器
+ */
 class ArchetypeSerializer(
     private val context: SerializationContext,
     private val archetype: Archetype
 ) {
-    private val componentSerializers = mutableMapOf<Int, KSerializer<Component>>()
-
-    init {
-        archetype.archetypeType.forEach { relation ->
-            val serializer = context.serializers.getSerializerFor(relation.kind.data)
-            if (serializer != null) {
-                componentSerializers[relation.kind.data] = serializer
-            }
-        }
-    }
+    private val services = WorldServices(context.world)
 
     fun serialize(entity: Entity): ByteArray {
         val components = mutableListOf<Component>()
 
-        context.world.entityService.runOn(entity) { entityIndex ->
+        services.entityService.runOn(entity) { entityIndex ->
             archetype.archetypeType.forEach { relation ->
-                val component = context.world.relationService.getRelation(entity, relation)
+                val component = services.relationService.getRelation(entity, relation)
                 if (component != null && component is Component) {
                     components.add(component)
                 }
             }
         }
 
-        return kotlinx.serialization.json.Json.encodeToString(
-            kotlinx.serialization.serializer<List<Component>>(),
+        return Json.encodeToString(
+            Json.serializersModule.serializer(),
             components
         ).encodeToByteArray()
     }

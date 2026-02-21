@@ -5,26 +5,33 @@ import cn.jzl.ecs.serialization.core.ComponentSerializers.Companion.fromCamelCas
 import cn.jzl.ecs.serialization.core.ComponentSerializers.Companion.hasNamespace
 import cn.jzl.ecs.serialization.core.OnMissingStrategy
 import cn.jzl.ecs.serialization.core.SerializationContext
+import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.json.Json
 
-typealias SerializedComponents = @Serializable(with = PolymorphicComponentSerializer::class) List<@kotlinx.serialization.Polymorphic Component>
-
+/**
+ * 多态组件序列化器
+ *
+ * 用于序列化和反序列化组件列表
+ */
 class PolymorphicComponentSerializer(
     private val context: SerializationContext
 ) : KSerializer<List<Component>> {
     private val config = context.config
     private val polymorphicSerializer = PolymorphicSerializer(Component::class)
+    private val stringMapSerializer = MapSerializer(String.serializer(), String.serializer())
 
-    override val descriptor = MapSerializer(String.serializer(), kotlinx.serialization.serializer(String.serializer())).descriptor
+    override val descriptor: SerialDescriptor = stringMapSerializer.descriptor
 
     override fun deserialize(decoder: Decoder): List<Component> {
         val components = mutableListOf<Component>()
-        val componentMap = decoder.decodeSerializableValue(MapSerializer(String.serializer(), kotlinx.serialization.serializer(String.serializer())))
+        val componentMap = decoder.decodeSerializableValue(stringMapSerializer)
 
         componentMap.entries.forEach { (key, value) ->
             val componentSerializer = findSerializerFor(key)
@@ -38,14 +45,8 @@ class PolymorphicComponentSerializer(
             }
 
             runCatching {
-                val jsonValue = kotlinx.serialization.json.Json {
-                    ignoreUnknownKeys = config.skipMalformedComponents
-                }.decodeFromString(kotlinx.serialization.serializer<String>(), value as String)
-                componentSerializer.deserialize(
-                    kotlinx.serialization.json.Json {
-                        ignoreUnknownKeys = config.skipMalformedComponents
-                    }.decodeToSequence(jsonValue).iterator().next().decoder
-                )
+                val json = Json { ignoreUnknownKeys = config.skipMalformedComponents }
+                json.decodeFromString(componentSerializer, value)
             }.onSuccess { components += it }
                 .onFailure { exception ->
                     if (config.skipMalformedComponents) {
@@ -70,24 +71,24 @@ class PolymorphicComponentSerializer(
             val serializer = context.serializers.getSerializerFor(kClass)
                 ?: error("No serializer found for ${kClass.simpleName}")
 
-            val jsonValue = kotlinx.serialization.json.Json.encodeToString(serializer, component)
+            val jsonValue = Json.encodeToString(serializer, component)
             componentMap[serialName] = jsonValue
         }
 
-        encoder.encodeSerializableValue(MapSerializer(String.serializer(), kotlinx.serialization.serializer(String.serializer())), componentMap)
+        encoder.encodeSerializableValue(stringMapSerializer, componentMap)
     }
 
-    private fun findSerializerFor(key: String): KSerializer<Component>? {
+    private fun findSerializerFor(key: String): KSerializer<out Component>? {
         val parsedKey = "${config.prefix}$key".fromCamelCaseToSnakeCase()
 
         return if (parsedKey.hasNamespace()) {
             context.serializers.getClassFor(parsedKey)?.let {
-                context.serializers.getSerializerFor(it)
+                context.serializers.getSerializerFor(it) as? KSerializer<out Component>
             }
         } else {
             config.namespaces.firstNotNullOfOrNull { namespace ->
                 context.serializers.getClassFor("$namespace:$parsedKey")?.let {
-                    context.serializers.getSerializerFor(it)
+                    context.serializers.getSerializerFor(it) as? KSerializer<out Component>
                 }
             }
         }

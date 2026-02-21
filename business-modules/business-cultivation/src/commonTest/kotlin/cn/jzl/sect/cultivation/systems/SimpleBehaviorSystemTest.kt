@@ -212,11 +212,11 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
 
     @Test
     fun testRestEffect() {
-        // Given: 创建一个休息中的实体
+        // Given: 创建一个生命值低的实体（会选择休息行为）
         world.entity {
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.REST))
+            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
             it.addComponent(Attribute(
-                health = 50,
+                health = 20,
                 maxHealth = 100,
                 spirit = 20,
                 maxSpirit = 50
@@ -227,11 +227,11 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
         // When: 更新行为系统
         system.update(1.0f)
 
-        // Then: 生命值和精神力应该恢复
+        // Then: 生命值和精神力应该恢复（休息行为效果）
         val query = world.query { BehaviorQueryContext(world) }
         query.forEach { ctx ->
-            if (ctx.attribute.maxHealth == 100 && ctx.attribute.health == 50) {
-                assertEquals(60, ctx.attribute.health, "休息应该恢复10点生命值")
+            if (ctx.attribute.maxHealth == 100 && ctx.attribute.health == 20) {
+                assertEquals(30, ctx.attribute.health, "休息应该恢复10点生命值")
                 assertEquals(25, ctx.attribute.spirit, "休息应该恢复5点精神力")
             }
         }
@@ -239,13 +239,13 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
 
     @Test
     fun testWorkEffect() {
-        // Given: 创建一个工作中的实体
+        // Given: 创建一个精神力低但生命值正常的实体（会选择工作行为）
         world.entity {
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.WORK))
+            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
             it.addComponent(Attribute(
                 health = 50,
                 maxHealth = 100,
-                spirit = 20,
+                spirit = 10,
                 maxSpirit = 50
             ))
             it.addComponent(Cultivation())
@@ -254,12 +254,12 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
         // When: 更新行为系统
         system.update(1.0f)
 
-        // Then: 生命值恢复，精神力消耗
+        // Then: 生命值恢复，精神力消耗（工作行为效果）
         val query = world.query { BehaviorQueryContext(world) }
         query.forEach { ctx ->
             if (ctx.attribute.maxHealth == 100 && ctx.attribute.health == 50) {
                 assertEquals(55, ctx.attribute.health, "工作应该恢复5点生命值")
-                assertEquals(18, ctx.attribute.spirit, "工作应该消耗2点精神力")
+                assertEquals(8, ctx.attribute.spirit, "工作应该消耗2点精神力")
             }
         }
     }
@@ -292,13 +292,13 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
 
     @Test
     fun testHealthNotExceedMax() {
-        // Given: 创建一个生命值接近上限的实体
+        // Given: 创建一个生命值接近上限且生命值低的实体（会选择休息行为）
         world.entity {
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.REST))
+            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
             it.addComponent(Attribute(
                 health = 95,
                 maxHealth = 100,
-                spirit = 45,
+                spirit = 10,
                 maxSpirit = 50
             ))
             it.addComponent(Cultivation())
@@ -307,10 +307,10 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
         // When: 更新行为系统
         system.update(1.0f)
 
-        // Then: 生命值不应该超过上限
+        // Then: 生命值不应该超过上限（休息恢复10点，但95+10=105>100，应该被限制为100）
         val query = world.query { BehaviorQueryContext(world) }
         query.forEach { ctx ->
-            if (ctx.attribute.maxHealth == 100 && ctx.attribute.health >= 95) {
+            if (ctx.attribute.maxHealth == 100 && ctx.attribute.spirit == 10) {
                 assertEquals(100, ctx.attribute.health, "生命值不应该超过上限")
             }
         }

@@ -2,54 +2,83 @@ package cn.jzl.ecs.serialization.entity
 
 import cn.jzl.ecs.component.Component
 import cn.jzl.ecs.entity.Entity
-import cn.jzl.ecs.relation.Relation
+import cn.jzl.ecs.entity.EntityCreateContext
+import cn.jzl.ecs.entity.addComponent
+import cn.jzl.ecs.entity.hasComponent
+import cn.jzl.ecs.relation.kind
 import cn.jzl.ecs.serialization.core.SerializationContext
+import cn.jzl.ecs.serialization.internal.WorldServices
 import kotlin.reflect.KClass
 
+/**
+ * 在实体创建上下文中设置持久化组件
+ *
+ * @param serializationContext 序列化上下文
+ * @param component 组件实例
+ * @param kClass 组件类型
+ */
+context(context: EntityCreateContext)
 inline fun <reified T : Component> Entity.setPersisting(
-    context: SerializationContext,
+    serializationContext: SerializationContext,
     component: T,
     kClass: KClass<out T> = T::class,
 ): T {
-    set(component, kClass)
-    val persistableRelation = Relation(
-        kind = context.world.components.id<Persistable>(),
-        target = this
-    )
-    context.world.relationService.addRelation(this, persistableRelation)
+    addComponent(component)
     Persistable().updateHash(component)
     return component
 }
 
+/**
+ * 在实体创建上下文中批量设置持久化组件
+ *
+ * @param serializationContext 序列化上下文
+ * @param components 组件集合
+ * @param override 是否覆盖现有组件
+ */
+context(context: EntityCreateContext)
 fun Entity.setAllPersisting(
-    context: SerializationContext,
+    serializationContext: SerializationContext,
     components: Collection<Component>,
     override: Boolean = true,
 ) {
     components.forEach {
-        if (override || !has(it::class)) {
-            setPersisting(context, it, it::class)
+        if (override || !hasComponent(it::class)) {
+            setPersisting(serializationContext, it, it::class)
         }
     }
 }
 
+/**
+ * 在实体创建上下文中获取或设置持久化组件
+ *
+ * @param serializationContext 序列化上下文
+ * @param kClass 组件类型
+ * @param default 默认组件工厂
+ */
+context(context: EntityCreateContext)
 inline fun <reified T : Component> Entity.getOrSetPersisting(
-    context: SerializationContext,
+    serializationContext: SerializationContext,
     kClass: KClass<out T> = T::class,
     default: () -> T,
 ): T {
-    return get(kClass) ?: default().also { setPersisting(context, it, kClass) }
+    return get(serializationContext, kClass) ?: default().also { setPersisting(serializationContext, it, kClass) }
 }
 
+/**
+ * 获取所有持久化组件
+ *
+ * @param context 序列化上下文
+ * @return 持久化组件集合
+ */
 fun Entity.getAllPersisting(context: SerializationContext): Set<Component> {
     val persistingComponents = mutableSetOf<Component>()
-    val persistableComponentId = context.world.components.id<Persistable>()
+    val services = WorldServices(context.world)
+    val persistableComponentId = services.components.id<Persistable>()
 
-    context.world.entityService.runOn(this) { entityIndex ->
-        val archetype = context.world.archetypeService.getArchetype(entityIndex)
-        archetype.archetypeType.forEach { relation ->
+    services.entityService.runOn(this) { entityIndex ->
+        archetypeType.forEach { relation ->
             if (relation.kind == persistableComponentId) {
-                val component = context.world.relationService.getRelation(this, relation)
+                val component = services.relationService.getRelation(this@Entity.getAllPersisting, relation)
                 if (component != null && component is Component) {
                     persistingComponents.add(component)
                 }
@@ -57,23 +86,80 @@ fun Entity.getAllPersisting(context: SerializationContext): Set<Component> {
         }
     }
 
-        return persistingComponents
-    }
+    return persistingComponents
 }
 
+/**
+ * 获取所有非持久化组件
+ *
+ * @param context 序列化上下文
+ * @return 非持久化组件集合
+ */
 fun Entity.getAllNotPersisting(context: SerializationContext): Set<Component> {
-    val allComponents = getAll()
+    val allComponents = getAll(context)
     val persistingComponents = getAllPersisting(context)
     return allComponents - persistingComponents
 }
 
+/**
+ * 标记实体为已持久化
+ *
+ * @param context 序列化上下文
+ */
 fun Entity.markAsPersisted(context: SerializationContext) {
     val persistingComponents = getAllPersisting(context)
     persistingComponents.forEach { component ->
-        val persistableRelation = Relation(
-            kind = context.world.components.id<Persistable>(),
-            target = this
-        )
-        context.world.relationService.addRelation(this, persistableRelation, Persistable().updateHash(component))
+        Persistable().updateHash(component)
     }
+}
+
+/**
+ * 获取实体的所有组件
+ *
+ * @param context 序列化上下文
+ * @return 所有组件集合
+ */
+fun Entity.getAll(context: SerializationContext): Set<Component> {
+    val components = mutableSetOf<Component>()
+    val services = WorldServices(context.world)
+
+    services.entityService.runOn(this) { entityIndex ->
+        archetypeType.forEach { relation ->
+            val component = services.relationService.getRelation(this@Entity.getAll, relation)
+            if (component != null && component is Component) {
+                components.add(component)
+            }
+        }
+    }
+    return components
+}
+
+/**
+ * 获取单个组件
+ *
+ * @param context 序列化上下文
+ * @param kClass 组件类型
+ * @return 组件实例或 null
+ */
+fun <T : Component> Entity.get(context: SerializationContext, kClass: KClass<out T>): T? {
+    val services = WorldServices(context.world)
+    var result: T? = null
+
+    services.entityService.runOn(this) { entityIndex ->
+        archetypeType.forEach { relation ->
+            val component = services.relationService.getRelation(this@Entity.get, relation)
+            if (component != null && kClass.isInstance(component)) {
+                result = component as T
+                return@forEach
+            }
+        }
+    }
+    return result
+}
+
+/**
+ * 内联版本的获取组件（用于测试）
+ */
+inline fun <reified T : Component> Entity.get(context: SerializationContext): T? {
+    return get(context, T::class)
 }

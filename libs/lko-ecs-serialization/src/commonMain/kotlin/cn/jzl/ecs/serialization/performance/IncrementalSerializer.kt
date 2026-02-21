@@ -1,17 +1,25 @@
 package cn.jzl.ecs.serialization.performance
 
-import cn.jzl.ecs.World
 import cn.jzl.ecs.component.Component
 import cn.jzl.ecs.entity.Entity
+import cn.jzl.ecs.relation.kind
 import cn.jzl.ecs.serialization.core.SerializationContext
 import cn.jzl.ecs.serialization.entity.Persistable
-import kotlinx.serialization.KSerializer
+import cn.jzl.ecs.serialization.entity.setPersisting
+import cn.jzl.ecs.serialization.internal.WorldServices
+import kotlinx.serialization.json.Json
 
+/**
+ * 增量序列化器
+ *
+ * 只序列化发生变化的组件，提高性能
+ */
 class IncrementalSerializer(
     private val context: SerializationContext
 ) {
     private val lastSerializedState = mutableMapOf<Entity, EntitySnapshot>()
     private val lastDeserializedState = mutableMapOf<String, EntitySnapshot>()
+    private val services = WorldServices(context.world)
 
     fun serializeIncremental(entity: Entity): ByteArray? {
         val currentSnapshot = createSnapshot(entity)
@@ -30,11 +38,11 @@ class IncrementalSerializer(
         val lastSnapshot = lastDeserializedState[entityId]
 
         if (lastSnapshot != null && !hasChanged(lastSnapshot, snapshot)) {
-            return lastSnapshot.entity
+            return lastSnapshot.entity ?: error("Entity not found in snapshot")
         }
 
         val entity = restoreEntity(snapshot)
-        lastDeserializedState[entityId] = snapshot
+        lastDeserializedState[entityId] = snapshot.copy(entity = entity)
         return entity
     }
 
@@ -63,15 +71,16 @@ class IncrementalSerializer(
     private fun createSnapshot(entity: Entity): EntitySnapshot {
         val components = mutableMapOf<String, ComponentSnapshot>()
 
-        context.world.entityService.runOn(entity) { entityIndex ->
-            val archetype = context.world.archetypeService.getArchetype(entityIndex)
-            archetype.archetypeType.forEach { relation ->
-                val component = context.world.relationService.getRelation(entity, relation)
+        services.entityService.runOn(entity) { entityIndex ->
+            archetypeType.forEach { relation ->
+                val component = services.relationService.getRelation(entity, relation)
                 if (component != null && component is Component) {
-                    val persistable = context.world.relationService.getRelation(entity, relation) as? Persistable
+                    val persistableComponentId = services.components.id<Persistable>()
+                    val hasPersistable = archetypeType.any { it.kind == persistableComponentId }
+                    val hash = if (hasPersistable) component.hashCode() else 0
                     components[relation.kind.data.toString()] = ComponentSnapshot(
                         component = component,
-                        hash = persistable?.hash ?: 0
+                        hash = hash
                     )
                 }
             }
@@ -93,30 +102,34 @@ class IncrementalSerializer(
 
     private fun serializeEntity(entity: Entity, snapshot: EntitySnapshot): ByteArray {
         val components = snapshot.components.values.map { it.component }
-        return kotlinx.serialization.json.Json.encodeToString(
-            kotlinx.serialization.serializer<List<Component>>(),
+        return Json.encodeToString(
+            Json.serializersModule.serializer(),
             components
         ).encodeToByteArray()
     }
 
     private fun deserializeSnapshot(data: ByteArray): EntitySnapshot {
         val jsonString = data.decodeToString()
-        val components = kotlinx.serialization.json.Json.decodeFromString<List<ComponentSnapshot>>(
-            kotlinx.serialization.serializer(),
+        val components: List<Component> = Json.decodeFromString(
+            Json.serializersModule.serializer(),
             jsonString
         )
 
         val componentMap = mutableMapOf<String, ComponentSnapshot>()
-        components.forEach { componentMap[it.component::class.simpleName ?: "unknown"] = it }
+        components.forEach { component ->
+            componentMap[component::class.simpleName ?: "unknown"] = ComponentSnapshot(
+                component = component,
+                hash = component.hashCode()
+            )
+        }
 
         return EntitySnapshot(null, componentMap)
     }
 
     private fun restoreEntity(snapshot: EntitySnapshot): Entity {
-        val entity = context.world.entity {
+        val entity = context.world.entity { e ->
             snapshot.components.values.forEach { componentSnapshot ->
-                set(componentSnapshot.component)
-                setPersisting(componentSnapshot.component)
+                e.setPersisting(context, componentSnapshot.component)
             }
         }
 
@@ -128,7 +141,6 @@ class IncrementalSerializer(
         val components: Map<String, ComponentSnapshot>
     )
 
-    @kotlinx.serialization.Serializable
     data class ComponentSnapshot(
         val component: Component,
         val hash: Int
