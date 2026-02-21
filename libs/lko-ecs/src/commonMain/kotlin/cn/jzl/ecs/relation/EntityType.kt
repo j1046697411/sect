@@ -90,9 +90,13 @@ value class EntityType(private val data: LongArray) : Sequence<Relation> {
      * 添加关系，返回新的实体类型
      *
      * @param relation 要添加的关系
-     * @return 新的实体类型实例
+     * @return 新的实体类型实例，如果关系已存在则返回当前实例
      */
-    operator fun plus(relation: Relation): EntityType = EntityType(data + relation.data)
+    operator fun plus(relation: Relation): EntityType {
+        // 如果关系已存在，返回当前实例，避免重复
+        if (relation in this) return this
+        return EntityType(data + relation.data)
+    }
 
     /**
      * 移除关系，返回新的实体类型

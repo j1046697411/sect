@@ -6,9 +6,11 @@ import cn.jzl.ecs.addon.Phase
 import cn.jzl.ecs.addon.WorldSetup
 import cn.jzl.ecs.addon.createAddon
 import cn.jzl.ecs.archetype.ArchetypeService
+import cn.jzl.ecs.component.OnEntityDestroyed
 import cn.jzl.ecs.component.componentAddon
 import cn.jzl.ecs.entity.*
 import cn.jzl.ecs.family.FamilyService
+import cn.jzl.ecs.observer.emit
 import cn.jzl.ecs.observer.observeAddon
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.Query
@@ -157,12 +159,20 @@ fun World.instanceOf(prefab: Entity, configuration: EntityCreateContext.(Entity)
 /**
  * 销毁实体
  *
- * 从世界中移除实体及其所有组件
+ * 从世界中移除实体及其所有组件，触发 OnEntityDestroyed 事件
  *
  * @param entity 要销毁的实体
  */
 fun World.destroy(entity: Entity) {
-    TODO("Not yet implemented")
+    if (entity !in entityStore) return
+
+    emit<OnEntityDestroyed>(entity)
+
+    entityService.runOn(entity) { entityIndex ->
+        table.removeAt(entityIndex)
+    }
+
+    entityStore.destroy(entity)
 }
 
 /**

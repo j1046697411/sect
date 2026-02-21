@@ -1,11 +1,11 @@
 {
   "usage": {
-    "solutions:需求文档一致性检查方法.md": 1,
+    "solutions:需求文档一致性检查方法.md": 2,
     "solutions:ecs-query-性能优化.md": 3,
     "conventions:宗门修真录术语规范.md": 1,
     "conventions:游戏可玩性设计混合型政策体系.md": 2,
     "solutions:游戏可玩性设计时间加速功能.md": 0,
-    "solutions:游戏可玩性设计隐形难度曲线.md": 0,
+    "solutions:游戏可玩性设计隐形难度曲线.md": 1,
     "lessons:游戏可玩性设计境界补偿机制.md": 0,
     "solutions:游戏可玩性设计里程碑进度显示.md": 0,
     "solutions:游戏可玩性设计政策效果反馈.md": 0,
@@ -20,7 +20,7 @@
     "solutions:经济系统设计玩家参与机制.md": 2,
     "solutions:设施系统设计设施分类与种类.md": 0,
     "solutions:设施系统设计设施功能与互动.md": 0,
-    "solutions:设施系统设计设施价值平衡.md": 0,
+    "solutions:设施系统设计设施价值平衡.md": 1,
     "solutions:角色系统设计属性体系.md": 0,
     "solutions:角色系统设计资质系统.md": 0,
     "solutions:角色系统设计ai行为系统.md": 0,
@@ -29,12 +29,14 @@
     "solutions:功法系统设计功法分类与学习.md": 0,
     "solutions:功法系统设计功法效果与传承.md": 0,
     "conventions:战斗系统设计战斗机制与类型.md": 0,
-    "solutions:战斗系统设计战斗结果与ai.md": 0
+    "solutions:战斗系统设计战斗结果与ai.md": 1,
+    "conventions:角色层级ai控制范围定义.md": 0,
+    "conventions:弟子晋升选拔机制.md": 0
   },
   "relations": {
     "conventions:游戏可玩性设计混合型政策体系.md": [
       "solutions:ecs-query-性能优化.md"
     ]
   },
-  "updated": "2026-02-19T18:11:42.157167"
+  "updated": "2026-02-21T21:12:55.001826"
 }

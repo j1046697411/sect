@@ -13,8 +13,8 @@ class GameState {
     private var _currentTime: GameTime = GameTime()
     val currentTime: GameTime get() = _currentTime
 
-    // 当前季节
-    private var _currentSeason: Season = Season.SPRING
+    // 当前季节 - 根据当前时间计算
+    private var _currentSeason: Season = calculateSeason(GameTime().month)
     val currentSeason: Season get() = _currentSeason
 
     // 游戏是否暂停

@@ -49,14 +49,19 @@ class EntityStoreImpl : EntityStore {
     /**
      * 使用指定 ID 创建实体
      *
-     * 注意：此方法尚未实现
+     * 用于从保存状态恢复实体时使用特定 ID。
+     * 如果指定 ID 已被使用（活跃实体中已存在），则抛出 IllegalArgumentException。
      *
      * @param entityId 指定的实体 ID
      * @return 创建的实体
-     * @throws NotImplementedError 始终抛出
+     * @throws IllegalArgumentException 如果指定 ID 已被使用
      */
     override fun create(entityId: Int): Entity {
-        TODO("Not yet implemented")
+        require(entityId !in activeEntities) { "Entity ID $entityId is already in use" }
+        val entity = Entity(entityId, 0)
+        activeEntities.set(entityId)
+        currentId.getAndIncrement()
+        return entity
     }
 
     /**

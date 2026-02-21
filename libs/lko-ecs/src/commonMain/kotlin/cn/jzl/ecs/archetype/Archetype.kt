@@ -118,7 +118,7 @@ data class Archetype(
     operator fun plus(relation: Relation): Archetype {
         return componentAddEdges.getOrPut(relation.data) {
             archetypeProvider.getArchetype(archetypeType + relation).also {
-                it.componentRemoveEdges.put(relation.data, it)
+                it.componentRemoveEdges.put(relation.data, this)
             }
         }
     }
@@ -134,7 +134,7 @@ data class Archetype(
     operator fun minus(relation: Relation): Archetype {
         return componentRemoveEdges.getOrPut(relation.data) {
             archetypeProvider.getArchetype(archetypeType - relation).also {
-                it.componentAddEdges.put(relation.data, it)
+                it.componentAddEdges.put(relation.data, this)
             }
         }
     }

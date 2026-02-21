@@ -4,6 +4,7 @@ import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.engine.SectWorld
 import cn.jzl.sect.core.time.toDisplayString
+import cn.jzl.sect.engine.state.GameState
 import kotlin.test.*
 
 /**
@@ -14,6 +15,8 @@ class TimeSystemTest : EntityRelationContext {
 
     @BeforeTest
     fun setup() {
+        // 重置 GameState 单例，确保测试之间相互独立
+        GameState.resetInstance()
         world = SectWorld.create("Test Sect")
     }
 
