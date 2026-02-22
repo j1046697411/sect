@@ -110,7 +110,7 @@ fun App() {
  * 宗门总览页面
  */
 @Composable
-fun OverviewPage(viewModel: SectViewModel = viewModel()) {
+fun OverviewPage(viewModel: SectViewModel) {
     val sectInfo by viewModel.sectInfo.collectAsState()
     val discipleStats by viewModel.discipleStats.collectAsState()
     
@@ -227,7 +227,7 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier) {
  * 弟子管理页面
  */
 @Composable
-fun DisciplesPage(viewModel: DiscipleViewModel = viewModel()) {
+fun DisciplesPage(viewModel: DiscipleViewModel) {
     val discipleList by viewModel.discipleList.collectAsState()
     val currentFilter by viewModel.currentFilter.collectAsState()
     
