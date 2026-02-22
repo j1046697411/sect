@@ -21,6 +21,10 @@ import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.time.GameTime
 import cn.jzl.sect.core.resource.ResourceProduction
+import cn.jzl.sect.core.quest.QuestComponent
+import cn.jzl.sect.core.quest.QuestExecutionComponent
+import cn.jzl.sect.core.quest.EvaluationComponent
+import cn.jzl.sect.core.quest.PolicyComponent
 
 // 集中注册第一阶段所需的组件类型
 object SectAddon {
@@ -60,6 +64,12 @@ object SectAddon {
 
             // 资源相关
             world.componentId<ResourceProduction>()
+
+            // 任务相关
+            world.componentId<QuestComponent>()
+            world.componentId<QuestExecutionComponent>()
+            world.componentId<EvaluationComponent>()
+            world.componentId<PolicyComponent>()
         }
     }
 }
