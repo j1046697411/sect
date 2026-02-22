@@ -608,6 +608,14 @@ fun DiscipleRow(position: String, realm: String, age: String, status: String) {
  */
 @Composable
 fun QuestsPage(gameViewModel: GameViewModel) {
+    val pendingTasks by gameViewModel.pendingTasks.collectAsState()
+    val completedTasks by gameViewModel.completedTasks.collectAsState()
+    val candidates by gameViewModel.candidates.collectAsState()
+
+    var showPublishDialog by remember { mutableStateOf(false) }
+    var showCandidatesDialog by remember { mutableStateOf(false) }
+    var selectedTaskId by remember { mutableStateOf<Long?>(null) }
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -617,14 +625,38 @@ fun QuestsPage(gameViewModel: GameViewModel) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
+        // 操作按钮
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(onClick = { showPublishDialog = true }) {
+                Text("发布选拔任务")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // 任务统计
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StatCard(value = "0", label = "进行中", modifier = Modifier.weight(1f))
-            StatCard(value = "0", label = "待审批", modifier = Modifier.weight(1f))
-            StatCard(value = "0", label = "已完成", modifier = Modifier.weight(1f))
+            StatCard(
+                value = pendingTasks.count { it.status == TaskStatus.IN_PROGRESS }.toString(),
+                label = "进行中",
+                modifier = Modifier.weight(1f)
+            )
+            StatCard(
+                value = pendingTasks.count { it.status == TaskStatus.PENDING_APPROVAL }.toString(),
+                label = "待审批",
+                modifier = Modifier.weight(1f)
+            )
+            StatCard(
+                value = completedTasks.size.toString(),
+                label = "已完成",
+                modifier = Modifier.weight(1f)
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -643,8 +675,181 @@ fun QuestsPage(gameViewModel: GameViewModel) {
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
-                Text("暂无任务", style = MaterialTheme.typography.bodyMedium)
+                if (pendingTasks.isEmpty()) {
+                    Text("暂无待处理任务", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    pendingTasks.forEach { task ->
+                        TaskItem(
+                            task = task,
+                            onApprove = {
+                                gameViewModel.approveTask(task.id, true)
+                                // 执行任务
+                                gameViewModel.executeTask(task.id)
+                                // 加载候选人
+                                gameViewModel.loadCandidates(task.id)
+                                selectedTaskId = task.id
+                                showCandidatesDialog = true
+                            },
+                            onReject = { gameViewModel.approveTask(task.id, false) }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
             }
+        }
+    }
+
+    // 发布任务对话框
+    if (showPublishDialog) {
+        AlertDialog(
+            onDismissRequest = { showPublishDialog = false },
+            title = { Text("发布选拔任务") },
+            text = { Text("确定要发布外门弟子选拔任务吗？") },
+            confirmButton = {
+                Button(onClick = {
+                    gameViewModel.publishSelectionTask()
+                    showPublishDialog = false
+                }) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showPublishDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+
+    // 候选人对话框
+    if (showCandidatesDialog) {
+        AlertDialog(
+            onDismissRequest = { showCandidatesDialog = false },
+            title = { Text("晋升候选人") },
+            text = {
+                Column {
+                    if (candidates.isEmpty()) {
+                        Text("暂无候选人")
+                    } else {
+                        Text("请选择要晋升的弟子：", style = MaterialTheme.typography.bodySmall)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        candidates.forEach { candidate ->
+                            CandidateItem(candidate = candidate)
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val selectedIds = candidates.map { it.id }
+                        if (selectedIds.isNotEmpty()) {
+                            gameViewModel.promoteDisciples(selectedIds)
+                        }
+                        showCandidatesDialog = false
+                    }
+                ) {
+                    Text("确认晋升")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showCandidatesDialog = false }) {
+                    Text("关闭")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun TaskItem(task: TaskInfo, onApprove: () -> Unit, onReject: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(task.title, style = MaterialTheme.typography.titleSmall)
+                    Text(task.description, style = MaterialTheme.typography.bodySmall)
+                    Text("创建时间: ${task.createdAt}", style = MaterialTheme.typography.bodySmall)
+                }
+                TaskStatusBadge(status = task.status)
+            }
+
+            if (task.status == TaskStatus.PENDING_APPROVAL) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(onClick = onApprove, modifier = Modifier.weight(1f)) {
+                        Text("批准")
+                    }
+                    Button(
+                        onClick = onReject,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("拒绝")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TaskStatusBadge(status: TaskStatus) {
+    val (text, color) = when (status) {
+        TaskStatus.PENDING_APPROVAL -> "待审批" to MaterialTheme.colorScheme.error
+        TaskStatus.APPROVED -> "已批准" to MaterialTheme.colorScheme.primary
+        TaskStatus.IN_PROGRESS -> "进行中" to MaterialTheme.colorScheme.tertiary
+        TaskStatus.COMPLETED -> "已完成" to MaterialTheme.colorScheme.secondary
+        TaskStatus.CANCELLED -> "已取消" to MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    Surface(
+        color = color.copy(alpha = 0.15f),
+        shape = MaterialTheme.shapes.extraSmall
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            color = color,
+            style = MaterialTheme.typography.labelSmall
+        )
+    }
+}
+
+@Composable
+fun CandidateItem(candidate: CandidateInfo) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp)
+        ) {
+            Text(candidate.name, style = MaterialTheme.typography.titleSmall)
+            Text("评分: ${String.format("%.2f", candidate.score)}", style = MaterialTheme.typography.bodySmall)
+            Text(
+                "完成度: ${(candidate.completionRate * 100).toInt()}% | " +
+                "效率: ${(candidate.efficiency * 100).toInt()}% | " +
+                "质量: ${(candidate.quality * 100).toInt()}%",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
@@ -654,8 +859,35 @@ fun QuestsPage(gameViewModel: GameViewModel) {
  */
 @Composable
 fun PolicyPage(gameViewModel: GameViewModel) {
-    var selectionCycle by remember { mutableStateOf(1) } // 0: 3年, 1: 5年, 2: 10年
-    var selectionRatio by remember { mutableStateOf(0.05f) }
+    val currentPolicy by gameViewModel.currentPolicy.collectAsState()
+
+    // 根据当前政策初始化状态
+    var selectionCycle by remember(currentPolicy) {
+        mutableStateOf(
+            when (currentPolicy?.selectionCycle) {
+                3 -> 0
+                5 -> 1
+                10 -> 2
+                else -> 1
+            }
+        )
+    }
+    var selectionRatio by remember(currentPolicy) {
+        mutableStateOf(currentPolicy?.selectionRatio ?: 0.05f)
+    }
+    var cultivationRatio by remember(currentPolicy) {
+        mutableStateOf((currentPolicy?.cultivationRatio ?: 40).toFloat())
+    }
+    var facilityRatio by remember(currentPolicy) {
+        mutableStateOf((currentPolicy?.facilityRatio ?: 30).toFloat())
+    }
+    var reserveRatio by remember(currentPolicy) {
+        mutableStateOf((currentPolicy?.reserveRatio ?: 30).toFloat())
+    }
+
+    // 计算总和
+    val totalRatio = cultivationRatio + facilityRatio + reserveRatio
+    val isValid = kotlin.math.abs(totalRatio - 100f) < 0.1f
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -716,13 +948,67 @@ fun PolicyPage(gameViewModel: GameViewModel) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
+                // 资源分配
+                Text(
+                    text = "资源分配比例",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                Text("修炼: ${cultivationRatio.toInt()}%")
+                Slider(
+                    value = cultivationRatio,
+                    onValueChange = { cultivationRatio = it },
+                    valueRange = 0f..100f
+                )
+
+                Text("设施: ${facilityRatio.toInt()}%")
+                Slider(
+                    value = facilityRatio,
+                    onValueChange = { facilityRatio = it },
+                    valueRange = 0f..100f
+                )
+
+                Text("储备: ${reserveRatio.toInt()}%")
+                Slider(
+                    value = reserveRatio,
+                    onValueChange = { reserveRatio = it },
+                    valueRange = 0f..100f
+                )
+
+                // 验证总和
+                if (!isValid) {
+                    Text(
+                        text = "警告: 资源分配总和必须为100% (当前: ${totalRatio.toInt()}%)",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // 保存按钮
                 Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.CenterEnd
                 ) {
                     Button(
-                        onClick = { }
+                        onClick = {
+                            val cycleYears = when (selectionCycle) {
+                                0 -> 3
+                                1 -> 5
+                                else -> 10
+                            }
+                            val policyInfo = PolicyInfo(
+                                selectionCycle = cycleYears,
+                                selectionRatio = selectionRatio,
+                                cultivationRatio = cultivationRatio.toInt(),
+                                facilityRatio = facilityRatio.toInt(),
+                                reserveRatio = reserveRatio.toInt()
+                            )
+                            gameViewModel.savePolicy(policyInfo)
+                        },
+                        enabled = isValid
                     ) {
                         Text("保存配置")
                     }
