@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cn.jzl.ecs.World
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.sect.SectPositionType
-import cn.jzl.sect.engine.SectWorld
+import cn.jzl.sect.engine.WorldProvider
 import cn.jzl.sect.engine.service.WorldQueryService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,8 +18,8 @@ import kotlinx.coroutines.launch
  */
 class DiscipleViewModel : ViewModel() {
 
-    // ECS世界实例
-    private val world: World = SectWorld.create("青云宗")
+    // 通过WorldProvider获取World实例
+    private val world: World = WorldProvider.world
     private val queryService = WorldQueryService(world)
 
     // 弟子列表状态

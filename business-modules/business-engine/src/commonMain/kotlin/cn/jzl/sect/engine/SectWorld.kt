@@ -55,6 +55,9 @@ object SectWorld {
      * 创建宗门世界
      * @param sectName 宗门名称
      * @return 配置好的 ECS 世界
+     *
+     * 注意：生产代码应使用 WorldProvider.initialize()，
+     * 此方法主要用于测试和WorldProvider内部调用
      */
     @OptIn(ECSDsl::class)
     fun create(sectName: String): World {

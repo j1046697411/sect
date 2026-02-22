@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.engine.WorldProvider
 import cn.jzl.sect.viewmodel.DiscipleViewModel
 import cn.jzl.sect.viewmodel.SectViewModel
 
@@ -25,9 +26,16 @@ enum class PageType {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
+    // 初始化World（只执行一次）
+    LaunchedEffect(Unit) {
+        if (!WorldProvider.isInitialized) {
+            WorldProvider.initialize("青云宗")
+        }
+    }
+
     MaterialTheme {
         var currentPage by remember { mutableStateOf(PageType.OVERVIEW) }
-        
+
         // 创建ViewModel
         val sectViewModel: SectViewModel = viewModel { SectViewModel() }
         val discipleViewModel: DiscipleViewModel = viewModel { DiscipleViewModel() }

@@ -3,7 +3,7 @@ package cn.jzl.sect.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.jzl.ecs.World
-import cn.jzl.sect.engine.SectWorld
+import cn.jzl.sect.engine.WorldProvider
 import cn.jzl.sect.engine.service.WorldQueryService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,8 +16,8 @@ import kotlinx.coroutines.launch
  */
 class SectViewModel : ViewModel() {
 
-    // ECS世界实例
-    private val world: World = SectWorld.create("青云宗")
+    // 通过WorldProvider获取World实例
+    private val world: World = WorldProvider.world
     private val queryService = WorldQueryService(world)
 
     // 宗门信息状态
