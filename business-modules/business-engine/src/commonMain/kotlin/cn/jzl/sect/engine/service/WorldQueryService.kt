@@ -8,6 +8,7 @@ import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
+import cn.jzl.sect.core.demo.Name
 import cn.jzl.sect.core.disciple.Age
 import cn.jzl.sect.core.facility.Facility
 import cn.jzl.sect.core.resource.ResourceProduction
@@ -45,6 +46,7 @@ class WorldQueryService(private val world: World) {
      */
     data class DiscipleInfo(
         val id: Long,
+        val name: String,              // 弟子姓名
         val position: SectPositionType,
         val realm: Realm,
         val layer: Int,
@@ -119,6 +121,7 @@ class WorldQueryService(private val world: World) {
             disciples.add(
                 DiscipleInfo(
                     id = ctx.entity.id.toLong(),
+                    name = ctx.name.name,
                     position = ctx.position.position,
                     realm = ctx.cultivation.realm,
                     layer = ctx.cultivation.layer,
@@ -237,6 +240,7 @@ class WorldQueryService(private val world: World) {
      * 查询上下文 - 弟子
      */
     class DiscipleQueryContext(world: World) : EntityQueryContext(world) {
+        val name: Name by component()
         val position: SectPositionInfo by component()
         val cultivation: CultivationProgress by component()
         val age: Age by component()

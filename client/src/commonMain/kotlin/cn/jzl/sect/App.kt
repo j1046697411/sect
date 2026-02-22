@@ -402,7 +402,30 @@ fun DiscipleCard(disciple: DiscipleUiModel) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // 顶部：职务标签和境界
+            // 顶部：名字和境界
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 名字
+                Text(
+                    text = disciple.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+
+                // 境界
+                Text(
+                    text = disciple.realmDisplay,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 第二行：职务标签和状态
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -421,25 +444,7 @@ fun DiscipleCard(disciple: DiscipleUiModel) {
                     )
                 }
 
-                // 境界
-                Text(
-                    text = disciple.realmDisplay,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 当前状态（行为）
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "状态: ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // 当前状态（行为）
                 Surface(
                     color = behaviorColor.copy(alpha = 0.15f),
                     shape = MaterialTheme.shapes.extraSmall

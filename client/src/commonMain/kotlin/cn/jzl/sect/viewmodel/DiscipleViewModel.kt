@@ -65,6 +65,7 @@ class DiscipleViewModel : ViewModel() {
                 allDisciples = disciples.map { dto ->
                     DiscipleUiModel(
                         id = dto.id,
+                        name = dto.name,
                         position = dto.position,
                         positionDisplay = getPositionDisplay(dto.position),
                         realm = dto.realm,
@@ -100,6 +101,7 @@ class DiscipleViewModel : ViewModel() {
                 allDisciples = disciples.map { dto ->
                     DiscipleUiModel(
                         id = dto.id,
+                        name = dto.name,
                         position = dto.position,
                         positionDisplay = getPositionDisplay(dto.position),
                         realm = dto.realm,
@@ -214,6 +216,7 @@ class DiscipleViewModel : ViewModel() {
  */
 data class DiscipleUiModel(
     val id: Long,
+    val name: String,                // 弟子姓名
     val position: SectPositionType,
     val positionDisplay: String,
     val realm: Realm,

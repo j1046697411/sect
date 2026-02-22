@@ -14,6 +14,7 @@ import cn.jzl.sect.core.ai.Personality8
 import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.core.demo.Name
 import cn.jzl.sect.core.vitality.Vitality
 import cn.jzl.sect.core.vitality.Spirit
 import cn.jzl.sect.core.disciple.Age
@@ -97,6 +98,7 @@ object SectWorld {
 
         // 掌门
         world.entity {
+            it.addComponent(Name(name = "青云子"))
             it.addComponent(CultivationProgress(
                 realm = Realm.FOUNDATION,
                 layer = 5,
@@ -117,9 +119,13 @@ object SectWorld {
             it.addComponent(SectLoyalty(value = 100))
         }
 
+        // 长老名字列表
+        val elderNames = listOf("玄明", "玉清")
+
         // 长老（2 名）
         repeat(2) { i ->
             world.entity {
+                it.addComponent(Name(name = elderNames[i]))
                 it.addComponent(CultivationProgress(
                     realm = Realm.FOUNDATION,
                     layer = 3,
@@ -141,10 +147,14 @@ object SectWorld {
             }
         }
 
+        // 内门弟子名字列表
+        val innerNames = listOf("李明", "王强", "张伟", "刘洋", "陈杰", "杨帆", "赵鹏", "黄磊")
+
         // 内门弟子（8 名）- 筑基期1-3层，有完整AI性格属性
         repeat(8) { i ->
             val layer = 1 + (i % 3) // 1,2,3,1,2,3,1,2
             world.entity {
+                it.addComponent(Name(name = innerNames[i]))
                 it.addComponent(CultivationProgress(
                     realm = Realm.FOUNDATION,
                     layer = layer,
@@ -168,10 +178,14 @@ object SectWorld {
             }
         }
 
+        // 外门弟子名字列表
+        val outerNames = listOf("周文", "吴武", "郑飞", "孙翔", "钱进")
+
         // 外门弟子（5 名）
         repeat(5) { i ->
             val layer = 3 + (i % 3) // 3,4,5,3,4
             world.entity {
+                it.addComponent(Name(name = outerNames[i]))
                 it.addComponent(CultivationProgress(
                     realm = Realm.QI_REFINING,
                     layer = layer,
