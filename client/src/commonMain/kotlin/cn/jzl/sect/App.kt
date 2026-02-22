@@ -1,5 +1,6 @@
 package cn.jzl.sect
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -300,6 +301,10 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
     val discipleList by viewModel.discipleList.collectAsState()
     val currentFilter by viewModel.currentFilter.collectAsState()
 
+    // 详情对话框状态
+    var showDetailDialog by remember { mutableStateOf(false) }
+    var selectedDisciple by remember { mutableStateOf<DiscipleUiModel?>(null) }
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -359,7 +364,13 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(disciples.size) { index ->
-                            DiscipleCard(disciple = disciples[index])
+                            DiscipleCard(
+                                disciple = disciples[index],
+                                onClick = {
+                                    selectedDisciple = disciples[index]
+                                    showDetailDialog = true
+                                }
+                            )
                         }
                     }
                 }
@@ -369,13 +380,21 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
             }
         }
     }
+
+    // 弟子详情对话框
+    if (showDetailDialog && selectedDisciple != null) {
+        DiscipleDetailDialog(
+            disciple = selectedDisciple!!,
+            onDismiss = { showDetailDialog = false }
+        )
+    }
 }
 
 /**
  * 弟子卡片组件
  */
 @Composable
-fun DiscipleCard(disciple: DiscipleUiModel) {
+fun DiscipleCard(disciple: DiscipleUiModel, onClick: () -> Unit = {}) {
     val positionColor = when (disciple.position) {
         SectPositionType.LEADER -> MaterialTheme.colorScheme.primary
         SectPositionType.ELDER -> MaterialTheme.colorScheme.tertiary
@@ -393,7 +412,9 @@ fun DiscipleCard(disciple: DiscipleUiModel) {
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -558,6 +579,166 @@ fun DiscipleCard(disciple: DiscipleUiModel) {
                 }
             }
         }
+    }
+}
+
+/**
+ * 弟子详情对话框
+ */
+@Composable
+fun DiscipleDetailDialog(disciple: DiscipleUiModel, onDismiss: () -> Unit) {
+    val positionColor = when (disciple.position) {
+        SectPositionType.LEADER -> MaterialTheme.colorScheme.primary
+        SectPositionType.ELDER -> MaterialTheme.colorScheme.tertiary
+        SectPositionType.DISCIPLE_INNER -> MaterialTheme.colorScheme.secondary
+        SectPositionType.DISCIPLE_OUTER -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val behaviorColor = when (disciple.currentBehavior) {
+        "修炼中" -> MaterialTheme.colorScheme.primary
+        "工作中" -> MaterialTheme.colorScheme.tertiary
+        "休息中" -> MaterialTheme.colorScheme.secondary
+        "社交中" -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(disciple.name, style = MaterialTheme.typography.headlineSmall)
+                Surface(
+                    color = positionColor.copy(alpha = 0.2f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = disciple.positionDisplay,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = positionColor
+                    )
+                }
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // 境界和状态
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "境界: ${disciple.realmDisplay}",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Surface(
+                        color = behaviorColor.copy(alpha = 0.15f),
+                        shape = MaterialTheme.shapes.extraSmall
+                    ) {
+                        Text(
+                            text = disciple.currentBehavior,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = behaviorColor
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 基本信息
+                DetailItem(label = "年龄", value = "${disciple.age}岁")
+                DetailItem(label = "职务", value = disciple.positionDisplay)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 修为详情
+                Text(
+                    text = "修为详情",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                DetailItem(label = "当前修为", value = "${disciple.cultivation}/${disciple.maxCultivation}")
+                DetailItem(label = "突破进度", value = "${(disciple.cultivationProgress * 100).toInt()}%")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 生命和精力
+                Text(
+                    text = "状态",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+                DetailItem(label = "生命值", value = "${disciple.health}/${disciple.maxHealth}")
+                DetailItem(label = "精力值", value = "${disciple.spirit}/${disciple.maxSpirit}")
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 进度条
+                Text("修为进度", style = MaterialTheme.typography.bodySmall)
+                LinearProgressIndicator(
+                    progress = { disciple.cultivationProgress },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.secondary
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("生命值", style = MaterialTheme.typography.bodySmall)
+                LinearProgressIndicator(
+                    progress = { disciple.health.toFloat() / disciple.maxHealth.toFloat() },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = if (disciple.health < disciple.maxHealth * 0.3f) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("精力值", style = MaterialTheme.typography.bodySmall)
+                LinearProgressIndicator(
+                    progress = { disciple.spirit.toFloat() / disciple.maxSpirit.toFloat() },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.tertiary
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("关闭")
+            }
+        }
+    )
+}
+
+/**
+ * 详情项组件
+ */
+@Composable
+fun DetailItem(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }
 
