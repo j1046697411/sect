@@ -93,7 +93,11 @@ class GameLoop(
         if (speed == GameSpeed.PAUSE) return
 
         // 计算本次tick应该推进的时间（小时）
-        val hoursToAdvance = speed.daysPerSecond / 24
+        // 每秒执行 1000/tickIntervalMs 次tick
+        // 每次tick推进 (daysPerSecond * 24) / (1000/tickIntervalMs) 小时
+        val ticksPerSecond = 1000f / speed.tickIntervalMs.toFloat()
+        val hoursPerTick = (speed.daysPerSecond * 24) / ticksPerSecond
+        val hoursToAdvance = hoursPerTick.toInt().coerceAtLeast(1)
 
         // 1. 推进时间系统
         systems.timeSystem.advance(hoursToAdvance)
