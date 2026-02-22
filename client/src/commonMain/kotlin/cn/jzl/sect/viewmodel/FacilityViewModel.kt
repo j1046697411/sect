@@ -8,6 +8,8 @@ import cn.jzl.sect.building.systems.FacilityProductionSystem
 import cn.jzl.sect.building.systems.FacilityUpgradeSystem
 import cn.jzl.sect.core.facility.*
 import cn.jzl.sect.engine.WorldProvider
+import cn.jzl.sect.facility.systems.FacilityUsageSystem
+import cn.jzl.sect.facility.systems.FacilityValueCalculator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,7 +28,13 @@ data class FacilityUiModel(
     val productionType: ResourceType,
     val productionAmount: Int,
     val maintenanceCost: Int,
-    val canUpgrade: Boolean
+    val canUpgrade: Boolean,
+    // 扩展字段
+    val valueScore: Int = 0,
+    val valueLevel: String = "",
+    val roi: Double = 0.0,
+    val paybackPeriod: Int = 0,
+    val recommendation: String = ""
 )
 
 /**
@@ -57,6 +65,8 @@ class FacilityViewModel : ViewModel() {
     private val constructionSystem = FacilityConstructionSystem(world)
     private val upgradeSystem = FacilityUpgradeSystem(world)
     private val productionSystem = FacilityProductionSystem(world)
+    private val valueCalculator = FacilityValueCalculator()
+    private val usageSystem = FacilityUsageSystem()
 
     // 设施列表状态
     private val _facilityList = MutableStateFlow<FacilityListUiState>(FacilityListUiState.Loading)
@@ -73,6 +83,14 @@ class FacilityViewModel : ViewModel() {
     // 总维护费用
     private val _totalMaintenanceCost = MutableStateFlow(0)
     val totalMaintenanceCost: StateFlow<Int> = _totalMaintenanceCost.asStateFlow()
+
+    // 设施价值报告
+    private val _facilityValueReports = MutableStateFlow<Map<Long, FacilityValueReportUiModel>>(emptyMap())
+    val facilityValueReports: StateFlow<Map<Long, FacilityValueReportUiModel>> = _facilityValueReports.asStateFlow()
+
+    // 设施使用结果
+    private val _usageResult = MutableStateFlow<FacilityUsageResultUiModel?>(null)
+    val usageResult: StateFlow<FacilityUsageResultUiModel?> = _usageResult.asStateFlow()
 
     init {
         loadFacilities()
@@ -111,7 +129,14 @@ class FacilityViewModel : ViewModel() {
                 productionType = ResourceType.CULTIVATION_SPEED,
                 productionAmount = 10,
                 maintenanceCost = 5,
-                canUpgrade = true
+                canUpgrade = true,
+                valueScore = calculateFacilityValue(100, 5, 1.0, FacilityType.CULTIVATION_ROOM),
+                valueLevel = valueCalculator.assessValueLevel(
+                    calculateFacilityValue(100, 5, 1.0, FacilityType.CULTIVATION_ROOM)
+                ).getDisplayName(),
+                roi = calculateROI(100, 10, 5),
+                paybackPeriod = calculatePaybackDays(100, 10, 5),
+                recommendation = generateRecommendation(calculateROI(100, 10, 5), calculatePaybackDays(100, 10, 5))
             ),
             FacilityUiModel(
                 id = 2,
@@ -121,9 +146,16 @@ class FacilityViewModel : ViewModel() {
                 maxLevel = 10,
                 isActive = true,
                 productionType = ResourceType.SPIRIT_STONE,
-                productionAmount = 22, // 20 * 1.1 (等级加成)
+                productionAmount = 22,
                 maintenanceCost = 10,
-                canUpgrade = true
+                canUpgrade = true,
+                valueScore = calculateFacilityValue(200, 10, 1.1, FacilityType.SPIRIT_STONE_MINE),
+                valueLevel = valueCalculator.assessValueLevel(
+                    calculateFacilityValue(200, 10, 1.1, FacilityType.SPIRIT_STONE_MINE)
+                ).getDisplayName(),
+                roi = calculateROI(200, 22, 10),
+                paybackPeriod = calculatePaybackDays(200, 22, 10),
+                recommendation = generateRecommendation(calculateROI(200, 22, 10), calculatePaybackDays(200, 22, 10))
             ),
             FacilityUiModel(
                 id = 3,
@@ -135,9 +167,133 @@ class FacilityViewModel : ViewModel() {
                 productionType = ResourceType.CONTRIBUTION_POINT,
                 productionAmount = 10,
                 maintenanceCost = 6,
-                canUpgrade = true
+                canUpgrade = true,
+                valueScore = calculateFacilityValue(120, 6, 1.0, FacilityType.CONTRIBUTION_HALL),
+                valueLevel = valueCalculator.assessValueLevel(
+                    calculateFacilityValue(120, 6, 1.0, FacilityType.CONTRIBUTION_HALL)
+                ).getDisplayName(),
+                roi = calculateROI(120, 10, 6),
+                paybackPeriod = calculatePaybackDays(120, 10, 6),
+                recommendation = generateRecommendation(calculateROI(120, 10, 6), calculatePaybackDays(120, 10, 6))
             )
         )
+    }
+
+    /**
+     * 计算设施价值
+     */
+    private fun calculateFacilityValue(
+        constructionCost: Int,
+        maintenanceCost: Int,
+        productionEfficiency: Double,
+        facilityType: FacilityType
+    ): Int {
+        return valueCalculator.calculateFacilityValue(
+            constructionCost = constructionCost,
+            maintenanceCost = maintenanceCost,
+            productionEfficiency = productionEfficiency,
+            facilityType = facilityType
+        )
+    }
+
+    /**
+     * 计算投资回报率
+     */
+    private fun calculateROI(constructionCost: Int, dailyRevenue: Int, dailyMaintenance: Int): Double {
+        return valueCalculator.calculateROI(constructionCost, dailyRevenue, dailyMaintenance)
+    }
+
+    /**
+     * 计算回收期（天数）
+     */
+    private fun calculatePaybackDays(constructionCost: Int, dailyRevenue: Int, dailyMaintenance: Int): Int {
+        return valueCalculator.calculatePaybackPeriod(constructionCost, dailyRevenue, dailyMaintenance)
+    }
+
+    /**
+     * 生成投资建议
+     */
+    private fun generateRecommendation(roi: Double, paybackPeriod: Int): String {
+        return when {
+            roi > 0.1 && paybackPeriod < 30 -> "强烈推荐"
+            roi > 0.05 && paybackPeriod < 60 -> "推荐"
+            roi > 0.02 && paybackPeriod < 100 -> "一般"
+            else -> "不推荐"
+        }
+    }
+
+    /**
+     * 生成设施价值报告
+     */
+    fun generateFacilityValueReport(facility: FacilityUiModel): FacilityValueReportUiModel {
+        val valueLevel = valueCalculator.assessValueLevel(facility.valueScore)
+
+        return FacilityValueReportUiModel(
+            facilityName = facility.name,
+            valueScore = facility.valueScore,
+            valueLevel = valueLevel.name,
+            valueLevelDisplay = valueLevel.getDisplayName(),
+            roi = facility.roi,
+            roiDisplay = String.format("%.1f%%", facility.roi * 100),
+            paybackPeriod = facility.paybackPeriod,
+            paybackPeriodDisplay = if (facility.paybackPeriod == Int.MAX_VALUE) "无法回收" else "${facility.paybackPeriod}天",
+            recommendation = facility.recommendation,
+            strategicValue = valueCalculator.calculateStrategicValue(facility.type)
+        )
+    }
+
+    /**
+     * 使用设施
+     */
+    fun useFacility(facilityId: Long, discipleId: Long, facilityType: FacilityType) {
+        viewModelScope.launch {
+            try {
+                // 检查是否可以使用
+                val canUse = usageSystem.canUseFacility(discipleId, facilityId)
+                if (!canUse) {
+                    _usageResult.value = FacilityUsageResultUiModel(
+                        success = false,
+                        message = "该弟子当前无法使用此设施",
+                        consumedResources = emptyMap(),
+                        gainedBenefits = emptyMap()
+                    )
+                    return@launch
+                }
+
+                // 获取使用成本
+                val cost = usageSystem.getUsageCost(facilityType, 1)
+
+                // 使用设施
+                val result = usageSystem.useFacility(discipleId, facilityId, facilityType)
+
+                _usageResult.value = FacilityUsageResultUiModel(
+                    success = result.success,
+                    message = result.message,
+                    consumedResources = mapOf(
+                        "贡献点" to cost.contributionPoints,
+                        "灵石" to cost.spiritStones
+                    ),
+                    gainedBenefits = mapOf(
+                        "修炼效率" to result.cultivationEfficiencyBonus,
+                        "资源产出" to result.resourceOutputBonus
+                    )
+                )
+            } catch (e: Exception) {
+                _usageResult.value = FacilityUsageResultUiModel(
+                    success = false,
+                    message = "使用设施失败: ${e.message}",
+                    consumedResources = emptyMap(),
+                    gainedBenefits = emptyMap()
+                )
+            }
+        }
+    }
+
+    /**
+     * 清除使用结果
+     */
+    fun clearUsageResult() {
+        _usageResult.value = null
     }
 
     /**

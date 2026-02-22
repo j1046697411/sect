@@ -59,6 +59,10 @@ kotlin {
             implementation(projects.libs.lkoCore)
             implementation(projects.businessModules.businessEngine)
             implementation(projects.businessModules.businessBuilding)
+            implementation(projects.businessModules.businessSkill)
+            implementation(projects.businessModules.businessCombat)
+            implementation(projects.businessModules.businessDisciples)
+            implementation(projects.businessModules.businessFacility)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

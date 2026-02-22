@@ -23,6 +23,7 @@ import cn.jzl.sect.core.facility.*
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.engine.*
 import cn.jzl.sect.engine.WorldProvider
+import cn.jzl.sect.pages.SkillsPage
 import cn.jzl.sect.viewmodel.*
 
 /**
@@ -34,6 +35,7 @@ enum class PageType {
     BUILDINGS,     // 建筑管理
     QUESTS,        // 任务大厅
     POLICY,        // 政策配置
+    SKILLS,        // 功法管理
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,6 +60,8 @@ fun App() {
         val gameViewModel: GameViewModel = viewModel { GameViewModel() }
         val sectViewModel: SectViewModel = viewModel { SectViewModel() }
         val discipleViewModel: DiscipleViewModel = viewModel { DiscipleViewModel() }
+        val skillViewModel: SkillViewModel = viewModel { SkillViewModel() }
+        val combatViewModel: CombatViewModel = viewModel { CombatViewModel() }
 
         // 游戏状态
         val gameState by gameViewModel.gameState.collectAsState()
@@ -167,6 +171,7 @@ fun App() {
                             PageType.BUILDINGS -> FacilitiesPage()
                             PageType.QUESTS -> QuestsPage(gameViewModel)
                             PageType.POLICY -> PolicyPage(gameViewModel)
+                            PageType.SKILLS -> SkillsPage(skillViewModel, discipleViewModel)
                         }
                     }
                 }
@@ -253,6 +258,12 @@ fun BottomNavigationBar(
             label = { Text("政策") },
             selected = currentPage == PageType.POLICY,
             onClick = { onPageSelected(PageType.POLICY) }
+        )
+        NavigationBarItem(
+            icon = { Text("📖") },
+            label = { Text("功法") },
+            selected = currentPage == PageType.SKILLS,
+            onClick = { onPageSelected(PageType.SKILLS) }
         )
     }
 }
@@ -390,6 +401,14 @@ fun CollapsibleNavigationRail(
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.POLICY,
                 onClick = { onPageSelected(PageType.POLICY) }
+            )
+
+            NavItem(
+                icon = "📖",
+                label = "功法",
+                isExpanded = isExpanded,
+                isSelected = currentPage == PageType.SKILLS,
+                onClick = { onPageSelected(PageType.SKILLS) }
             )
         }
     }
