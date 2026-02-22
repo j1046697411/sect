@@ -70,7 +70,7 @@ kotlin {
 
 compose.desktop {
     application {
-        mainClass = "cn.jzl.sect.demo.DemoMainKt"
+        mainClass = "cn.jzl.sect.MainKt"
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
