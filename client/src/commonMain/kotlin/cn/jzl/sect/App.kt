@@ -105,10 +105,11 @@ fun App() {
                     )
                 }
 
-                // 主内容区
+                // 中间主内容区
                 Box(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .weight(1f)
+                        .fillMaxHeight()
                         .padding(16.dp)
                 ) {
                     when (currentPage) {
@@ -118,6 +119,17 @@ fun App() {
                         PageType.POLICY -> PolicyPage(gameViewModel)
                     }
                 }
+
+                // 右侧信息面板
+                RightPanel(
+                    sectViewModel = sectViewModel,
+                    discipleViewModel = discipleViewModel,
+                    gameViewModel = gameViewModel,
+                    modifier = Modifier
+                        .width(280.dp)
+                        .fillMaxHeight()
+                        .padding(vertical = 16.dp, horizontal = 8.dp)
+                )
             }
         }
     }
@@ -173,6 +185,118 @@ fun GameSpeedControl(
                 )
             }
         }
+    }
+}
+
+/**
+ * 右侧面板组件
+ */
+@Composable
+fun RightPanel(
+    sectViewModel: SectViewModel,
+    discipleViewModel: DiscipleViewModel,
+    gameViewModel: GameViewModel,
+    modifier: Modifier = Modifier
+) {
+    val sectInfo by sectViewModel.sectInfo.collectAsState()
+    val discipleStats by sectViewModel.discipleStats.collectAsState()
+    val gameState by gameViewModel.gameState.collectAsState()
+    val gameSpeed by gameViewModel.gameSpeed.collectAsState()
+
+    Card(
+        modifier = modifier,
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 游戏状态
+            Text(
+                text = "游戏状态",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            InfoRow("状态", if (gameState == GameState.Running) "运行中" else "已暂停")
+            InfoRow("速度", gameSpeed.displayName)
+
+            Divider()
+
+            // 宗门信息
+            Text(
+                text = "宗门信息",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            when (val state = sectInfo) {
+                is SectViewModel.SectInfoUiState.Success -> {
+                    InfoRow("名称", state.data.name)
+                    InfoRow("灵石", "${state.data.spiritStones}")
+                    InfoRow("贡献点", "${state.data.contributionPoints}")
+                }
+                else -> {
+                    Text("加载中...", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            Divider()
+
+            // 弟子统计
+            Text(
+                text = "弟子统计",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            when (val state = discipleStats) {
+                is SectViewModel.DiscipleStatsUiState.Success -> {
+                    InfoRow("总数", "${state.data.totalCount}")
+                    InfoRow("内门", "${state.data.innerCount}")
+                    InfoRow("外门", "${state.data.outerCount}")
+                    InfoRow("长老", "${state.data.elderCount}")
+                }
+                else -> {
+                    Text("加载中...", style = MaterialTheme.typography.bodySmall)
+                }
+            }
+
+            Divider()
+
+            // 快速操作
+            Text(
+                text = "快速操作",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Button(
+                onClick = { gameViewModel.publishSelectionTask() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("发布选拔任务")
+            }
+        }
+    }
+}
+
+/**
+ * 信息行组件
+ */
+@Composable
+fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 
