@@ -341,40 +341,25 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 弟子列表
+        // 弟子卡片网格
         when (val state = discipleList) {
             is DiscipleViewModel.DiscipleListUiState.Loading -> {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
             is DiscipleViewModel.DiscipleListUiState.Success -> {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
+                val disciples = state.data
+                if (disciples.isEmpty()) {
+                    Text("暂无弟子", style = MaterialTheme.typography.bodyLarge)
+                } else {
+                    // 使用LazyVerticalGrid展示卡片
+                    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                        columns = androidx.compose.foundation.lazy.grid.GridCells.Adaptive(minSize = 200.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        // 表头
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text("职务", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                            Text("境界", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                            Text("年龄", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                            Text("状态", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                        }
-
-                        Divider(modifier = Modifier.padding(vertical = 8.dp))
-
-                        // 数据行
-                        state.data.forEach { disciple ->
-                            DiscipleRow(
-                                position = disciple.positionDisplay,
-                                realm = disciple.realmDisplay,
-                                age = "${disciple.age}岁",
-                                status = "${disciple.health}/${disciple.maxHealth}"
-                            )
+                        items(disciples.size) { index ->
+                            DiscipleCard(disciple = disciples[index])
                         }
                     }
                 }
@@ -382,6 +367,128 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
             is DiscipleViewModel.DiscipleListUiState.Error -> {
                 Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
             }
+        }
+    }
+}
+
+/**
+ * 弟子卡片组件
+ */
+@Composable
+fun DiscipleCard(disciple: DiscipleUiModel) {
+    val positionColor = when (disciple.position) {
+        SectPositionType.LEADER -> MaterialTheme.colorScheme.primary
+        SectPositionType.ELDER -> MaterialTheme.colorScheme.tertiary
+        SectPositionType.DISCIPLE_INNER -> MaterialTheme.colorScheme.secondary
+        SectPositionType.DISCIPLE_OUTER -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // 顶部：职务标签和境界
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 职务标签
+                Surface(
+                    color = positionColor.copy(alpha = 0.2f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = disciple.positionDisplay,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = positionColor
+                    )
+                }
+
+                // 境界
+                Text(
+                    text = disciple.realmDisplay,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 年龄
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "年龄: ",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${disciple.age}岁",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 生命值
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "生命: ",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${disciple.health}/${disciple.maxHealth}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (disciple.health < disciple.maxHealth * 0.3f) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 精力值
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "精力: ",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "${disciple.spirit}/${disciple.maxSpirit}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 进度条：生命
+            LinearProgressIndicator(
+                progress = { disciple.health.toFloat() / disciple.maxHealth.toFloat() },
+                modifier = Modifier.fillMaxWidth(),
+                color = if (disciple.health < disciple.maxHealth * 0.3f) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
+            )
         }
     }
 }
