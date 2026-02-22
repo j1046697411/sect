@@ -7,12 +7,12 @@ import cn.jzl.ecs.component.componentId
 import cn.jzl.ecs.entity.*
 import kotlin.test.*
 
-class CultivationTest : EntityRelationContext {
+class CultivationProgressTest : EntityRelationContext {
     override lateinit var world: World
 
     private val testAddon = createAddon<Unit>("test") {
         components {
-            world.componentId<Cultivation>()
+            world.componentId<CultivationProgress>()
         }
     }
 
@@ -29,9 +29,9 @@ class CultivationTest : EntityRelationContext {
     }
 
     @Test
-    fun testCultivationCreation() {
+    fun testCultivationProgressCreation() {
         val entity = world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.QI_REFINING,
                 layer = 5,
                 cultivation = 5000L,
@@ -39,7 +39,7 @@ class CultivationTest : EntityRelationContext {
             ))
         }
 
-        val cultivation = entity.getComponent<Cultivation>()
+        val cultivation = entity.getComponent<CultivationProgress>()
         assertEquals(Realm.QI_REFINING, cultivation.realm)
         assertEquals(5, cultivation.layer)
         assertEquals(5000L, cultivation.cultivation)

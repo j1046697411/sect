@@ -8,7 +8,7 @@ import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.resource.ResourceProduction
 import cn.jzl.sect.core.resource.ResourceType
-import cn.jzl.sect.core.sect.SectResource
+import cn.jzl.sect.core.sect.SectTreasury
 
 /**
  * 资源生产系统 - 处理宗门的资源产出（灵脉、矿脉等）
@@ -27,19 +27,19 @@ class ResourceProductionSystem(private val world: World) {
             val production = ctx.production
             if (production.isActive) {
                 val output = production.calculateOutput()
-                val sect = ctx.sectResource
+                val treasury = ctx.sectTreasury
 
                 // 更新宗门资源
                 val newSpiritStones = when (production.type) {
-                    ResourceType.SPIRIT_STONE -> sect.spiritStones + output
-                    else -> sect.spiritStones
+                    ResourceType.SPIRIT_STONE -> treasury.spiritStones + output
+                    else -> treasury.spiritStones
                 }
 
                 world.editor(ctx.entity) {
                     it.addComponent(
-                        SectResource(
+                        SectTreasury(
                             spiritStones = newSpiritStones,
-                            contributionPoints = sect.contributionPoints
+                            contributionPoints = treasury.contributionPoints
                         )
                     )
                 }
@@ -100,7 +100,7 @@ class ResourceProductionSystem(private val world: World) {
      */
     class ProductionQueryContext(world: World) : EntityQueryContext(world) {
         val production: ResourceProduction by component()
-        val sectResource: SectResource by component()
+        val sectTreasury: SectTreasury by component()
     }
 }
 

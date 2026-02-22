@@ -7,12 +7,12 @@ import cn.jzl.ecs.component.componentId
 import cn.jzl.ecs.entity.*
 import kotlin.test.*
 
-class BehaviorStateTest : EntityRelationContext {
+class CurrentBehaviorTest : EntityRelationContext {
     override lateinit var world: World
 
     private val testAddon = createAddon<Unit>("test") {
         components {
-            world.componentId<BehaviorState>()
+            world.componentId<CurrentBehavior>()
         }
     }
 
@@ -27,14 +27,14 @@ class BehaviorStateTest : EntityRelationContext {
     }
 
     @Test
-    fun testBehaviorStateCreation() {
+    fun testCurrentBehaviorCreation() {
         val entity = world.entity {
-            it.addComponent(BehaviorState(
-                currentBehavior = BehaviorType.CULTIVATE
+            it.addComponent(CurrentBehavior(
+                type = BehaviorType.CULTIVATE
             ))
         }
 
-        val behavior = entity.getComponent<BehaviorState>()
-        assertEquals(BehaviorType.CULTIVATE, behavior.currentBehavior)
+        val behavior = entity.getComponent<CurrentBehavior>()
+        assertEquals(BehaviorType.CULTIVATE, behavior.type)
     }
 }

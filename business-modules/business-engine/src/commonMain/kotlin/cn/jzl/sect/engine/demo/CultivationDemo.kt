@@ -10,7 +10,7 @@ import cn.jzl.sect.resource.systems.ResourceProductionSystem
 import cn.jzl.sect.resource.systems.ResourceConsumptionSystem
 import cn.jzl.sect.facility.systems.SectStatusSystem
 import cn.jzl.sect.facility.systems.SectStatus
-import cn.jzl.sect.core.sect.SectPosition
+import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.core.time.toDisplayString
 
 /**
@@ -205,12 +205,12 @@ class CultivationDemo {
 /**
  * 职务显示名称扩展
  */
-private val SectPosition.displayName: String
+private val SectPositionType.displayName: String
     get() = when (this) {
-        SectPosition.DISCIPLE_OUTER -> "外门弟子"
-        SectPosition.DISCIPLE_INNER -> "内门弟子"
-        SectPosition.ELDER -> "长老"
-        SectPosition.LEADER -> "掌门"
+        SectPositionType.DISCIPLE_OUTER -> "外门弟子"
+        SectPositionType.DISCIPLE_INNER -> "内门弟子"
+        SectPositionType.ELDER -> "长老"
+        SectPositionType.LEADER -> "掌门"
     }
 
 /**

@@ -7,7 +7,9 @@ import cn.jzl.ecs.relation.kind
 import cn.jzl.ecs.serialization.core.SerializationContext
 import cn.jzl.ecs.serialization.entity.EntitySerializer
 import cn.jzl.ecs.serialization.internal.WorldServices
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.PolymorphicSerializer
 
 /**
  * 原型感知序列化器
@@ -92,7 +94,7 @@ class ArchetypeSerializer(
         }
 
         return Json.encodeToString(
-            Json.serializersModule.serializer(),
+            ListSerializer(PolymorphicSerializer(Component::class)),
             components
         ).encodeToByteArray()
     }

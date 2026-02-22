@@ -1,9 +1,9 @@
 package cn.jzl.sect.core.disciple
 
 /**
- * 忠诚度组件 - 表示弟子对宗门的忠诚程度
+ * 宗门忠诚度组件 - 表示弟子对宗门的忠诚程度
  */
-data class Loyalty(
+data class SectLoyalty(
     val value: Int = 100,           // 忠诚度值 (0-100)
     val consecutiveUnpaidMonths: Int = 0  // 连续未发放俸禄月数
 )
@@ -34,7 +34,7 @@ val LoyaltyLevel.displayName: String
 /**
  * 获取忠诚度等级
  */
-fun Loyalty.getLevel(): LoyaltyLevel {
+fun SectLoyalty.getLevel(): LoyaltyLevel {
     return when {
         value >= 80 -> LoyaltyLevel.DEVOTED      // 忠心耿耿
         value >= 60 -> LoyaltyLevel.LOYAL        // 忠诚
@@ -47,6 +47,6 @@ fun Loyalty.getLevel(): LoyaltyLevel {
 /**
  * 是否可能叛逃
  */
-fun Loyalty.mayDefect(): Boolean {
+fun SectLoyalty.mayDefect(): Boolean {
     return value <= 10 || consecutiveUnpaidMonths >= 6
 }

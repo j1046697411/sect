@@ -14,14 +14,14 @@ import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.ecs.world
-import cn.jzl.sect.core.ai.BehaviorState
+import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
 import cn.jzl.sect.core.config.GameConfig
-import cn.jzl.sect.core.cultivation.Cultivation
+import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.disciple.Attribute
-import cn.jzl.sect.core.sect.Position
-import cn.jzl.sect.core.sect.SectPosition
+import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.core.sect.SectPositionInfo
+import cn.jzl.sect.core.sect.SectPositionType
 import kotlin.test.*
 
 /**
@@ -36,10 +36,10 @@ class CultivationSystemTest : EntityRelationContext {
         val testWorld = world {
             WorldSetupInstallHelper.install(this, createAddon<Unit>("test") {
                 components {
-                    world.componentId<Cultivation>()
-                    world.componentId<Attribute>()
-                    world.componentId<Position>()
-                    world.componentId<BehaviorState>()
+                    world.componentId<CultivationProgress>()
+                    world.componentId<Talent>()
+                    world.componentId<SectPositionInfo>()
+                    world.componentId<CurrentBehavior>()
                 }
             })
         }
@@ -62,19 +62,19 @@ class CultivationSystemTest : EntityRelationContext {
     fun testCultivationGain() {
         // Given: 创建一个修炼者实体
         val entity = world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.MORTAL,
                 layer = 1,
                 cultivation = 0L,
                 maxCultivation = 1000L
             ))
-            it.addComponent(Attribute(
+            it.addComponent(Talent(
                 physique = 50,
                 comprehension = 50,
                 fortune = 50
             ))
-            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
         }
 
         // When: 推进修炼时间
@@ -97,19 +97,19 @@ class CultivationSystemTest : EntityRelationContext {
     fun testCultivationGainWithHighAttributes() {
         // Given: 创建一个高资质的修炼者（设置足够大的maxCultivation避免突破）
         world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.MORTAL,
                 layer = 1,
                 cultivation = 0L,
                 maxCultivation = 10000L
             ))
-            it.addComponent(Attribute(
+            it.addComponent(Talent(
                 physique = 100,
                 comprehension = 100,
                 fortune = 50
             ))
-            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
         }
 
         // When: 推进1小时
@@ -118,7 +118,7 @@ class CultivationSystemTest : EntityRelationContext {
         // Then: 高资质应该获得更多修为
         val query = world.query { CultivatorQueryContext(world) }
         query.forEach { ctx ->
-            if (ctx.attribute.physique == 100) {
+            if (ctx.talent.physique == 100) {
                 // 基础增长 = (100 * 100 / 100) * 1 * 10 = 1000
                 assertEquals(1000L, ctx.cultivation.cultivation, "高资质修炼者应该获得更多修为")
             }
@@ -129,19 +129,19 @@ class CultivationSystemTest : EntityRelationContext {
     fun testCultivationGainWithLowAttributes() {
         // Given: 创建一个低资质的修炼者
         world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.MORTAL,
                 layer = 1,
                 cultivation = 0L,
                 maxCultivation = 1000L
             ))
-            it.addComponent(Attribute(
+            it.addComponent(Talent(
                 physique = 10,
                 comprehension = 10,
                 fortune = 50
             ))
-            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
         }
 
         // When: 推进1小时
@@ -150,7 +150,7 @@ class CultivationSystemTest : EntityRelationContext {
         // Then: 低资质应该获得较少修为，但至少为1
         val query = world.query { CultivatorQueryContext(world) }
         query.forEach { ctx ->
-            if (ctx.attribute.physique == 10) {
+            if (ctx.talent.physique == 10) {
                 // 基础增长 = (10 * 10 / 100) * 10 = 10，但最低为1
                 assertTrue(ctx.cultivation.cultivation >= 1, "修为增长至少为1")
             }
@@ -161,19 +161,19 @@ class CultivationSystemTest : EntityRelationContext {
     fun testMultipleHoursCultivation() {
         // Given: 创建一个修炼者（设置足够大的maxCultivation避免突破）
         world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.MORTAL,
                 layer = 1,
                 cultivation = 0L,
                 maxCultivation = 10000L
             ))
-            it.addComponent(Attribute(
+            it.addComponent(Talent(
                 physique = 50,
                 comprehension = 50,
                 fortune = 50
             ))
-            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
         }
 
         // When: 推进10小时
@@ -182,7 +182,7 @@ class CultivationSystemTest : EntityRelationContext {
         // Then: 修为应该按比例增加
         val query = world.query { CultivatorQueryContext(world) }
         query.forEach { ctx ->
-            if (ctx.attribute.physique == 50) {
+            if (ctx.talent.physique == 50) {
                 // 基础增长 = (50 * 50 / 100) * 10 * 10 = 2500
                 assertEquals(2500L, ctx.cultivation.cultivation, "10小时修炼应该获得2500修为")
             }
@@ -193,19 +193,19 @@ class CultivationSystemTest : EntityRelationContext {
     fun testBreakthroughLayer() {
         // Given: 创建一个即将突破层数的修炼者
         world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.MORTAL,
                 layer = 1,
                 cultivation = 990L,
                 maxCultivation = 1000L
             ))
-            it.addComponent(Attribute(
+            it.addComponent(Talent(
                 physique = 100,
                 comprehension = 100,
                 fortune = 100
             ))
-            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
         }
 
         // When: 推进足够时间触发突破
@@ -214,7 +214,7 @@ class CultivationSystemTest : EntityRelationContext {
         // Then: 应该突破到第2层
         val query = world.query { CultivatorQueryContext(world) }
         query.forEach { ctx ->
-            if (ctx.attribute.fortune == 100) {
+            if (ctx.talent.fortune == 100) {
                 assertEquals(2, ctx.cultivation.layer, "应该突破到第2层")
                 assertTrue(ctx.cultivation.cultivation < 1000, "突破后修为应该清零或保留剩余")
             }
@@ -228,19 +228,19 @@ class CultivationSystemTest : EntityRelationContext {
         val maxLayer = config.cultivation.maxLayerPerRealm
 
         world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.MORTAL,
                 layer = maxLayer,
                 cultivation = 990L,
                 maxCultivation = 1000L
             ))
-            it.addComponent(Attribute(
+            it.addComponent(Talent(
                 physique = 100,
                 comprehension = 100,
                 fortune = 100
             ))
-            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
         }
 
         // When: 推进足够时间触发突破
@@ -249,7 +249,7 @@ class CultivationSystemTest : EntityRelationContext {
         // Then: 应该突破到炼气期第1层
         val query = world.query { CultivatorQueryContext(world) }
         query.forEach { ctx ->
-            if (ctx.attribute.fortune == 100) {
+            if (ctx.talent.fortune == 100) {
                 assertEquals(Realm.QI_REFINING, ctx.cultivation.realm, "应该突破到炼气期")
                 assertEquals(1, ctx.cultivation.layer, "应该回到第1层")
             }
@@ -260,19 +260,19 @@ class CultivationSystemTest : EntityRelationContext {
     fun testBreakthroughEventGenerated() {
         // Given: 创建一个即将突破的修炼者
         world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.MORTAL,
                 layer = 1,
                 cultivation = 995L,
                 maxCultivation = 1000L
             ))
-            it.addComponent(Attribute(
+            it.addComponent(Talent(
                 physique = 100,
                 comprehension = 100,
                 fortune = 100
             ))
-            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
         }
 
         // When: 推进修炼
@@ -284,17 +284,17 @@ class CultivationSystemTest : EntityRelationContext {
         assertEquals(Realm.MORTAL, event.oldRealm, "旧境界应该是凡人")
         assertEquals(1, event.oldLayer, "旧层数应该是1")
         assertEquals(2, event.newLayer, "新层数应该是2")
-        assertEquals(SectPosition.DISCIPLE_OUTER, event.position, "职位应该是外门弟子")
+        assertEquals(SectPositionType.DISCIPLE_OUTER, event.position, "职位应该是外门弟子")
     }
 
     @Test
     fun testBreakthroughEventDisplay() {
         // Given: 创建一个突破事件
         val entity = world.entity {
-            it.addComponent(Cultivation())
-            it.addComponent(Attribute())
-            it.addComponent(Position(position = SectPosition.DISCIPLE_INNER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+            it.addComponent(CultivationProgress())
+            it.addComponent(Talent())
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_INNER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
         }
 
         val event = CultivationSystem.BreakthroughEvent(
@@ -303,7 +303,7 @@ class CultivationSystemTest : EntityRelationContext {
             oldLayer = 9,
             newRealm = Realm.QI_REFINING,
             newLayer = 1,
-            position = SectPosition.DISCIPLE_INNER
+            position = SectPositionType.DISCIPLE_INNER
         )
 
         // When: 获取显示字符串
@@ -321,19 +321,19 @@ class CultivationSystemTest : EntityRelationContext {
         // Given: 创建多个修炼者
         repeat(3) { i ->
             world.entity {
-                it.addComponent(Cultivation(
+                it.addComponent(CultivationProgress(
                     realm = Realm.MORTAL,
                     layer = 1,
                     cultivation = (i * 100).toLong(),
                     maxCultivation = 1000L
                 ))
-                it.addComponent(Attribute(
+                it.addComponent(Talent(
                     physique = 40 + i * 10,
                     comprehension = 40 + i * 10,
                     fortune = 50
                 ))
-                it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-                it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
+                it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+                it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
             }
         }
 
@@ -344,7 +344,7 @@ class CultivationSystemTest : EntityRelationContext {
         val query = world.query { CultivatorQueryContext(world) }
         var count = 0
         query.forEach { ctx ->
-            if (ctx.position.position == SectPosition.DISCIPLE_OUTER) {
+            if (ctx.position.position == SectPositionType.DISCIPLE_OUTER) {
                 count++
                 assertTrue(ctx.cultivation.cultivation > 0, "每个修炼者都应该有修为")
             }
@@ -369,9 +369,9 @@ class CultivationSystemTest : EntityRelationContext {
      * 查询上下文 - 修炼者
      */
     class CultivatorQueryContext(world: World) : EntityQueryContext(world) {
-        val cultivation: Cultivation by component()
-        val attribute: Attribute by component()
-        val position: Position by component()
+        val cultivation: CultivationProgress by component()
+        val talent: Talent by component()
+        val position: SectPositionInfo by component()
     }
 
     private object WorldSetupInstallHelper {

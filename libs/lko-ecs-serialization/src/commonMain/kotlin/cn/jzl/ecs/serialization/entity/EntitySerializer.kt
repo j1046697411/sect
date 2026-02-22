@@ -1,6 +1,7 @@
 package cn.jzl.ecs.serialization.entity
 
 import cn.jzl.ecs.component.Component
+import cn.jzl.ecs.entity
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.entity.EntityCreateContext
@@ -35,7 +36,9 @@ class EntitySerializer(
     }
 
     override fun serialize(encoder: Encoder, value: Entity) {
-        val persistingComponents = getAllPersistingComponents(value)
+        val persistingComponents = with(WorldServices(context.world).createRelationContext()) {
+            getAllPersistingComponents(value)
+        }
         encoder.encodeSerializableValue(componentSerializer, persistingComponents)
     }
 
@@ -60,8 +63,7 @@ class EntitySerializer(
 }
 
 /**
- * 在实体创建上下文中设置持久化组件（简化版本，用于反序列化）
- */
+ * 在实体创建上下文中设置持久化组件（简化版本，用于反序列化） */
 context(context: EntityCreateContext)
 fun Entity.setPersisting(serializationContext: SerializationContext, component: Component): Component {
     addComponent(component)

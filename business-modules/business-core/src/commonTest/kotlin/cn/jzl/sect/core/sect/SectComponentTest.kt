@@ -13,7 +13,7 @@ class SectTest : EntityRelationContext {
     private val testAddon = createAddon<Unit>("test") {
         components {
             world.componentId<Sect>()
-            world.componentId<SectResource>()
+            world.componentId<SectTreasury>()
         }
     }
 
@@ -38,15 +38,15 @@ class SectTest : EntityRelationContext {
     }
 
     @Test
-    fun testResourceComponent() {
+    fun testSectTreasuryComponent() {
         val entity = world.entity {
-            it.addComponent(SectResource(
+            it.addComponent(SectTreasury(
                 spiritStones = 1000L,
                 contributionPoints = 500L
             ))
         }
 
-        val resource = entity.getComponent<SectResource>()
-        assertEquals(1000L, resource.spiritStones)
+        val treasury = entity.getComponent<SectTreasury>()
+        assertEquals(1000L, treasury.spiritStones)
     }
 }

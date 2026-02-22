@@ -32,6 +32,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.serialization.cbor)
+            implementation("org.jetbrains.kotlin:kotlin-reflect:2.1.10")
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

@@ -1,7 +1,10 @@
 package cn.jzl.sect.core.ai
 
-data class BehaviorState(
-    val currentBehavior: BehaviorType = BehaviorType.CULTIVATE,
-    val behaviorStartTime: Long = 0L,
+/**
+ * 当前行为组件 - 存储实体当前的行为状态
+ */
+data class CurrentBehavior(
+    val type: BehaviorType = BehaviorType.CULTIVATE,
+    val startTime: Long = 0L,
     val lastBehaviorTime: Long = 0L
 )

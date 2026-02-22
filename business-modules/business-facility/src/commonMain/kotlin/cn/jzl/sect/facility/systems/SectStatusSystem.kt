@@ -5,10 +5,10 @@ import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.config.GameConfig
-import cn.jzl.sect.core.disciple.Loyalty
-import cn.jzl.sect.core.sect.Position
+import cn.jzl.sect.core.disciple.SectLoyalty
+import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.Sect
-import cn.jzl.sect.core.sect.SectResource
+import cn.jzl.sect.core.sect.SectTreasury
 
 /**
  * 宗门状态系统 - 检测宗门健康状况和破产风险
@@ -23,12 +23,12 @@ class SectStatusSystem(private val world: World) {
      */
     fun checkSectStatus(): SectStatus {
         val sect = getSect() ?: return SectStatus.NO_SECT
-        val resource = getSectResource(sect)
+        val treasury = getSectTreasury(sect)
 
         // 检查资源状况
         val monthlyCost = estimateMonthlyCost()
         val canSurviveMonths = if (monthlyCost > 0) {
-            resource.spiritStones / monthlyCost
+            treasury.spiritStones / monthlyCost
         } else {
             Long.MAX_VALUE
         }
@@ -44,10 +44,10 @@ class SectStatusSystem(private val world: World) {
 
         return when {
             // 宗门解散：资源耗尽且没有弟子
-            resource.spiritStones <= 0 && totalDisciples == 0 -> SectStatus.DISSOLVED
+            treasury.spiritStones <= 0 && totalDisciples == 0 -> SectStatus.DISSOLVED
 
             // 宗门危急：资源耗尽或超过半数弟子有叛逃风险
-            resource.spiritStones <= 0 || rebelliousRatio > 0.5f -> SectStatus.CRITICAL
+            treasury.spiritStones <= 0 || rebelliousRatio > 0.5f -> SectStatus.CRITICAL
 
             // 宗门警告：资源不足3个月或超过1/4弟子有叛逃风险
             canSurviveMonths < 3 || rebelliousRatio > 0.25f -> SectStatus.WARNING
@@ -62,17 +62,17 @@ class SectStatusSystem(private val world: World) {
      */
     fun getFinancialSummary(): FinancialSummary {
         val sect = getSect() ?: return FinancialSummary.EMPTY
-        val resource = getSectResource(sect)
+        val treasury = getSectTreasury(sect)
         val monthlyCost = estimateMonthlyCost()
         val canSurviveMonths = if (monthlyCost > 0) {
-            resource.spiritStones / monthlyCost
+            treasury.spiritStones / monthlyCost
         } else {
             Long.MAX_VALUE
         }
 
         return FinancialSummary(
-            spiritStones = resource.spiritStones,
-            contributionPoints = resource.contributionPoints,
+            spiritStones = treasury.spiritStones,
+            contributionPoints = treasury.contributionPoints,
             monthlyCost = monthlyCost,
             canSurviveMonths = canSurviveMonths,
             totalDisciples = countTotalDisciples(),
@@ -98,7 +98,7 @@ class SectStatusSystem(private val world: World) {
     /**
      * 根据职位获取俸禄
      */
-    private fun getSalaryByPosition(position: cn.jzl.sect.core.sect.SectPosition): Long {
+    private fun getSalaryByPosition(position: cn.jzl.sect.core.sect.SectPositionType): Long {
         return config.salary.getMonthlySalary(position)
     }
 
@@ -139,15 +139,15 @@ class SectStatusSystem(private val world: World) {
     /**
      * 获取宗门资源
      */
-    private fun getSectResource(entity: cn.jzl.ecs.entity.Entity): SectResource {
-        val query = world.query { SectResourceQueryContext(this) }
-        var resource = SectResource()
+    private fun getSectTreasury(entity: cn.jzl.ecs.entity.Entity): SectTreasury {
+        val query = world.query { SectTreasuryQueryContext(this) }
+        var treasury = SectTreasury()
         query.forEach {
             if (it.entity == entity) {
-                resource = it.sectResource
+                treasury = it.sectTreasury
             }
         }
-        return resource
+        return treasury
     }
 
     /**
@@ -158,24 +158,24 @@ class SectStatusSystem(private val world: World) {
     }
 
     /**
-     * 查询上下文 - 宗门资源
+     * 查询上下文 - 宗门金库
      */
-    class SectResourceQueryContext(world: World) : EntityQueryContext(world) {
-        val sectResource: SectResource by component()
+    class SectTreasuryQueryContext(world: World) : EntityQueryContext(world) {
+        val sectTreasury: SectTreasury by component()
     }
 
     /**
      * 查询上下文 - 职位
      */
     class PositionQueryContext(world: World) : EntityQueryContext(world) {
-        val position: Position by component()
+        val position: SectPositionInfo by component()
     }
 
     /**
      * 查询上下文 - 忠诚度
      */
     class LoyaltyQueryContext(world: World) : EntityQueryContext(world) {
-        val loyalty: Loyalty by component()
+        val loyalty: SectLoyalty by component()
     }
 }
 

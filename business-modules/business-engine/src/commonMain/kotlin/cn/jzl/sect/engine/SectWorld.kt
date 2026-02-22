@@ -7,21 +7,24 @@ import cn.jzl.ecs.addon.WorldSetup
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.world
-import cn.jzl.sect.core.ai.BehaviorState
+import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
-import cn.jzl.sect.core.cultivation.Cultivation
+import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.disciple.Attribute
+import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.core.vitality.Vitality
+import cn.jzl.sect.core.vitality.Spirit
+import cn.jzl.sect.core.disciple.Age
+import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.facility.Facility
 import cn.jzl.sect.core.facility.FacilityType
-import cn.jzl.sect.core.sect.SectPosition
-import cn.jzl.sect.core.sect.Position
+import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.Sect
-import cn.jzl.sect.core.sect.SectResource
+import cn.jzl.sect.core.sect.SectTreasury
 import cn.jzl.sect.core.time.GameTime
 import cn.jzl.sect.core.resource.ResourceProduction
 import cn.jzl.sect.core.resource.ResourceType
-import cn.jzl.sect.core.disciple.Loyalty
 import cn.jzl.sect.cultivation.systems.CultivationSystem
 import cn.jzl.sect.cultivation.systems.SimpleBehaviorSystem
 import cn.jzl.sect.disciples.systems.DiscipleInfoSystem
@@ -68,7 +71,7 @@ object SectWorld {
                 leaderId = 0,
                 foundedYear = 1
             ))
-            it.addComponent(SectResource(
+            it.addComponent(SectTreasury(
                 spiritStones = 1000L,
                 contributionPoints = 0L
             ))
@@ -82,41 +85,47 @@ object SectWorld {
 
         // 掌门
         world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.FOUNDATION,
                 layer = 5,
                 cultivation = 5000L,
                 maxCultivation = 10000L
             ))
-            it.addComponent(Attribute(
+            it.addComponent(Talent(
                 physique = 70,
                 comprehension = 65,
                 fortune = 50,
-                charm = 60,
-                age = 80
+                charm = 60
             ))
-            it.addComponent(Position(position = SectPosition.LEADER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
-            it.addComponent(Loyalty(value = 100))
+            it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
+            it.addComponent(Spirit(currentSpirit = 50, maxSpirit = 50))
+            it.addComponent(Age(age = 80))
+            it.addComponent(SectPositionInfo(position = SectPositionType.LEADER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
+            it.addComponent(SectLoyalty(value = 100))
         }
 
         // 长老（2 名）
         repeat(2) { i ->
             world.entity {
-                it.addComponent(Cultivation(
+                it.addComponent(CultivationProgress(
                     realm = Realm.FOUNDATION,
                     layer = 3,
                     cultivation = 3000L,
                     maxCultivation = 10000L
                 ))
-                it.addComponent(Attribute(
+                it.addComponent(Talent(
                     physique = 55 + i * 5,
                     comprehension = 50 + i * 5,
-                    age = 60 + i * 5
+                    fortune = 45 + i * 5,
+                    charm = 50
                 ))
-                it.addComponent(Position(position = SectPosition.ELDER))
-                it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
-                it.addComponent(Loyalty(value = 90))
+                it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
+                it.addComponent(Spirit(currentSpirit = 50, maxSpirit = 50))
+                it.addComponent(Age(age = 60 + i * 5))
+                it.addComponent(SectPositionInfo(position = SectPositionType.ELDER))
+                it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
+                it.addComponent(SectLoyalty(value = 90))
             }
         }
 
@@ -124,20 +133,24 @@ object SectWorld {
         repeat(5) { i ->
             val layer = 3 + (i % 3) // 3,4,5,3,4
             world.entity {
-                it.addComponent(Cultivation(
+                it.addComponent(CultivationProgress(
                     realm = Realm.QI_REFINING,
                     layer = layer,
                     cultivation = layer * 1000L,
                     maxCultivation = 5000L
                 ))
-                it.addComponent(Attribute(
+                it.addComponent(Talent(
                     physique = 30 + i * 5,
                     comprehension = 30 + i * 5,
-                    age = 18 + i
+                    fortune = 40,
+                    charm = 45
                 ))
-                it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-                it.addComponent(BehaviorState(currentBehavior = BehaviorType.CULTIVATE))
-                it.addComponent(Loyalty(value = 80))
+                it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
+                it.addComponent(Spirit(currentSpirit = 50, maxSpirit = 50))
+                it.addComponent(Age(age = 18 + i))
+                it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+                it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
+                it.addComponent(SectLoyalty(value = 80))
             }
         }
 

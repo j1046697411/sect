@@ -4,14 +4,17 @@ import cn.jzl.ecs.World
 import cn.jzl.ecs.entity
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
-import cn.jzl.sect.core.ai.BehaviorState
+import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
-import cn.jzl.sect.core.cultivation.Cultivation
+import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.disciple.Attribute
-import cn.jzl.sect.core.disciple.Loyalty
-import cn.jzl.sect.core.sect.Position
-import cn.jzl.sect.core.sect.SectPosition
+import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.core.vitality.Vitality
+import cn.jzl.sect.core.vitality.Spirit
+import cn.jzl.sect.core.disciple.Age
+import cn.jzl.sect.core.disciple.SectLoyalty
+import cn.jzl.sect.core.sect.SectPositionInfo
+import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.engine.SectWorld
 import kotlin.test.*
 
@@ -47,8 +50,8 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         val disciples = discipleInfoSystem.getAllDisciples()
 
         // Then: 弟子应该按职位排序（掌门在前，外门在后）
-        assertEquals(SectPosition.LEADER, disciples[0].position, "第一个应该是掌门")
-        assertEquals(SectPosition.LEADER.sortOrder, disciples[0].position.sortOrder)
+        assertEquals(SectPositionType.LEADER, disciples[0].position, "第一个应该是掌门")
+        assertEquals(SectPositionType.LEADER.sortOrder, disciples[0].position.sortOrder)
 
         // 验证排序顺序
         for (i in 1 until disciples.size) {
@@ -65,10 +68,10 @@ class DiscipleInfoSystemTest : EntityRelationContext {
 
         // When: 获取所有弟子
         val disciples = discipleInfoSystem.getAllDisciples()
-        val leader = disciples.first { it.position == SectPosition.LEADER }
+        val leader = disciples.first { it.position == SectPositionType.LEADER }
 
         // Then: 掌门信息应该正确
-        assertEquals(SectPosition.LEADER, leader.position)
+        assertEquals(SectPositionType.LEADER, leader.position)
         assertEquals(Realm.FOUNDATION, leader.realm)
         assertEquals(5, leader.layer)
         assertEquals(5000L, leader.cultivation)
@@ -86,7 +89,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
 
         // When: 获取所有弟子
         val disciples = discipleInfoSystem.getAllDisciples()
-        val leader = disciples.first { it.position == SectPosition.LEADER }
+        val leader = disciples.first { it.position == SectPositionType.LEADER }
 
         // Then: 修炼进度应该正确计算（5000/10000 = 0.5）
         assertEquals(0.5f, leader.progress, 0.01f, "掌门修炼进度应该是50%")
@@ -97,9 +100,9 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界
 
         // When: 按职位筛选弟子
-        val leaders = discipleInfoSystem.getDisciplesByPosition(SectPosition.LEADER)
-        val elders = discipleInfoSystem.getDisciplesByPosition(SectPosition.ELDER)
-        val outerDisciples = discipleInfoSystem.getDisciplesByPosition(SectPosition.DISCIPLE_OUTER)
+        val leaders = discipleInfoSystem.getDisciplesByPosition(SectPositionType.LEADER)
+        val elders = discipleInfoSystem.getDisciplesByPosition(SectPositionType.ELDER)
+        val outerDisciples = discipleInfoSystem.getDisciplesByPosition(SectPositionType.DISCIPLE_OUTER)
 
         // Then: 各职位人数应该正确
         assertEquals(1, leaders.size, "应该有1个掌门")
@@ -112,7 +115,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界（没有内门弟子）
 
         // When: 查询不存在的职位
-        val innerDisciples = discipleInfoSystem.getDisciplesByPosition(SectPosition.DISCIPLE_INNER)
+        val innerDisciples = discipleInfoSystem.getDisciplesByPosition(SectPositionType.DISCIPLE_INNER)
 
         // Then: 应该返回空列表
         assertTrue(innerDisciples.isEmpty(), "应该返回空列表")
@@ -174,20 +177,24 @@ class DiscipleInfoSystemTest : EntityRelationContext {
     fun testStatisticsWithRebelliousDisciples() {
         // Given: 创建一个包含叛逆弟子的世界
         world.entity {
-            it.addComponent(Cultivation(
+            it.addComponent(CultivationProgress(
                 realm = Realm.MORTAL,
                 layer = 1,
                 cultivation = 0L,
                 maxCultivation = 100L
             ))
-            it.addComponent(Attribute(
+            it.addComponent(Talent(
                 physique = 30,
                 comprehension = 30,
-                age = 20
+                fortune = 40,
+                charm = 45
             ))
-            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-            it.addComponent(BehaviorState(currentBehavior = BehaviorType.REST))
-            it.addComponent(Loyalty(value = 10)) // 叛逆的忠诚度
+            it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
+            it.addComponent(Spirit(currentSpirit = 50, maxSpirit = 50))
+            it.addComponent(Age(age = 20))
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+            it.addComponent(CurrentBehavior(type = BehaviorType.REST))
+            it.addComponent(SectLoyalty(value = 10)) // 叛逆的忠诚度
         }
 
         // When: 获取弟子统计
@@ -204,7 +211,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
 
         // When: 获取弟子并转换为显示字符串
         val disciples = discipleInfoSystem.getAllDisciples()
-        val leader = disciples.first { it.position == SectPosition.LEADER }
+        val leader = disciples.first { it.position == SectPositionType.LEADER }
         val displayString = leader.toDisplayString()
 
         // Then: 显示字符串应该包含关键信息

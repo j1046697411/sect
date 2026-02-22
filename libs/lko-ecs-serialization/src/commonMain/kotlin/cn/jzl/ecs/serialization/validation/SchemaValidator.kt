@@ -70,14 +70,11 @@ class SchemaValidator(
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun getFieldValue(data: Any, fieldName: String): Any? {
         return try {
             val property = data::class.memberProperties.find { it.name == fieldName }
-            if (property != null) {
-                property.get(data)
-            } else {
-                null
-            }
+            (property as? kotlin.reflect.KProperty1<Any, *>)?.get(data)
         } catch (e: Exception) {
             null
         }

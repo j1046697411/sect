@@ -6,10 +6,11 @@ import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.ai.BehaviorState
+import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
-import cn.jzl.sect.core.cultivation.Cultivation
-import cn.jzl.sect.core.disciple.Attribute
+import cn.jzl.sect.core.cultivation.CultivationProgress
+import cn.jzl.sect.core.vitality.Vitality
+import cn.jzl.sect.core.vitality.Spirit
 
 /**
  * 简单行为系统 - 根据状态决定弟子行为（修炼/休息/工作）
@@ -24,18 +25,18 @@ class SimpleBehaviorSystem(private val world: World) {
         val query = world.query { BehaviorQueryContext(this) }
 
         query.forEach { ctx ->
-            val behavior = ctx.behaviorState
-            val attr = ctx.attribute
-            val cult = ctx.cultivation
+            val behavior = ctx.behavior
+            val vitality = ctx.vitality
+            val spirit = ctx.spirit
 
             // 根据状态决定行为
             val newBehavior = when {
                 // 精神力 >= 30% 且生命值 >= 30% -> 修炼
-                attr.spirit >= attr.maxSpirit * 0.3 && attr.health >= attr.maxHealth * 0.3 -> {
+                spirit.currentSpirit >= spirit.maxSpirit * 0.3 && vitality.currentHealth >= vitality.maxHealth * 0.3 -> {
                     BehaviorType.CULTIVATE
                 }
                 // 生命值 < 30% -> 休息
-                attr.health < attr.maxHealth * 0.3 -> {
+                vitality.currentHealth < vitality.maxHealth * 0.3 -> {
                     BehaviorType.REST
                 }
                 // 其他情况 -> 工作
@@ -48,44 +49,46 @@ class SimpleBehaviorSystem(private val world: World) {
             when (newBehavior) {
                 BehaviorType.CULTIVATE -> {
                     // 修炼：消耗精神力，增加修为（由 CultivationSystem 处理）
-                    val newSpirit = (attr.spirit - 5).coerceAtLeast(0)
+                    val newSpiritValue = (spirit.currentSpirit - 5).coerceAtLeast(0)
                     world.editor(ctx.entity) {
-                        it.addComponent(attr.copy(spirit = newSpirit))
+                        it.addComponent(spirit.copy(currentSpirit = newSpiritValue))
                     }
                 }
                 BehaviorType.REST -> {
                     // 休息：恢复生命值和精神力
-                    val newHealth = (attr.health + 10).coerceAtMost(attr.maxHealth)
-                    val newSpirit = (attr.spirit + 5).coerceAtMost(attr.maxSpirit)
+                    val newHealth = (vitality.currentHealth + 10).coerceAtMost(vitality.maxHealth)
+                    val newSpiritValue = (spirit.currentSpirit + 5).coerceAtMost(spirit.maxSpirit)
                     world.editor(ctx.entity) {
-                        it.addComponent(attr.copy(health = newHealth, spirit = newSpirit))
+                        it.addComponent(vitality.copy(currentHealth = newHealth))
+                        it.addComponent(spirit.copy(currentSpirit = newSpiritValue))
                     }
                 }
                 BehaviorType.WORK -> {
                     // 工作：恢复生命值，消耗少量精神力
-                    val newHealth = (attr.health + 5).coerceAtMost(attr.maxHealth)
-                    val newSpirit = (attr.spirit - 2).coerceAtLeast(0)
+                    val newHealth = (vitality.currentHealth + 5).coerceAtMost(vitality.maxHealth)
+                    val newSpiritValue = (spirit.currentSpirit - 2).coerceAtLeast(0)
                     world.editor(ctx.entity) {
-                        it.addComponent(attr.copy(health = newHealth, spirit = newSpirit))
+                        it.addComponent(vitality.copy(currentHealth = newHealth))
+                        it.addComponent(spirit.copy(currentSpirit = newSpiritValue))
                     }
                 }
                 BehaviorType.SOCIAL -> {
                     // 社交：消耗精神力，增加心情（心情系统待实现）
-                    val newSpirit = (attr.spirit - 3).coerceAtLeast(0)
+                    val newSpiritValue = (spirit.currentSpirit - 3).coerceAtLeast(0)
                     world.editor(ctx.entity) {
-                        it.addComponent(attr.copy(spirit = newSpirit))
+                        it.addComponent(spirit.copy(currentSpirit = newSpiritValue))
                     }
                 }
             }
 
             // 更新行为状态
-            if (newBehavior != behavior.currentBehavior) {
+            if (newBehavior != behavior.type) {
                 world.editor(ctx.entity) {
                     it.addComponent(
-                        BehaviorState(
-                            currentBehavior = newBehavior,
-                            behaviorStartTime = System.currentTimeMillis(),
-                            lastBehaviorTime = behavior.behaviorStartTime
+                        CurrentBehavior(
+                            type = newBehavior,
+                            startTime = System.currentTimeMillis(),
+                            lastBehaviorTime = behavior.startTime
                         )
                     )
                 }
@@ -97,8 +100,9 @@ class SimpleBehaviorSystem(private val world: World) {
      * 查询上下文 - 行为实体
      */
     class BehaviorQueryContext(world: World) : EntityQueryContext(world) {
-        val behaviorState: BehaviorState by component()
-        val attribute: Attribute by component()
-        val cultivation: Cultivation by component()
+        val behavior: CurrentBehavior by component()
+        val vitality: Vitality by component()
+        val spirit: Spirit by component()
+        val cultivation: CultivationProgress by component()
     }
 }

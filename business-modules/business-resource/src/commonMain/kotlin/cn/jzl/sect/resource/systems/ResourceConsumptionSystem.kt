@@ -7,11 +7,11 @@ import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.config.GameConfig
-import cn.jzl.sect.core.disciple.Loyalty
+import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.facility.Facility
-import cn.jzl.sect.core.sect.Position
-import cn.jzl.sect.core.sect.SectPosition
-import cn.jzl.sect.core.sect.SectResource
+import cn.jzl.sect.core.sect.SectPositionInfo
+import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.core.sect.SectTreasury
 
 /**
  * 资源消耗系统 - 处理宗门的资源消耗（俸禄、设施维护等）
@@ -26,14 +26,14 @@ class ResourceConsumptionSystem(private val world: World) {
      */
     fun monthlyConsumption(): ConsumptionResult {
         val sect = getSectEntity() ?: return ConsumptionResult(false, 0, 0, 0, emptyList())
-        val sectResource = getSectResource(sect)
+        val sectTreasury = getSectTreasury(sect)
 
         // 计算各项支出
         val salaryCost = calculateSalaryCost()
         val maintenanceCost = calculateMaintenanceCost()
         val totalCost = salaryCost + maintenanceCost
 
-        var remainingSpiritStones = sectResource.spiritStones
+        var remainingSpiritStones = sectTreasury.spiritStones
         val paymentRecords = mutableListOf<PaymentRecord>()
 
         // 优先支付维护费
@@ -76,9 +76,9 @@ class ResourceConsumptionSystem(private val world: World) {
         // 更新宗门资源
         world.editor(sect) {
             it.addComponent(
-                SectResource(
+                SectTreasury(
                     spiritStones = remainingSpiritStones,
-                    contributionPoints = sectResource.contributionPoints
+                    contributionPoints = sectTreasury.contributionPoints
                 )
             )
         }
@@ -126,7 +126,7 @@ class ResourceConsumptionSystem(private val world: World) {
     /**
      * 根据职位获取俸禄
      */
-    private fun getSalaryByPosition(position: SectPosition): Long {
+    private fun getSalaryByPosition(position: SectPositionType): Long {
         return config.salary.getMonthlySalary(position)
     }
 
@@ -140,7 +140,7 @@ class ResourceConsumptionSystem(private val world: World) {
     /**
      * 更新忠诚度（根据支付情况）
      */
-    private fun updateLoyaltyAfterPayment(entity: cn.jzl.ecs.entity.Entity, loyalty: Loyalty, paid: Boolean) {
+    private fun updateLoyaltyAfterPayment(entity: cn.jzl.ecs.entity.Entity, loyalty: SectLoyalty, paid: Boolean) {
         val newLoyalty = if (paid) {
             // 正常发放，忠诚度微增
             (loyalty.value + config.loyalty.loyaltyIncreaseOnPayment).coerceAtMost(100)
@@ -157,7 +157,7 @@ class ResourceConsumptionSystem(private val world: World) {
 
         world.editor(entity) {
             it.addComponent(
-                Loyalty(
+                SectLoyalty(
                     value = newLoyalty,
                     consecutiveUnpaidMonths = newConsecutiveMonths
                 )
@@ -178,23 +178,23 @@ class ResourceConsumptionSystem(private val world: World) {
     /**
      * 获取宗门资源
      */
-    private fun getSectResource(entity: cn.jzl.ecs.entity.Entity): SectResource {
-        val query = world.query { SectQueryContext(this) }
-        var resource = SectResource()
+    private fun getSectTreasury(entity: cn.jzl.ecs.entity.Entity): SectTreasury {
+        val query = world.query { SectTreasuryQueryContext(this) }
+        var treasury = SectTreasury()
         query.forEach {
             if (it.entity == entity) {
-                resource = it.sectResource
+                treasury = it.sectTreasury
             }
         }
-        return resource
+        return treasury
     }
 
     /**
      * 查询上下文 - 俸禄
      */
     class SalaryQueryContext(world: World) : EntityQueryContext(world) {
-        val position: Position by component()
-        val loyalty: Loyalty by component()
+        val position: SectPositionInfo by component()
+        val loyalty: SectLoyalty by component()
     }
 
     /**
@@ -208,7 +208,14 @@ class ResourceConsumptionSystem(private val world: World) {
      * 查询上下文 - 宗门
      */
     class SectQueryContext(world: World) : EntityQueryContext(world) {
-        val sectResource: SectResource by component()
+        val sectTreasury: SectTreasury by component()
+    }
+
+    /**
+     * 查询上下文 - 宗门金库
+     */
+    class SectTreasuryQueryContext(world: World) : EntityQueryContext(world) {
+        val sectTreasury: SectTreasury by component()
     }
 }
 
@@ -239,7 +246,7 @@ data class ConsumptionResult(
  */
 data class PaymentRecord(
     val entity: cn.jzl.ecs.entity.Entity,
-    val position: SectPosition,
+    val position: SectPositionType,
     val expectedAmount: Long,
     val actualAmount: Long,
     val paid: Boolean
@@ -253,10 +260,10 @@ data class PaymentRecord(
 /**
  * 职务显示名称扩展
  */
-private val SectPosition.displayName: String
+private val SectPositionType.displayName: String
     get() = when (this) {
-        SectPosition.DISCIPLE_OUTER -> "外门弟子"
-        SectPosition.DISCIPLE_INNER -> "内门弟子"
-        SectPosition.ELDER -> "长老"
-        SectPosition.LEADER -> "掌门"
+        SectPositionType.DISCIPLE_OUTER -> "外门弟子"
+        SectPositionType.DISCIPLE_INNER -> "内门弟子"
+        SectPositionType.ELDER -> "长老"
+        SectPositionType.LEADER -> "掌门"
     }

@@ -9,12 +9,12 @@ import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.config.GameConfig
-import cn.jzl.sect.core.disciple.Loyalty
+import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.facility.Facility
 import cn.jzl.sect.core.facility.FacilityType
-import cn.jzl.sect.core.sect.Position
-import cn.jzl.sect.core.sect.SectPosition
-import cn.jzl.sect.core.sect.SectResource
+import cn.jzl.sect.core.sect.SectPositionInfo
+import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.core.sect.SectTreasury
 import cn.jzl.sect.engine.SectWorld
 import kotlin.test.*
 
@@ -91,20 +91,20 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     fun testPaymentRecordCreation() {
         // Given: 创建支付记录
         val entity = world.entity {
-            it.addComponent(Position(position = SectPosition.ELDER))
-            it.addComponent(Loyalty(value = 90))
+            it.addComponent(SectPositionInfo(position = SectPositionType.ELDER))
+            it.addComponent(SectLoyalty(value = 90))
         }
 
         val record = PaymentRecord(
             entity = entity,
-            position = SectPosition.ELDER,
+            position = SectPositionType.ELDER,
             expectedAmount = 300L,
             actualAmount = 300L,
             paid = true
         )
 
         // Then: 验证记录属性
-        assertEquals(SectPosition.ELDER, record.position)
+        assertEquals(SectPositionType.ELDER, record.position)
         assertEquals(300L, record.expectedAmount)
         assertEquals(300L, record.actualAmount)
         assertTrue(record.paid)
@@ -113,13 +113,13 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     @Test
     fun testPaymentRecordDisplayStringPaid() {
         val entity = world.entity {
-            it.addComponent(Position(position = SectPosition.ELDER))
-            it.addComponent(Loyalty(value = 90))
+            it.addComponent(SectPositionInfo(position = SectPositionType.ELDER))
+            it.addComponent(SectLoyalty(value = 90))
         }
 
         val record = PaymentRecord(
             entity = entity,
-            position = SectPosition.ELDER,
+            position = SectPositionType.ELDER,
             expectedAmount = 300L,
             actualAmount = 300L,
             paid = true
@@ -135,13 +135,13 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     @Test
     fun testPaymentRecordDisplayStringUnpaid() {
         val entity = world.entity {
-            it.addComponent(Position(position = SectPosition.DISCIPLE_OUTER))
-            it.addComponent(Loyalty(value = 80))
+            it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
+            it.addComponent(SectLoyalty(value = 80))
         }
 
         val record = PaymentRecord(
             entity = entity,
-            position = SectPosition.DISCIPLE_OUTER,
+            position = SectPositionType.DISCIPLE_OUTER,
             expectedAmount = 30L,
             actualAmount = 10L,
             paid = false
@@ -156,15 +156,15 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     @Test
     fun testAllPositionTypes() {
         // 测试所有职位类型的显示名称
-        val leaderEntity = world.entity { it.addComponent(Position(SectPosition.LEADER)) }
-        val elderEntity = world.entity { it.addComponent(Position(SectPosition.ELDER)) }
-        val innerEntity = world.entity { it.addComponent(Position(SectPosition.DISCIPLE_INNER)) }
-        val outerEntity = world.entity { it.addComponent(Position(SectPosition.DISCIPLE_OUTER)) }
+        val leaderEntity = world.entity { it.addComponent(SectPositionInfo(SectPositionType.LEADER)) }
+        val elderEntity = world.entity { it.addComponent(SectPositionInfo(SectPositionType.ELDER)) }
+        val innerEntity = world.entity { it.addComponent(SectPositionInfo(SectPositionType.DISCIPLE_INNER)) }
+        val outerEntity = world.entity { it.addComponent(SectPositionInfo(SectPositionType.DISCIPLE_OUTER)) }
 
-        val leaderRecord = PaymentRecord(leaderEntity, SectPosition.LEADER, 500L, 500L, true)
-        val elderRecord = PaymentRecord(elderEntity, SectPosition.ELDER, 300L, 300L, true)
-        val innerRecord = PaymentRecord(innerEntity, SectPosition.DISCIPLE_INNER, 80L, 80L, true)
-        val outerRecord = PaymentRecord(outerEntity, SectPosition.DISCIPLE_OUTER, 30L, 30L, true)
+        val leaderRecord = PaymentRecord(leaderEntity, SectPositionType.LEADER, 500L, 500L, true)
+        val elderRecord = PaymentRecord(elderEntity, SectPositionType.ELDER, 300L, 300L, true)
+        val innerRecord = PaymentRecord(innerEntity, SectPositionType.DISCIPLE_INNER, 80L, 80L, true)
+        val outerRecord = PaymentRecord(outerEntity, SectPositionType.DISCIPLE_OUTER, 30L, 30L, true)
 
         assertTrue(leaderRecord.toDisplayString().contains("掌门"))
         assertTrue(elderRecord.toDisplayString().contains("长老"))
@@ -178,10 +178,10 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
         val config = GameConfig.getInstance()
 
         // Then: 验证各职位俸禄
-        assertEquals(500L, config.salary.getMonthlySalary(SectPosition.LEADER))
-        assertEquals(300L, config.salary.getMonthlySalary(SectPosition.ELDER))
-        assertEquals(80L, config.salary.getMonthlySalary(SectPosition.DISCIPLE_INNER))
-        assertEquals(30L, config.salary.getMonthlySalary(SectPosition.DISCIPLE_OUTER))
+        assertEquals(500L, config.salary.getMonthlySalary(SectPositionType.LEADER))
+        assertEquals(300L, config.salary.getMonthlySalary(SectPositionType.ELDER))
+        assertEquals(80L, config.salary.getMonthlySalary(SectPositionType.DISCIPLE_INNER))
+        assertEquals(30L, config.salary.getMonthlySalary(SectPositionType.DISCIPLE_OUTER))
     }
 
     @Test
@@ -199,7 +199,7 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     }
 
     @Test
-    fun testGameConfigLoyalty() {
+    fun testGameConfigSectLoyalty() {
         // Given: 获取游戏配置
         val config = GameConfig.getInstance()
 
@@ -210,17 +210,17 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     }
 
     @Test
-    fun testSectResourceComponent() {
-        // Given: 创建宗门资源组件
-        val resource1 = SectResource()
-        val resource2 = SectResource(spiritStones = 5000L, contributionPoints = 1000L)
+    fun testSectTreasuryComponent() {
+        // Given: 创建宗门金库组件
+        val treasury1 = SectTreasury()
+        val treasury2 = SectTreasury(spiritStones = 5000L, contributionPoints = 1000L)
 
         // Then: 验证默认值和自定义值
-        assertEquals(1000L, resource1.spiritStones)
-        assertEquals(0L, resource1.contributionPoints)
+        assertEquals(1000L, treasury1.spiritStones)
+        assertEquals(0L, treasury1.contributionPoints)
 
-        assertEquals(5000L, resource2.spiritStones)
-        assertEquals(1000L, resource2.contributionPoints)
+        assertEquals(5000L, treasury2.spiritStones)
+        assertEquals(1000L, treasury2.contributionPoints)
     }
 
     @Test

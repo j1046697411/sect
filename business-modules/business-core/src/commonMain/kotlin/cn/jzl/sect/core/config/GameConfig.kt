@@ -1,7 +1,7 @@
 package cn.jzl.sect.core.config
 
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.sect.SectPosition
+import cn.jzl.sect.core.sect.SectPositionType
 
 /**
  * 游戏配置管理器
@@ -53,12 +53,12 @@ class SalaryConfig {
     /**
      * 获取指定职位的月俸
      */
-    fun getMonthlySalary(position: SectPosition): Long {
+    fun getMonthlySalary(position: SectPositionType): Long {
         return when (position) {
-            SectPosition.LEADER -> 500L
-            SectPosition.ELDER -> 300L
-            SectPosition.DISCIPLE_INNER -> 80L
-            SectPosition.DISCIPLE_OUTER -> 30L
+            SectPositionType.LEADER -> 500L
+            SectPositionType.ELDER -> 300L
+            SectPositionType.DISCIPLE_INNER -> 80L
+            SectPositionType.DISCIPLE_OUTER -> 30L
         }
     }
 }

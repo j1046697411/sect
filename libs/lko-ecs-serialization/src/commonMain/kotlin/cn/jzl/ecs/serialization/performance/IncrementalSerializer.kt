@@ -1,13 +1,16 @@
 package cn.jzl.ecs.serialization.performance
 
 import cn.jzl.ecs.component.Component
+import cn.jzl.ecs.entity
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.relation.kind
 import cn.jzl.ecs.serialization.core.SerializationContext
 import cn.jzl.ecs.serialization.entity.Persistable
 import cn.jzl.ecs.serialization.entity.setPersisting
 import cn.jzl.ecs.serialization.internal.WorldServices
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.PolymorphicSerializer
 
 /**
  * 增量序列化器
@@ -103,7 +106,7 @@ class IncrementalSerializer(
     private fun serializeEntity(entity: Entity, snapshot: EntitySnapshot): ByteArray {
         val components = snapshot.components.values.map { it.component }
         return Json.encodeToString(
-            Json.serializersModule.serializer(),
+            ListSerializer(PolymorphicSerializer(Component::class)),
             components
         ).encodeToByteArray()
     }
@@ -111,7 +114,7 @@ class IncrementalSerializer(
     private fun deserializeSnapshot(data: ByteArray): EntitySnapshot {
         val jsonString = data.decodeToString()
         val components: List<Component> = Json.decodeFromString(
-            Json.serializersModule.serializer(),
+            ListSerializer(PolymorphicSerializer(Component::class)),
             jsonString
         )
 
@@ -127,13 +130,11 @@ class IncrementalSerializer(
     }
 
     private fun restoreEntity(snapshot: EntitySnapshot): Entity {
-        val entity = context.world.entity { e ->
+        return context.world.entity { e ->
             snapshot.components.values.forEach { componentSnapshot ->
-                e.setPersisting(context, componentSnapshot.component)
+                e.setPersisting(this@IncrementalSerializer.context, componentSnapshot.component)
             }
         }
-
-        return entity
     }
 
     data class EntitySnapshot(

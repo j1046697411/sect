@@ -10,7 +10,7 @@ import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.resource.ResourceProduction
 import cn.jzl.sect.core.resource.ResourceType
-import cn.jzl.sect.core.sect.SectResource
+import cn.jzl.sect.core.sect.SectTreasury
 import cn.jzl.sect.engine.SectWorld
 import kotlin.test.*
 
@@ -36,7 +36,7 @@ class ResourceProductionSystemTest : EntityRelationContext {
     fun testProductionRecordCreation() {
         // Given: 创建一个实体用于测试
         val entity = world.entity {
-            it.addComponent(SectResource(spiritStones = 0L, contributionPoints = 0L))
+            it.addComponent(SectTreasury(spiritStones = 0L, contributionPoints = 0L))
         }
 
         // When: 创建产出记录
@@ -56,7 +56,7 @@ class ResourceProductionSystemTest : EntityRelationContext {
     @Test
     fun testProductionRecordDisplayString() {
         val entity = world.entity {
-            it.addComponent(SectResource(spiritStones = 0L, contributionPoints = 0L))
+            it.addComponent(SectTreasury(spiritStones = 0L, contributionPoints = 0L))
         }
 
         val record = ProductionRecord(
@@ -114,7 +114,7 @@ class ResourceProductionSystemTest : EntityRelationContext {
     fun testResourceTypeDisplayName() {
         // 验证资源类型显示名称
         val spiritStoneRecord = ProductionRecord(
-            entity = world.entity { it.addComponent(SectResource()) },
+            entity = world.entity { it.addComponent(SectTreasury()) },
             resourceType = ResourceType.SPIRIT_STONE,
             amount = 100L,
             efficiency = 1.0f
@@ -122,7 +122,7 @@ class ResourceProductionSystemTest : EntityRelationContext {
         assertTrue(spiritStoneRecord.toDisplayString().contains("灵石"))
 
         val herbRecord = ProductionRecord(
-            entity = world.entity { it.addComponent(SectResource()) },
+            entity = world.entity { it.addComponent(SectTreasury()) },
             resourceType = ResourceType.HERB,
             amount = 50L,
             efficiency = 1.0f
@@ -130,7 +130,7 @@ class ResourceProductionSystemTest : EntityRelationContext {
         assertTrue(herbRecord.toDisplayString().contains("草药"))
 
         val oreRecord = ProductionRecord(
-            entity = world.entity { it.addComponent(SectResource()) },
+            entity = world.entity { it.addComponent(SectTreasury()) },
             resourceType = ResourceType.ORE,
             amount = 75L,
             efficiency = 1.0f
@@ -138,7 +138,7 @@ class ResourceProductionSystemTest : EntityRelationContext {
         assertTrue(oreRecord.toDisplayString().contains("矿石"))
 
         val foodRecord = ProductionRecord(
-            entity = world.entity { it.addComponent(SectResource()) },
+            entity = world.entity { it.addComponent(SectTreasury()) },
             resourceType = ResourceType.FOOD,
             amount = 200L,
             efficiency = 1.0f

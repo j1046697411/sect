@@ -3,6 +3,7 @@ package cn.jzl.ecs.serialization.entity
 import cn.jzl.ecs.component.Component
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityCreateContext
+import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.entity.hasComponent
 import cn.jzl.ecs.relation.kind
@@ -41,9 +42,11 @@ fun Entity.setAllPersisting(
     components: Collection<Component>,
     override: Boolean = true,
 ) {
-    components.forEach {
-        if (override || !hasComponent(it::class)) {
-            setPersisting(serializationContext, it, it::class)
+    val services = WorldServices(serializationContext.world)
+    components.forEach { component ->
+        val componentId = services.components.id<Component>()
+        if (override || !hasComponent(componentId)) {
+            setPersisting(serializationContext, component, component::class)
         }
     }
 }
@@ -70,6 +73,7 @@ inline fun <reified T : Component> Entity.getOrSetPersisting(
  * @param context 序列化上下文
  * @return 持久化组件集合
  */
+context(ctx: EntityRelationContext)
 fun Entity.getAllPersisting(context: SerializationContext): Set<Component> {
     val persistingComponents = mutableSetOf<Component>()
     val services = WorldServices(context.world)
@@ -78,7 +82,7 @@ fun Entity.getAllPersisting(context: SerializationContext): Set<Component> {
     services.entityService.runOn(this) { entityIndex ->
         archetypeType.forEach { relation ->
             if (relation.kind == persistableComponentId) {
-                val component = services.relationService.getRelation(this@Entity.getAllPersisting, relation)
+                val component = services.relationService.getRelation(this@getAllPersisting, relation)
                 if (component != null && component is Component) {
                     persistingComponents.add(component)
                 }
@@ -95,6 +99,7 @@ fun Entity.getAllPersisting(context: SerializationContext): Set<Component> {
  * @param context 序列化上下文
  * @return 非持久化组件集合
  */
+context(ctx: EntityRelationContext)
 fun Entity.getAllNotPersisting(context: SerializationContext): Set<Component> {
     val allComponents = getAll(context)
     val persistingComponents = getAllPersisting(context)
@@ -107,7 +112,9 @@ fun Entity.getAllNotPersisting(context: SerializationContext): Set<Component> {
  * @param context 序列化上下文
  */
 fun Entity.markAsPersisted(context: SerializationContext) {
-    val persistingComponents = getAllPersisting(context)
+    val persistingComponents = with(WorldServices(context.world).createRelationContext()) {
+        getAllPersisting(context)
+    }
     persistingComponents.forEach { component ->
         Persistable().updateHash(component)
     }
@@ -119,13 +126,14 @@ fun Entity.markAsPersisted(context: SerializationContext) {
  * @param context 序列化上下文
  * @return 所有组件集合
  */
+context(ctx: EntityRelationContext)
 fun Entity.getAll(context: SerializationContext): Set<Component> {
     val components = mutableSetOf<Component>()
     val services = WorldServices(context.world)
 
     services.entityService.runOn(this) { entityIndex ->
         archetypeType.forEach { relation ->
-            val component = services.relationService.getRelation(this@Entity.getAll, relation)
+            val component = services.relationService.getRelation(this@getAll, relation)
             if (component != null && component is Component) {
                 components.add(component)
             }
@@ -141,13 +149,14 @@ fun Entity.getAll(context: SerializationContext): Set<Component> {
  * @param kClass 组件类型
  * @return 组件实例或 null
  */
+context(ctx: EntityRelationContext)
 fun <T : Component> Entity.get(context: SerializationContext, kClass: KClass<out T>): T? {
     val services = WorldServices(context.world)
     var result: T? = null
 
     services.entityService.runOn(this) { entityIndex ->
         archetypeType.forEach { relation ->
-            val component = services.relationService.getRelation(this@Entity.get, relation)
+            val component = services.relationService.getRelation(this@get, relation)
             if (component != null && kClass.isInstance(component)) {
                 result = component as T
                 return@forEach
@@ -160,6 +169,7 @@ fun <T : Component> Entity.get(context: SerializationContext, kClass: KClass<out
 /**
  * 内联版本的获取组件（用于测试）
  */
+context(ctx: EntityRelationContext)
 inline fun <reified T : Component> Entity.get(context: SerializationContext): T? {
     return get(context, T::class)
 }

@@ -7,11 +7,11 @@ import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.config.GameConfig
-import cn.jzl.sect.core.cultivation.Cultivation
+import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.disciple.Attribute
-import cn.jzl.sect.core.sect.Position
-import cn.jzl.sect.core.sect.SectPosition
+import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.core.sect.SectPositionInfo
+import cn.jzl.sect.core.sect.SectPositionType
 
 /**
  * 修炼系统 - 处理弟子的修为增长和境界突破
@@ -34,11 +34,11 @@ class CultivationSystem(private val world: World) {
 
         query.forEach { ctx ->
             val cult = ctx.cultivation
-            val attr = ctx.attribute
+            val talent = ctx.talent
             val pos = ctx.position
 
             // 计算修为增长
-            val gain = calculateCultivationGain(attr, hours)
+            val gain = calculateCultivationGain(talent, hours)
             var newCultivation = cult.cultivation + gain
             var newRealm = cult.realm
             var newLayer = cult.layer
@@ -48,7 +48,7 @@ class CultivationSystem(private val world: World) {
             // 检查是否达到突破条件
             while (newCultivation >= cult.maxCultivation) {
                 newCultivation -= cult.maxCultivation
-                val result = tryBreakthrough(cult.realm, cult.layer, attr)
+                val result = tryBreakthrough(cult.realm, cult.layer, talent)
                 if (result.success) {
                     newRealm = result.newRealm
                     newLayer = result.newLayer
@@ -90,7 +90,7 @@ class CultivationSystem(private val world: World) {
         updates.forEach { data ->
             world.editor(data.entity) {
                 it.addComponent(
-                    Cultivation(
+                    CultivationProgress(
                         realm = data.newRealm,
                         layer = data.newLayer,
                         cultivation = data.newCultivation,
@@ -106,9 +106,9 @@ class CultivationSystem(private val world: World) {
     /**
      * 计算修为增长
      */
-    private fun calculateCultivationGain(attr: Attribute, hours: Int): Long {
+    private fun calculateCultivationGain(talent: Talent, hours: Int): Long {
         // 基础增长 = 悟性 * 根骨 / 100 * 时间系数
-        val baseGain = (attr.comprehension * attr.physique) / 100.0
+        val baseGain = (talent.comprehension * talent.physique) / 100.0
         val timeMultiplier = hours * config.cultivation.baseCultivationGainPerHour
         return (baseGain * timeMultiplier).toLong().coerceAtLeast(1)
     }
@@ -119,11 +119,11 @@ class CultivationSystem(private val world: World) {
     private fun tryBreakthrough(
         currentRealm: Realm,
         currentLayer: Int,
-        attr: Attribute
+        talent: Talent
     ): BreakthroughResult {
         // 计算突破成功率
         val baseSuccessRate = config.cultivation.getBaseBreakthroughSuccessRate(currentRealm)
-        val fortuneBonus = attr.fortune * config.cultivation.fortuneEffectOnBreakthrough
+        val fortuneBonus = talent.fortune * config.cultivation.fortuneEffectOnBreakthrough
         val finalSuccessRate = (baseSuccessRate + fortuneBonus).coerceIn(0.1, 0.95)
 
         val success = Math.random() < finalSuccessRate
@@ -169,9 +169,9 @@ class CultivationSystem(private val world: World) {
      * 查询上下文 - 修炼者
      */
     class CultivatorQueryContext(world: World) : EntityQueryContext(world) {
-        val cultivation: Cultivation by component()
-        val attribute: Attribute by component()
-        val position: Position by component()
+        val cultivation: CultivationProgress by component()
+        val talent: Talent by component()
+        val position: SectPositionInfo by component()
     }
 
     /**
@@ -179,7 +179,7 @@ class CultivationSystem(private val world: World) {
      */
     private data class CultivatorUpdateData(
         val entity: cn.jzl.ecs.entity.Entity,
-        val oldCultivation: Cultivation,
+        val oldCultivation: CultivationProgress,
         val newCultivation: Long,
         val newRealm: Realm,
         val newLayer: Int,
@@ -205,7 +205,7 @@ class CultivationSystem(private val world: World) {
         val oldLayer: Int,
         val newRealm: Realm,
         val newLayer: Int,
-        val position: SectPosition
+        val position: SectPositionType
     ) {
         fun toDisplayString(): String {
             return "${position.displayName} 突破成功！${oldRealm.displayName}${oldLayer}层 → ${newRealm.displayName}${newLayer}层"
@@ -226,10 +226,10 @@ private val Realm.displayName: String
 /**
  * 职务显示名称扩展
  */
-private val SectPosition.displayName: String
+private val SectPositionType.displayName: String
     get() = when (this) {
-        SectPosition.DISCIPLE_OUTER -> "外门弟子"
-        SectPosition.DISCIPLE_INNER -> "内门弟子"
-        SectPosition.ELDER -> "长老"
-        SectPosition.LEADER -> "掌门"
+        SectPositionType.DISCIPLE_OUTER -> "外门弟子"
+        SectPositionType.DISCIPLE_INNER -> "内门弟子"
+        SectPositionType.ELDER -> "长老"
+        SectPositionType.LEADER -> "掌门"
     }

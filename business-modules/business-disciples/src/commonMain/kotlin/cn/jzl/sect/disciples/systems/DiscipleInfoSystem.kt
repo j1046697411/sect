@@ -4,12 +4,15 @@ import cn.jzl.ecs.World
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.cultivation.Cultivation
+import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.disciple.Attribute
-import cn.jzl.sect.core.disciple.Loyalty
-import cn.jzl.sect.core.sect.Position
-import cn.jzl.sect.core.sect.SectPosition
+import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.core.vitality.Vitality
+import cn.jzl.sect.core.vitality.Spirit
+import cn.jzl.sect.core.disciple.Age
+import cn.jzl.sect.core.disciple.SectLoyalty
+import cn.jzl.sect.core.sect.SectPositionInfo
+import cn.jzl.sect.core.sect.SectPositionType
 
 /**
  * 弟子信息系统 - 管理和查询弟子信息
@@ -33,15 +36,15 @@ class DiscipleInfoSystem(private val world: World) {
                     cultivation = ctx.cultivation.cultivation,
                     maxCultivation = ctx.cultivation.maxCultivation,
                     progress = calculateProgress(ctx.cultivation),
-                    health = ctx.attribute.health,
-                    maxHealth = ctx.attribute.maxHealth,
-                    spirit = ctx.attribute.spirit,
-                    maxSpirit = ctx.attribute.maxSpirit,
-                    age = ctx.attribute.age,
-                    physique = ctx.attribute.physique,
-                    comprehension = ctx.attribute.comprehension,
-                    fortune = ctx.attribute.fortune,
-                    charm = ctx.attribute.charm,
+                    health = ctx.vitality.currentHealth,
+                    maxHealth = ctx.vitality.maxHealth,
+                    spirit = ctx.spirit.currentSpirit,
+                    maxSpirit = ctx.spirit.maxSpirit,
+                    age = ctx.age.age,
+                    physique = ctx.talent.physique,
+                    comprehension = ctx.talent.comprehension,
+                    fortune = ctx.talent.fortune,
+                    charm = ctx.talent.charm,
                     loyalty = ctx.loyalty.value,
                     loyaltyLevel = ctx.loyalty.getLevel()
                 )
@@ -55,7 +58,7 @@ class DiscipleInfoSystem(private val world: World) {
     /**
      * 按职位筛选弟子
      */
-    fun getDisciplesByPosition(position: SectPosition): List<DiscipleInfo> {
+    fun getDisciplesByPosition(position: SectPositionType): List<DiscipleInfo> {
         return getAllDisciples().filter { it.position == position }
     }
 
@@ -67,10 +70,10 @@ class DiscipleInfoSystem(private val world: World) {
 
         return DiscipleStatistics(
             totalCount = allDisciples.size,
-            leaderCount = allDisciples.count { it.position == SectPosition.LEADER },
-            elderCount = allDisciples.count { it.position == SectPosition.ELDER },
-            innerCount = allDisciples.count { it.position == SectPosition.DISCIPLE_INNER },
-            outerCount = allDisciples.count { it.position == SectPosition.DISCIPLE_OUTER },
+            leaderCount = allDisciples.count { it.position == SectPositionType.LEADER },
+            elderCount = allDisciples.count { it.position == SectPositionType.ELDER },
+            innerCount = allDisciples.count { it.position == SectPositionType.DISCIPLE_INNER },
+            outerCount = allDisciples.count { it.position == SectPositionType.DISCIPLE_OUTER },
             mortalCount = allDisciples.count { it.realm == Realm.MORTAL },
             qiRefiningCount = allDisciples.count { it.realm == Realm.QI_REFINING },
             foundationCount = allDisciples.count { it.realm == Realm.FOUNDATION },
@@ -84,7 +87,7 @@ class DiscipleInfoSystem(private val world: World) {
     /**
      * 计算修炼进度百分比
      */
-    private fun calculateProgress(cultivation: Cultivation): Float {
+    private fun calculateProgress(cultivation: CultivationProgress): Float {
         return (cultivation.cultivation.toFloat() / cultivation.maxCultivation.toFloat())
             .coerceIn(0f, 1f)
     }
@@ -93,10 +96,13 @@ class DiscipleInfoSystem(private val world: World) {
      * 查询上下文 - 弟子
      */
     class DiscipleQueryContext(world: World) : EntityQueryContext(world) {
-        val position: Position by component()
-        val cultivation: Cultivation by component()
-        val attribute: Attribute by component()
-        val loyalty: Loyalty by component()
+        val position: SectPositionInfo by component()
+        val cultivation: CultivationProgress by component()
+        val talent: Talent by component()
+        val vitality: Vitality by component()
+        val spirit: Spirit by component()
+        val age: Age by component()
+        val loyalty: SectLoyalty by component()
     }
 }
 
@@ -105,7 +111,7 @@ class DiscipleInfoSystem(private val world: World) {
  */
 data class DiscipleInfo(
     val entity: cn.jzl.ecs.entity.Entity,
-    val position: SectPosition,
+    val position: SectPositionType,
     val realm: Realm,
     val layer: Int,
     val cultivation: Long,
@@ -181,12 +187,12 @@ private val Realm.displayName: String
 /**
  * 职务显示名称扩展
  */
-private val SectPosition.displayName: String
+private val SectPositionType.displayName: String
     get() = when (this) {
-        SectPosition.DISCIPLE_OUTER -> "外门弟子"
-        SectPosition.DISCIPLE_INNER -> "内门弟子"
-        SectPosition.ELDER -> "长老"
-        SectPosition.LEADER -> "掌门"
+        SectPositionType.DISCIPLE_OUTER -> "外门弟子"
+        SectPositionType.DISCIPLE_INNER -> "内门弟子"
+        SectPositionType.ELDER -> "长老"
+        SectPositionType.LEADER -> "掌门"
     }
 
 /**
@@ -209,6 +215,6 @@ enum class LoyaltyLevel(val displayName: String, val minValue: Int, val maxValue
 /**
  * 获取忠诚度等级扩展
  */
-private fun cn.jzl.sect.core.disciple.Loyalty.getLevel(): LoyaltyLevel {
+private fun SectLoyalty.getLevel(): LoyaltyLevel {
     return LoyaltyLevel.fromValue(this.value)
 }

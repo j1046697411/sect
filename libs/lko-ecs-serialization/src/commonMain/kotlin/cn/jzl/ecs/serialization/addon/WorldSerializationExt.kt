@@ -1,5 +1,6 @@
 package cn.jzl.ecs.serialization.addon
 
+import cn.jzl.di.DIContext
 import cn.jzl.di.instance
 import cn.jzl.ecs.World
 
@@ -9,4 +10,4 @@ import cn.jzl.ecs.World
  * 通过 DI 获取已安装的 SerializationModule
  */
 val World.serialization: SerializationModule
-    get() = di.instance<SerializationModule>().invoke()
+    get() = di.on(DIContext).instance()

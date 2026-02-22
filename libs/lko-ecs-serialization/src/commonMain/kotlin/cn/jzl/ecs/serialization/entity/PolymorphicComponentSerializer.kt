@@ -71,7 +71,8 @@ class PolymorphicComponentSerializer(
             val serializer = context.serializers.getSerializerFor(kClass)
                 ?: error("No serializer found for ${kClass.simpleName}")
 
-            val jsonValue = Json.encodeToString(serializer, component)
+            @Suppress("UNCHECKED_CAST")
+            val jsonValue = Json.encodeToString(serializer as KSerializer<Component>, component)
             componentMap[serialName] = jsonValue
         }
 
