@@ -4,28 +4,28 @@ import cn.jzl.ecs.World
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.building.components.*
+import cn.jzl.sect.core.facility.*
 
 /**
- * 建筑产出系统
+ * 设施产出系统
  */
-class BuildingProductionSystem(private val world: World) {
+class FacilityProductionSystem(private val world: World) {
 
     /**
-     * 计算所有建筑的总产出
+     * 计算所有设施的总产出
      * @return 产出明细列表
      */
     fun calculateTotalProduction(): List<ProductionDetail> {
         val productions = mutableListOf<ProductionDetail>()
-        val query = world.query { BuildingProductionQueryContext(this) }
+        val query = world.query { FacilityProductionQueryContext(this) }
 
         query.forEach { ctx ->
             if (ctx.status.isActive) {
-                val actualOutput = ctx.production.calculateActualOutput(ctx.level)
+                val actualOutput = ctx.production.calculateActualOutput(ctx.facility.level)
                 productions.add(
                     ProductionDetail(
-                        buildingName = ctx.info.name,
-                        buildingType = ctx.info.buildingType,
+                        facilityName = ctx.facility.name,
+                        facilityType = ctx.facility.type,
                         resourceType = ctx.production.productionType,
                         amount = actualOutput,
                         maintenanceCost = ctx.status.maintenanceCost
@@ -59,7 +59,7 @@ class BuildingProductionSystem(private val world: World) {
      */
     fun calculateTotalMaintenanceCost(): Int {
         var totalCost = 0
-        val query = world.query { BuildingStatusQueryContext(this) }
+        val query = world.query { FacilityStatusQueryContext(this) }
 
         query.forEach { ctx ->
             if (ctx.status.isActive) {
@@ -92,20 +92,20 @@ class BuildingProductionSystem(private val world: World) {
     }
 
     /**
-     * 获取建筑产出详情
-     * @param buildingName 建筑名称
+     * 获取设施产出详情
+     * @param facilityName 设施名称
      * @return 产出详情
      */
-    fun getBuildingProduction(buildingName: String): ProductionDetail? {
-        val query = world.query { BuildingProductionQueryContext(this) }
+    fun getFacilityProduction(facilityName: String): ProductionDetail? {
+        val query = world.query { FacilityProductionQueryContext(this) }
         var result: ProductionDetail? = null
 
         query.forEach { ctx ->
-            if (ctx.info.name == buildingName && ctx.status.isActive) {
-                val actualOutput = ctx.production.calculateActualOutput(ctx.level)
+            if (ctx.facility.name == facilityName && ctx.status.isActive) {
+                val actualOutput = ctx.production.calculateActualOutput(ctx.facility.level)
                 result = ProductionDetail(
-                    buildingName = ctx.info.name,
-                    buildingType = ctx.info.buildingType,
+                    facilityName = ctx.facility.name,
+                    facilityType = ctx.facility.type,
                     resourceType = ctx.production.productionType,
                     amount = actualOutput,
                     maintenanceCost = ctx.status.maintenanceCost
@@ -117,20 +117,19 @@ class BuildingProductionSystem(private val world: World) {
     }
 
     /**
-     * 查询上下文 - 建筑产出查询
+     * 查询上下文 - 设施产出查询
      */
-    class BuildingProductionQueryContext(world: World) : EntityQueryContext(world) {
-        val info: BuildingInfo by component()
-        val level: BuildingLevel by component()
-        val status: BuildingStatus by component()
-        val production: BuildingProduction by component()
+    class FacilityProductionQueryContext(world: World) : EntityQueryContext(world) {
+        val facility: Facility by component()
+        val status: FacilityStatus by component()
+        val production: FacilityProduction by component()
     }
 
     /**
-     * 查询上下文 - 建筑状态查询
+     * 查询上下文 - 设施状态查询
      */
-    class BuildingStatusQueryContext(world: World) : EntityQueryContext(world) {
-        val status: BuildingStatus by component()
+    class FacilityStatusQueryContext(world: World) : EntityQueryContext(world) {
+        val status: FacilityStatus by component()
     }
 }
 
@@ -138,8 +137,8 @@ class BuildingProductionSystem(private val world: World) {
  * 产出明细
  */
 data class ProductionDetail(
-    val buildingName: String,
-    val buildingType: BuildingType,
+    val facilityName: String,
+    val facilityType: FacilityType,
     val resourceType: ResourceType,
     val amount: Int,
     val maintenanceCost: Int

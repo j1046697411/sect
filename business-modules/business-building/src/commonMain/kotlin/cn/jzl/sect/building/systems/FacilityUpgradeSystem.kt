@@ -5,48 +5,47 @@ import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.building.components.*
+import cn.jzl.sect.core.facility.*
 
 /**
- * 建筑升级系统
+ * 设施升级系统
  */
-class BuildingUpgradeSystem(private val world: World) {
+class FacilityUpgradeSystem(private val world: World) {
 
     /**
-     * 检查建筑是否可以升级
-     * @param building 建筑实体
+     * 检查设施是否可以升级
+     * @param facility 设施实体
      * @return 升级检查结果
      */
-    fun canUpgrade(building: Entity): UpgradeCheckResult {
-        val query = world.query { BuildingQueryContext(this) }
+    fun canUpgrade(facility: Entity): UpgradeCheckResult {
+        val query = world.query { FacilityQueryContext(this) }
         var result: UpgradeCheckResult? = null
 
         query.forEach { ctx ->
-            if (ctx.entity == building) {
-                val level = ctx.level
-                val info = ctx.info
+            if (ctx.entity == facility) {
+                val facilityInfo = ctx.facility
 
                 result = when {
-                    !level.canUpgrade() ->
-                        UpgradeCheckResult(false, "建筑已达到最高等级", null)
+                    !facilityInfo.canUpgrade() ->
+                        UpgradeCheckResult(false, "设施已达到最高等级", null)
                     else -> {
-                        val cost = BuildingCost.getUpgradeCost(info.buildingType, level.level)
+                        val cost = FacilityCost.getUpgradeCost(facilityInfo.type, facilityInfo.level)
                         UpgradeCheckResult(true, "可以升级", cost)
                     }
                 }
             }
         }
 
-        return result ?: UpgradeCheckResult(false, "未找到建筑", null)
+        return result ?: UpgradeCheckResult(false, "未找到设施", null)
     }
 
     /**
-     * 升级建筑
-     * @param building 建筑实体
+     * 升级设施
+     * @param facility 设施实体
      * @return 升级结果
      */
-    fun upgrade(building: Entity): UpgradeResult {
-        val checkResult = canUpgrade(building)
+    fun upgrade(facility: Entity): UpgradeResult {
+        val checkResult = canUpgrade(facility)
         if (!checkResult.canUpgrade) {
             return UpgradeResult(false, checkResult.reason)
         }
@@ -60,24 +59,24 @@ class BuildingUpgradeSystem(private val world: World) {
         }
 
         // 执行升级
-        return performUpgrade(building)
+        return performUpgrade(facility)
     }
 
     /**
      * 执行升级
      */
-    private fun performUpgrade(building: Entity): UpgradeResult {
-        val query = world.query { BuildingQueryContext(this) }
+    private fun performUpgrade(facility: Entity): UpgradeResult {
+        val query = world.query { FacilityQueryContext(this) }
         var success = false
         var newLevel = 0
 
         query.forEach { ctx ->
-            if (ctx.entity == building) {
-                val currentLevel = ctx.level
-                if (currentLevel.canUpgrade()) {
-                    // 这里应该更新建筑等级组件
+            if (ctx.entity == facility) {
+                val currentFacility = ctx.facility
+                if (currentFacility.canUpgrade()) {
+                    // 这里应该更新设施等级组件
                     // 由于ECS组件是不可变的，需要移除旧组件并添加新组件
-                    newLevel = currentLevel.level + 1
+                    newLevel = currentFacility.level + 1
                     success = true
                 }
             }
@@ -93,18 +92,17 @@ class BuildingUpgradeSystem(private val world: World) {
     /**
      * 扣除资源
      */
-    private fun deductResources(cost: BuildingCost): Boolean {
+    private fun deductResources(cost: FacilityCost): Boolean {
         // 这里应该调用资源系统扣除资源
         // 暂时返回成功，实际实现需要与ResourceSystem集成
         return true
     }
 
     /**
-     * 查询上下文 - 建筑信息
+     * 查询上下文 - 设施信息
      */
-    class BuildingQueryContext(world: World) : EntityQueryContext(world) {
-        val info: BuildingInfo by component()
-        val level: BuildingLevel by component()
+    class FacilityQueryContext(world: World) : EntityQueryContext(world) {
+        val facility: Facility by component()
     }
 }
 
@@ -114,7 +112,7 @@ class BuildingUpgradeSystem(private val world: World) {
 data class UpgradeCheckResult(
     val canUpgrade: Boolean,
     val reason: String,
-    val cost: BuildingCost?
+    val cost: FacilityCost?
 )
 
 /**

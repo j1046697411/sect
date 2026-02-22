@@ -2,7 +2,7 @@
   "usage": {
     "solutions:需求文档一致性检查方法.md": 2,
     "solutions:ecs-query-性能优化.md": 3,
-    "conventions:宗门修真录术语规范.md": 1,
+    "conventions:宗门修真录术语规范.md": 3,
     "conventions:游戏可玩性设计混合型政策体系.md": 2,
     "solutions:游戏可玩性设计时间加速功能.md": 0,
     "solutions:游戏可玩性设计隐形难度曲线.md": 1,
@@ -42,5 +42,5 @@
       "solutions:ecs-query-性能优化.md"
     ]
   },
-  "updated": "2026-02-21T22:18:52.120606"
+  "updated": "2026-02-22T20:28:23.425324"
 }

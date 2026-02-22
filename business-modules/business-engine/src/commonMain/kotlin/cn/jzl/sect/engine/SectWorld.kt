@@ -210,16 +210,20 @@ object SectWorld {
         // 设施
         world.entity {
             it.addComponent(Facility(
+                name = "初级修炼室",
                 type = FacilityType.CULTIVATION_ROOM,
                 level = 1,
+                maxLevel = 10,
                 capacity = 5,
                 efficiency = 1.1f
             ))
         }
         world.entity {
             it.addComponent(Facility(
+                name = "弟子宿舍",
                 type = FacilityType.DORMITORY,
                 level = 1,
+                maxLevel = 10,
                 capacity = 20,
                 efficiency = 1.0f
             ))

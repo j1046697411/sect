@@ -3,10 +3,10 @@ package cn.jzl.sect.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.jzl.ecs.World
-import cn.jzl.sect.building.components.*
-import cn.jzl.sect.building.systems.BuildingConstructionSystem
-import cn.jzl.sect.building.systems.BuildingProductionSystem
-import cn.jzl.sect.building.systems.BuildingUpgradeSystem
+import cn.jzl.sect.building.systems.FacilityConstructionSystem
+import cn.jzl.sect.building.systems.FacilityProductionSystem
+import cn.jzl.sect.building.systems.FacilityUpgradeSystem
+import cn.jzl.sect.core.facility.*
 import cn.jzl.sect.engine.WorldProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,12 +14,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * 建筑UI数据模型
+ * 设施UI数据模型
  */
-data class BuildingUiModel(
+data class FacilityUiModel(
     val id: Long,
     val name: String,
-    val type: BuildingType,
+    val type: FacilityType,
     val level: Int,
     val maxLevel: Int,
     val isActive: Boolean,
@@ -30,41 +30,41 @@ data class BuildingUiModel(
 )
 
 /**
- * 建筑列表状态
+ * 设施列表状态
  */
-sealed class BuildingListUiState {
-    data object Loading : BuildingListUiState()
-    data class Success(val buildings: List<BuildingUiModel>) : BuildingListUiState()
-    data class Error(val message: String) : BuildingListUiState()
+sealed class FacilityListUiState {
+    data object Loading : FacilityListUiState()
+    data class Success(val facilities: List<FacilityUiModel>) : FacilityListUiState()
+    data class Error(val message: String) : FacilityListUiState()
 }
 
 /**
- * 建筑操作结果
+ * 设施操作结果
  */
-data class BuildingOperationResult(
+data class FacilityOperationResult(
     val success: Boolean,
     val message: String
 )
 
 /**
- * 建筑ViewModel
+ * 设施ViewModel
  */
-class BuildingViewModel : ViewModel() {
+class FacilityViewModel : ViewModel() {
 
     private val world: World = WorldProvider.world
         ?: throw IllegalStateException("World not initialized")
 
-    private val constructionSystem = BuildingConstructionSystem(world)
-    private val upgradeSystem = BuildingUpgradeSystem(world)
-    private val productionSystem = BuildingProductionSystem(world)
+    private val constructionSystem = FacilityConstructionSystem(world)
+    private val upgradeSystem = FacilityUpgradeSystem(world)
+    private val productionSystem = FacilityProductionSystem(world)
 
-    // 建筑列表状态
-    private val _buildingList = MutableStateFlow<BuildingListUiState>(BuildingListUiState.Loading)
-    val buildingList: StateFlow<BuildingListUiState> = _buildingList.asStateFlow()
+    // 设施列表状态
+    private val _facilityList = MutableStateFlow<FacilityListUiState>(FacilityListUiState.Loading)
+    val facilityList: StateFlow<FacilityListUiState> = _facilityList.asStateFlow()
 
     // 操作结果
-    private val _operationResult = MutableStateFlow<BuildingOperationResult?>(null)
-    val operationResult: StateFlow<BuildingOperationResult?> = _operationResult.asStateFlow()
+    private val _operationResult = MutableStateFlow<FacilityOperationResult?>(null)
+    val operationResult: StateFlow<FacilityOperationResult?> = _operationResult.asStateFlow()
 
     // 总产出汇总
     private val _totalProduction = MutableStateFlow<Map<ResourceType, Int>>(emptyMap())
@@ -75,36 +75,36 @@ class BuildingViewModel : ViewModel() {
     val totalMaintenanceCost: StateFlow<Int> = _totalMaintenanceCost.asStateFlow()
 
     init {
-        loadBuildings()
+        loadFacilities()
         updateProductionSummary()
     }
 
     /**
-     * 加载建筑列表
+     * 加载设施列表
      */
-    fun loadBuildings() {
+    fun loadFacilities() {
         viewModelScope.launch {
-            _buildingList.value = BuildingListUiState.Loading
+            _facilityList.value = FacilityListUiState.Loading
             try {
-                val buildings = queryBuildings()
-                _buildingList.value = BuildingListUiState.Success(buildings)
+                val facilities = queryFacilities()
+                _facilityList.value = FacilityListUiState.Success(facilities)
             } catch (e: Exception) {
-                _buildingList.value = BuildingListUiState.Error("加载失败: ${e.message}")
+                _facilityList.value = FacilityListUiState.Error("加载失败: ${e.message}")
             }
         }
     }
 
     /**
-     * 查询建筑列表
+     * 查询设施列表
      */
-    private fun queryBuildings(): List<BuildingUiModel> {
-        // 这里应该查询World中的建筑实体
+    private fun queryFacilities(): List<FacilityUiModel> {
+        // 这里应该查询World中的设施实体
         // 暂时返回模拟数据
         return listOf(
-            BuildingUiModel(
+            FacilityUiModel(
                 id = 1,
                 name = "初级修炼室",
-                type = BuildingType.CULTIVATION_ROOM,
+                type = FacilityType.CULTIVATION_ROOM,
                 level = 1,
                 maxLevel = 10,
                 isActive = true,
@@ -113,10 +113,10 @@ class BuildingViewModel : ViewModel() {
                 maintenanceCost = 5,
                 canUpgrade = true
             ),
-            BuildingUiModel(
+            FacilityUiModel(
                 id = 2,
                 name = "灵石矿脉",
-                type = BuildingType.SPIRIT_STONE_MINE,
+                type = FacilityType.SPIRIT_STONE_MINE,
                 level = 2,
                 maxLevel = 10,
                 isActive = true,
@@ -125,10 +125,10 @@ class BuildingViewModel : ViewModel() {
                 maintenanceCost = 10,
                 canUpgrade = true
             ),
-            BuildingUiModel(
+            FacilityUiModel(
                 id = 3,
                 name = "贡献堂",
-                type = BuildingType.CONTRIBUTION_HALL,
+                type = FacilityType.CONTRIBUTION_HALL,
                 level = 1,
                 maxLevel = 10,
                 isActive = true,
@@ -141,35 +141,35 @@ class BuildingViewModel : ViewModel() {
     }
 
     /**
-     * 建造建筑
+     * 建造设施
      */
-    fun buildBuilding(name: String, type: BuildingType) {
+    fun buildFacility(name: String, type: FacilityType) {
         viewModelScope.launch {
             val checkResult = constructionSystem.canBuild(type)
             if (!checkResult.canBuild) {
-                _operationResult.value = BuildingOperationResult(false, checkResult.reason)
+                _operationResult.value = FacilityOperationResult(false, checkResult.reason)
                 return@launch
             }
 
             val result = constructionSystem.build(name, type)
-            _operationResult.value = BuildingOperationResult(result.success, result.message)
+            _operationResult.value = FacilityOperationResult(result.success, result.message)
 
             if (result.success) {
-                loadBuildings()
+                loadFacilities()
                 updateProductionSummary()
             }
         }
     }
 
     /**
-     * 升级建筑
+     * 升级设施
      */
-    fun upgradeBuilding(buildingId: Long) {
+    fun upgradeFacility(facilityId: Long) {
         viewModelScope.launch {
-            // 这里应该根据buildingId获取建筑实体
+            // 这里应该根据facilityId获取设施实体
             // 暂时模拟升级成功
-            _operationResult.value = BuildingOperationResult(true, "升级成功")
-            loadBuildings()
+            _operationResult.value = FacilityOperationResult(true, "升级成功")
+            loadFacilities()
             updateProductionSummary()
         }
     }
@@ -195,16 +195,16 @@ class BuildingViewModel : ViewModel() {
     }
 
     /**
-     * 获取建筑建造成本
+     * 获取设施建造成本
      */
-    fun getConstructionCost(type: BuildingType): BuildingCost {
-        return BuildingCost.getConstructionCost(type)
+    fun getConstructionCost(type: FacilityType): FacilityCost {
+        return FacilityCost.getConstructionCost(type)
     }
 
     /**
-     * 获取建筑升级成本
+     * 获取设施升级成本
      */
-    fun getUpgradeCost(type: BuildingType, currentLevel: Int): BuildingCost {
-        return BuildingCost.getUpgradeCost(type, currentLevel)
+    fun getUpgradeCost(type: FacilityType, currentLevel: Int): FacilityCost {
+        return FacilityCost.getUpgradeCost(type, currentLevel)
     }
 }

@@ -18,9 +18,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import cn.jzl.sect.building.components.BuildingCost
-import cn.jzl.sect.building.components.BuildingType
 import cn.jzl.sect.core.cultivation.Realm
+import cn.jzl.sect.core.facility.*
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.engine.*
 import cn.jzl.sect.engine.WorldProvider
@@ -165,7 +164,7 @@ fun App() {
                         when (page) {
                             PageType.OVERVIEW -> OverviewPage(sectViewModel)
                             PageType.DISCIPLES -> DisciplesPage(discipleViewModel)
-                            PageType.BUILDINGS -> BuildingsPage()
+                            PageType.BUILDINGS -> FacilitiesPage()
                             PageType.QUESTS -> QuestsPage(gameViewModel)
                             PageType.POLICY -> PolicyPage(gameViewModel)
                         }
@@ -883,11 +882,11 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * 建筑管理页面
+ * 设施管理页面
  */
 @Composable
-fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel() }) {
-    val buildingList by viewModel.buildingList.collectAsState()
+fun FacilitiesPage(viewModel: FacilityViewModel = viewModel { FacilityViewModel() }) {
+    val facilityList by viewModel.facilityList.collectAsState()
     val totalProduction by viewModel.totalProduction.collectAsState()
     val totalMaintenanceCost by viewModel.totalMaintenanceCost.collectAsState()
     val operationResult by viewModel.operationResult.collectAsState()
@@ -895,7 +894,7 @@ fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel()
     // 对话框状态
     var showBuildDialog by remember { mutableStateOf(false) }
     var showUpgradeDialog by remember { mutableStateOf(false) }
-    var selectedBuilding by remember { mutableStateOf<BuildingUiModel?>(null) }
+    var selectedFacility by remember { mutableStateOf<FacilityUiModel?>(null) }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -907,11 +906,11 @@ fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel()
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "建筑管理",
+                text = "设施管理",
                 style = MaterialTheme.typography.headlineMedium
             )
             Button(onClick = { showBuildDialog = true }) {
-                Text("+ 建造新建筑")
+                Text("+ 建造新设施")
             }
         }
 
@@ -933,7 +932,7 @@ fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel()
                 Spacer(modifier = Modifier.height(8.dp))
 
                 if (totalProduction.isEmpty()) {
-                    Text("暂无建筑产出", style = MaterialTheme.typography.bodyMedium)
+                    Text("暂无设施产出", style = MaterialTheme.typography.bodyMedium)
                 } else {
                     totalProduction.forEach { (resourceType, amount) ->
                         InfoRow(
@@ -953,15 +952,15 @@ fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel()
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 建筑列表
-        when (val state = buildingList) {
-            is BuildingListUiState.Loading -> {
+        // 设施列表
+        when (val state = facilityList) {
+            is FacilityListUiState.Loading -> {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
-            is BuildingListUiState.Success -> {
-                val buildings = state.buildings
-                if (buildings.isEmpty()) {
-                    Text("暂无建筑，请建造新建筑", style = MaterialTheme.typography.bodyLarge)
+            is FacilityListUiState.Success -> {
+                val facilities = state.facilities
+                if (facilities.isEmpty()) {
+                    Text("暂无设施，请建造新设施", style = MaterialTheme.typography.bodyLarge)
                 } else {
                     androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
                         columns = androidx.compose.foundation.lazy.grid.GridCells.Adaptive(minSize = 250.dp),
@@ -969,11 +968,11 @@ fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel()
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        items(buildings.size) { index ->
-                            BuildingCard(
-                                building = buildings[index],
+                        items(facilities.size) { index ->
+                            FacilityCard(
+                                facility = facilities[index],
                                 onUpgrade = {
-                                    selectedBuilding = buildings[index]
+                                    selectedFacility = facilities[index]
                                     showUpgradeDialog = true
                                 }
                             )
@@ -981,7 +980,7 @@ fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel()
                     }
                 }
             }
-            is BuildingListUiState.Error -> {
+            is FacilityListUiState.Error -> {
                 Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
             }
         }
@@ -989,10 +988,10 @@ fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel()
 
     // 建造对话框
     if (showBuildDialog) {
-        BuildDialog(
+        BuildFacilityDialog(
             onDismiss = { showBuildDialog = false },
             onBuild = { name, type ->
-                viewModel.buildBuilding(name, type)
+                viewModel.buildFacility(name, type)
                 showBuildDialog = false
             },
             getConstructionCost = { viewModel.getConstructionCost(it) }
@@ -1000,18 +999,18 @@ fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel()
     }
 
     // 升级对话框
-    if (showUpgradeDialog && selectedBuilding != null) {
-        UpgradeDialog(
-            building = selectedBuilding!!,
-            upgradeCost = viewModel.getUpgradeCost(selectedBuilding!!.type, selectedBuilding!!.level),
+    if (showUpgradeDialog && selectedFacility != null) {
+        UpgradeFacilityDialog(
+            facility = selectedFacility!!,
+            upgradeCost = viewModel.getUpgradeCost(selectedFacility!!.type, selectedFacility!!.level),
             onDismiss = {
                 showUpgradeDialog = false
-                selectedBuilding = null
+                selectedFacility = null
             },
             onUpgrade = {
-                viewModel.upgradeBuilding(selectedBuilding!!.id)
+                viewModel.upgradeFacility(selectedFacility!!.id)
                 showUpgradeDialog = false
-                selectedBuilding = null
+                selectedFacility = null
             }
         )
     }
@@ -1032,18 +1031,22 @@ fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel()
 }
 
 /**
- * 建筑卡片组件
+ * 设施卡片组件
  */
 @Composable
-fun BuildingCard(
-    building: BuildingUiModel,
+fun FacilityCard(
+    facility: FacilityUiModel,
     onUpgrade: () -> Unit
 ) {
-    val typeColor = when (building.type) {
-        BuildingType.CULTIVATION_ROOM -> Color(0xFF4CAF50)
-        BuildingType.ALCHEMY_LAB -> Color(0xFFFF9800)
-        BuildingType.SPIRIT_STONE_MINE -> Color(0xFF2196F3)
-        BuildingType.CONTRIBUTION_HALL -> Color(0xFF9C27B0)
+    val typeColor = when (facility.type) {
+        FacilityType.CULTIVATION_ROOM -> Color(0xFF4CAF50)
+        FacilityType.ALCHEMY_ROOM -> Color(0xFFFF9800)
+        FacilityType.FORGE_ROOM -> Color(0xFF795548)
+        FacilityType.LIBRARY -> Color(0xFF9C27B0)
+        FacilityType.WAREHOUSE -> Color(0xFF607D8B)
+        FacilityType.DORMITORY -> Color(0xFF3F51B5)
+        FacilityType.SPIRIT_STONE_MINE -> Color(0xFF2196F3)
+        FacilityType.CONTRIBUTION_HALL -> Color(0xFFE91E63)
     }
 
     Card(
@@ -1060,7 +1063,7 @@ fun BuildingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = building.name,
+                    text = facility.name,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Surface(
@@ -1068,7 +1071,7 @@ fun BuildingCard(
                     shape = MaterialTheme.shapes.small
                 ) {
                     Text(
-                        text = "Lv.${building.level}",
+                        text = "Lv.${facility.level}",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = typeColor
@@ -1080,7 +1083,7 @@ fun BuildingCard(
 
             // 类型
             Text(
-                text = building.type.displayName,
+                text = facility.type.displayName,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1092,7 +1095,7 @@ fun BuildingCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "📦 ${building.productionType.displayName}: +${building.productionAmount}/小时",
+                    text = "📦 ${facility.productionType.displayName}: +${facility.productionAmount}/小时",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -1101,7 +1104,7 @@ fun BuildingCard(
 
             // 维护费用
             Text(
-                text = "💰 维护费: ${building.maintenanceCost}灵石/小时",
+                text = "💰 维护费: ${facility.maintenanceCost}灵石/小时",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1112,46 +1115,46 @@ fun BuildingCard(
             Button(
                 onClick = onUpgrade,
                 modifier = Modifier.fillMaxWidth(),
-                enabled = building.canUpgrade
+                enabled = facility.canUpgrade
             ) {
-                Text(if (building.canUpgrade) "升级" else "已满级")
+                Text(if (facility.canUpgrade) "升级" else "已满级")
             }
         }
     }
 }
 
 /**
- * 建造对话框
+ * 建造设施对话框
  */
 @Composable
-fun BuildDialog(
+fun BuildFacilityDialog(
     onDismiss: () -> Unit,
-    onBuild: (String, BuildingType) -> Unit,
-    getConstructionCost: (BuildingType) -> BuildingCost
+    onBuild: (String, FacilityType) -> Unit,
+    getConstructionCost: (FacilityType) -> FacilityCost
 ) {
-    var buildingName by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(BuildingType.CULTIVATION_ROOM) }
+    var facilityName by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(FacilityType.CULTIVATION_ROOM) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("建造新建筑") },
+        title = { Text("建造新设施") },
         text = {
             Column {
-                // 建筑名称输入
+                // 设施名称输入
                 OutlinedTextField(
-                    value = buildingName,
-                    onValueChange = { buildingName = it },
-                    label = { Text("建筑名称") },
+                    value = facilityName,
+                    onValueChange = { facilityName = it },
+                    label = { Text("设施名称") },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 建筑类型选择
-                Text("选择建筑类型:", style = MaterialTheme.typography.bodyMedium)
+                // 设施类型选择
+                Text("选择设施类型:", style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
 
-                BuildingType.entries.forEach { type ->
+                FacilityType.entries.forEach { type ->
                     val cost = getConstructionCost(type)
                     Row(
                         modifier = Modifier
@@ -1183,8 +1186,8 @@ fun BuildDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onBuild(buildingName, selectedType) },
-                enabled = buildingName.isNotBlank()
+                onClick = { onBuild(facilityName, selectedType) },
+                enabled = facilityName.isNotBlank()
             ) {
                 Text("建造")
             }
@@ -1198,30 +1201,30 @@ fun BuildDialog(
 }
 
 /**
- * 升级对话框
+ * 升级设施对话框
  */
 @Composable
-fun UpgradeDialog(
-    building: BuildingUiModel,
-    upgradeCost: BuildingCost,
+fun UpgradeFacilityDialog(
+    facility: FacilityUiModel,
+    upgradeCost: FacilityCost,
     onDismiss: () -> Unit,
     onUpgrade: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("升级建筑") },
+        title = { Text("升级设施") },
         text = {
             Column {
                 Text(
-                    "建筑: ${building.name}",
+                    "设施: ${facility.name}",
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Text(
-                    "当前等级: ${building.level}",
+                    "当前等级: ${facility.level}",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    "升级后等级: ${building.level + 1}",
+                    "升级后等级: ${facility.level + 1}",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
