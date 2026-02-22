@@ -506,67 +506,56 @@ fun DiscipleCard(disciple: DiscipleUiModel) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 生命值
-            Column {
+            // 生命和精力（简化为一行）
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // 生命值（简化）
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "生命值",
+                        text = "❤ ",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "${disciple.health}/${disciple.maxHealth}",
-                        style = MaterialTheme.typography.bodySmall,
                         color = if (disciple.health < disciple.maxHealth * 0.3f) {
                             MaterialTheme.colorScheme.error
                         } else {
-                            MaterialTheme.colorScheme.onSurface
+                            MaterialTheme.colorScheme.primary
                         }
                     )
+                    LinearProgressIndicator(
+                        progress = { disciple.health.toFloat() / disciple.maxHealth.toFloat() },
+                        modifier = Modifier.weight(1f).height(6.dp),
+                        color = if (disciple.health < disciple.maxHealth * 0.3f) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.primary
+                        },
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                LinearProgressIndicator(
-                    progress = { disciple.health.toFloat() / disciple.maxHealth.toFloat() },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = if (disciple.health < disciple.maxHealth * 0.3f) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
-            // 精力值
-            Column {
+                // 精力值（简化）
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = "精力值",
+                        text = "⚡ ",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.tertiary
                     )
-                    Text(
-                        text = "${disciple.spirit}/${disciple.maxSpirit}",
-                        style = MaterialTheme.typography.bodySmall
+                    LinearProgressIndicator(
+                        progress = { disciple.spirit.toFloat() / disciple.maxSpirit.toFloat() },
+                        modifier = Modifier.weight(1f).height(6.dp),
+                        color = MaterialTheme.colorScheme.tertiary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                LinearProgressIndicator(
-                    progress = { disciple.spirit.toFloat() / disciple.maxSpirit.toFloat() },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.tertiary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
-                )
             }
         }
     }
