@@ -2,6 +2,89 @@
 
 本文档提供部署、监控和问题排查的指导。
 
+## 运行项目
+
+### 桌面版（JVM）
+
+```bash
+# 运行桌面版（推荐用于开发测试）
+./gradlew :client:run
+
+# 或运行JVM主类
+./gradlew :client:jvmRun
+```
+
+### Android 应用
+
+```bash
+# 构建 Debug APK
+./gradlew :androidApp:assembleDebug
+# 输出: androidApp/build/outputs/apk/debug/
+
+# 构建 Release APK（需要签名配置）
+./gradlew :androidApp:assembleRelease
+
+# 安装到连接的设备
+./gradlew :androidApp:installDebug
+```
+
+### Web 版本
+
+```bash
+# 运行 JS 版本
+./gradlew :client:jsRun
+
+# 运行 WasmJS 版本
+./gradlew :client:wasmJsRun
+```
+
+## 测试
+
+```bash
+# 运行所有测试
+./gradlew test
+
+# 运行特定模块测试
+./gradlew :libs:lko-ecs:test
+./gradlew :libs:lko-core:test
+./gradlew :business-modules:business-core:test
+./gradlew :business-modules:business-quest:test
+./gradlew :business-modules:business-engine:test
+
+# 运行基准测试
+./gradlew :benchmarks:lko-ecs-benchmarks:jvmBenchmark
+```
+
+## 代码覆盖率
+
+```bash
+# 生成所有模块覆盖率报告
+./gradlew allCoverage
+
+# 查看 HTML 报告
+open libs/lko-ecs/build/reports/kover/htmlJvm/index.html
+
+# 生成 XML 报告（CI 集成）
+./gradlew :libs:lko-ecs:koverXmlReportJvm
+```
+
+## 构建
+
+```bash
+# 完整构建
+./gradlew build
+
+# 清理构建
+./gradlew clean build
+
+# 仅构建库模块
+./gradlew :libs:lko-ecs:build
+./gradlew :libs:lko-core:build
+
+# 构建业务模块
+./gradlew :business-modules:business-engine:build
+```
+
 ## 部署流程
 
 ### 桌面应用部署
@@ -51,11 +134,11 @@
 
 ```bash
 # Debug 构建
-./gradlew :client:assembleDebug
-# 输出: client/build/outputs/apk/debug/
+./gradlew :androidApp:assembleDebug
+# 输出: androidApp/build/outputs/apk/debug/
 
 # Release 构建（需要签名配置）
-./gradlew :client:assembleRelease
+./gradlew :androidApp:assembleRelease
 ```
 
 #### 发布到 Play Store
@@ -69,7 +152,7 @@
 # android.keyPassword
 
 # 2. 生成 App Bundle
-./gradlew :client:bundleRelease
+./gradlew :androidApp:bundleRelease
 
 # 3. 上传到 Play Store
 # 使用 Google Play Console 或 fastlane
@@ -155,10 +238,7 @@ ECS 框架提供基准测试：
 
 ```bash
 # 运行基准测试
-./gradlew benchmark
-
-# 运行特定基准测试
-./gradlew :benchmarks:lko-ecs-benchmarks:mainBenchmark
+./gradlew :benchmarks:lko-ecs-benchmarks:jvmBenchmark
 ```
 
 基准测试结果示例：
@@ -167,19 +247,6 @@ ECS 框架提供基准测试：
 Benchmark                      Mode  Cnt    Score    Error   Units
 EntityCreateBenchmark.create  avgt   10    0.123 ±  0.015  us/op
 QueryBenchmark.query          avgt   10    0.456 ±  0.032  us/op
-```
-
-### 代码覆盖率监控
-
-```bash
-# 生成所有模块覆盖率报告
-./gradlew allCoverage
-
-# 查看 HTML 报告
-open libs/lko-ecs/build/reports/kover/htmlJvm/index.html
-
-# 生成 XML 报告（CI 集成）
-./gradlew :libs:lko-ecs:koverXmlReportJvm
 ```
 
 ## 常见问题及修复
@@ -200,23 +267,7 @@ rm -rf ~/.gradle/caches/modules-2/files-2.1/
 # 项目已配置阿里云镜像：maven.aliyun.com
 ```
 
-### 问题 2: 热重载不工作
-
-**症状**: 代码修改后界面未更新
-
-**解决方案**:
-```bash
-# 1. 确保使用热重载任务
-./gradlew :client:hotReloadJvmDev
-
-# 2. 检查是否有编译错误
-./gradlew :client:compileJvmDev --info
-
-# 3. 重启热重载
-# 停止当前进程，重新运行
-```
-
-### 问题 3: Android 构建失败
+### 问题 2: Android 构建失败
 
 **症状**: `sdk.dir` 未找到或 Android 资源错误
 
@@ -232,7 +283,7 @@ yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
 $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" "build-tools;36.0.0"
 ```
 
-### 问题 4: 测试失败 - ConcurrentModificationException
+### 问题 3: 测试失败 - ConcurrentModificationException
 
 **症状**: 在遍历查询结果时修改实体抛出异常
 
@@ -253,7 +304,7 @@ world.query { DiscipleContext(this) }
     }
 ```
 
-### 问题 5: 组件查询返回空结果
+### 问题 4: 组件查询返回空结果
 
 **症状**: 查询不到预期的实体
 
@@ -266,42 +317,18 @@ world.query { DiscipleContext(this) }
 // 确保在启动时注册所有组件
 class GameWorld {
     fun init() {
-        world.componentId<Health>() { it.component() }
-        world.componentId<Position>() { it.component() }
+        world.componentId<Health>()
+        world.componentId<Position>()
     }
 }
 
 // 使用正确的查询方式
 class DiscipleContext(world: World) : EntityQueryContext(world) {
-    override fun FamilyBuilder.configure() {
-        component<Health>()  // 使用 component，不是 kind 或 tag
-    }
+    val health: Health by component()
 }
 ```
 
-### 问题 6: Lint 检查失败
-
-**症状**: `lint` 任务报告错误
-
-**解决方案**:
-```bash
-# 查看详细错误
-./gradlew :client:lint --info
-
-# 自动修复
-./gradlew :client:lintFix
-
-# 如需忽略特定错误，在 build.gradle.kts 中配置
-android {
-    lint {
-        warning 'MissingTranslation', 'HardcodedText'
-        error 'NewApi'
-        abortOnError false
-    }
-}
-```
-
-### 问题 7: Kover 覆盖率生成失败
+### 问题 5: Kover 覆盖率生成失败
 
 **症状**: 覆盖率报告任务失败
 
@@ -314,18 +341,6 @@ android {
 ./gradlew :libs:lko-ecs:test
 ./gradlew :libs:lko-ecs:koverHtmlReportJvm
 ```
-
-### 问题 8: Kotlin Multiplatform 插件警告
-
-**症状**: AGP 兼容性警告
-
-**警告信息**:
-```
-The 'org.jetbrains.kotlin.multiplatform' plugin deprecated compatibility 
-with Android Gradle plugin: 'com.android.library'
-```
-
-**解决方案**: 计划迁移到 `com.android.kotlin.multiplatform.library` 插件（AGP 9.0+）
 
 ## 回滚流程
 
@@ -356,13 +371,6 @@ kotlin = "2.3.0"
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version = "2.3.0" }
 ```
 
-### 部署回滚
-
-如需回滚已发布的应用：
-
-1. **桌面应用**: 重新打包上一个稳定版本
-2. **Android**: 在 Play Console 中使用「紧急回滚」功能
-
 ## 健康检查
 
 ### 构建健康检查
@@ -377,10 +385,7 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version = "2.3.0" }
 # 3. 运行代码检查
 ./gradlew :client:lint
 
-# 4. 运行基准测试（验证性能未退化）
-./gradlew benchmark
-
-# 5. 生成覆盖率报告
+# 4. 生成覆盖率报告
 ./gradlew allCoverage
 ```
 
@@ -388,7 +393,6 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version = "2.3.0" }
 
 - [ ] 所有测试通过
 - [ ] Lint 检查无错误
-- [ ] 基准测试结果在预期范围内
 - [ ] 覆盖率报告已生成
 - [ ] CHANGELOG 已更新
 - [ ] 版本号已更新
@@ -420,4 +424,4 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version = "2.3.0" }
 
 - [贡献指南](./CONTRIB.md)
 - [ECS 架构文档](../technology/ecs-architecture.md)
-- [项目规范](../AGENTS.md)
+- [项目规范](../../AGENTS.md)
