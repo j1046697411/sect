@@ -1,11 +1,19 @@
 package cn.jzl.sect
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cn.jzl.sect.core.cultivation.Realm
@@ -37,6 +45,8 @@ fun App() {
 
     MaterialTheme {
         var currentPage by remember { mutableStateOf(PageType.OVERVIEW) }
+        // 导航栏展开/折叠状态
+        var isNavExpanded by remember { mutableStateOf(true) }
 
         // 创建ViewModel（此时World已初始化）
         val gameViewModel: GameViewModel = viewModel { GameViewModel() }
@@ -74,36 +84,13 @@ fun App() {
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                // 左侧导航栏
-                NavigationRail(
-                    modifier = Modifier.fillMaxHeight(),
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    NavigationRailItem(
-                        icon = { Text("🏠") },
-                        label = { Text("总览") },
-                        selected = currentPage == PageType.OVERVIEW,
-                        onClick = { currentPage = PageType.OVERVIEW }
-                    )
-                    NavigationRailItem(
-                        icon = { Text("👥") },
-                        label = { Text("弟子") },
-                        selected = currentPage == PageType.DISCIPLES,
-                        onClick = { currentPage = PageType.DISCIPLES }
-                    )
-                    NavigationRailItem(
-                        icon = { Text("📋") },
-                        label = { Text("任务") },
-                        selected = currentPage == PageType.QUESTS,
-                        onClick = { currentPage = PageType.QUESTS }
-                    )
-                    NavigationRailItem(
-                        icon = { Text("⚙️") },
-                        label = { Text("政策") },
-                        selected = currentPage == PageType.POLICY,
-                        onClick = { currentPage = PageType.POLICY }
-                    )
-                }
+                // 左侧可折叠导航栏
+                CollapsibleNavigationRail(
+                    isExpanded = isNavExpanded,
+                    onToggle = { isNavExpanded = !isNavExpanded },
+                    currentPage = currentPage,
+                    onPageSelected = { currentPage = it }
+                )
 
                 // 中间主内容区
                 Box(
@@ -181,6 +168,134 @@ fun GameSpeedControl(
                     color = if (isSelected) 
                         MaterialTheme.colorScheme.onPrimary 
                     else 
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 可折叠导航栏组件
+ */
+@Composable
+fun CollapsibleNavigationRail(
+    isExpanded: Boolean,
+    onToggle: () -> Unit,
+    currentPage: PageType,
+    onPageSelected: (PageType) -> Unit
+) {
+    val width by animateDpAsState(
+        targetValue = if (isExpanded) 200.dp else 80.dp,
+        label = "nav_width"
+    )
+
+    Card(
+        modifier = Modifier
+            .width(width)
+            .fillMaxHeight(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        shape = MaterialTheme.shapes.large
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // 切换按钮
+            IconButton(
+                onClick = onToggle,
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text(
+                    text = if (isExpanded) "◀" else "▶",
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+
+            Divider(modifier = Modifier.padding(horizontal = 8.dp))
+
+            // 导航项
+            NavItem(
+                icon = "🏠",
+                label = "总览",
+                isExpanded = isExpanded,
+                isSelected = currentPage == PageType.OVERVIEW,
+                onClick = { onPageSelected(PageType.OVERVIEW) }
+            )
+
+            NavItem(
+                icon = "👥",
+                label = "弟子",
+                isExpanded = isExpanded,
+                isSelected = currentPage == PageType.DISCIPLES,
+                onClick = { onPageSelected(PageType.DISCIPLES) }
+            )
+
+            NavItem(
+                icon = "📋",
+                label = "任务",
+                isExpanded = isExpanded,
+                isSelected = currentPage == PageType.QUESTS,
+                onClick = { onPageSelected(PageType.QUESTS) }
+            )
+
+            NavItem(
+                icon = "⚙️",
+                label = "政策",
+                isExpanded = isExpanded,
+                isSelected = currentPage == PageType.POLICY,
+                onClick = { onPageSelected(PageType.POLICY) }
+            )
+        }
+    }
+}
+
+/**
+ * 导航项组件
+ */
+@Composable
+fun NavItem(
+    icon: String,
+    label: String,
+    isExpanded: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isSelected)
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+        else
+            MaterialTheme.colorScheme.surfaceVariant,
+        label = "nav_item_bg"
+    )
+
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(4.dp),
+        color = backgroundColor,
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = if (isExpanded) Arrangement.Start else Arrangement.Center
+        ) {
+            Text(
+                text = icon,
+                style = MaterialTheme.typography.titleMedium
+            )
+            if (isExpanded) {
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isSelected)
+                        MaterialTheme.colorScheme.primary
+                    else
                         MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -570,23 +685,33 @@ fun DiscipleCard(disciple: DiscipleUiModel, onClick: () -> Unit = {}) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 第二行：职务标签和状态
+            // 第二行：职务图标、标签和状态
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 职务标签
-                Surface(
-                    color = positionColor.copy(alpha = 0.2f),
-                    shape = MaterialTheme.shapes.small
+                // 职务图标和标签
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // 职务图标
                     Text(
-                        text = disciple.positionDisplay,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = positionColor
+                        text = getPositionIcon(disciple.position),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(end = 4.dp)
                     )
+                    Surface(
+                        color = positionColor.copy(alpha = 0.2f),
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Text(
+                            text = disciple.positionDisplay,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = positionColor
+                        )
+                    }
                 }
 
                 // 当前状态（行为）
@@ -622,7 +747,7 @@ fun DiscipleCard(disciple: DiscipleUiModel, onClick: () -> Unit = {}) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 修为进度
+            // 修为进度（游戏风格）
             Column {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -630,79 +755,228 @@ fun DiscipleCard(disciple: DiscipleUiModel, onClick: () -> Unit = {}) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "修为进度",
+                        text = "📿 修为",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "${(disciple.cultivationProgress * 100).toInt()}%",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = Color(0xFFAB47BC)
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
-                LinearProgressIndicator(
-                    progress = { disciple.cultivationProgress },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.secondary,
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                GameCultivationBar(
+                    progress = disciple.cultivationProgress,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // 生命和精力（简化为一行）
+            // 生命和精力（游戏风格）
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                // 生命值（简化）
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "❤ ",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (disciple.health < disciple.maxHealth * 0.3f) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        }
-                    )
-                    LinearProgressIndicator(
-                        progress = { disciple.health.toFloat() / disciple.maxHealth.toFloat() },
-                        modifier = Modifier.weight(1f).height(6.dp),
-                        color = if (disciple.health < disciple.maxHealth * 0.3f) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        },
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                // 生命值（游戏风格血条）
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "❤ ${disciple.health}/${disciple.maxHealth}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (disciple.health < disciple.maxHealth * 0.3f) {
+                                Color(0xFFB71C1C)
+                            } else {
+                                Color(0xFFE53935)
+                            }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    GameHealthBar(
+                        progress = disciple.health.toFloat() / disciple.maxHealth.toFloat(),
+                        modifier = Modifier.fillMaxWidth(),
+                        isLow = disciple.health < disciple.maxHealth * 0.3f
                     )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
 
-                // 精力值（简化）
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = "⚡ ",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                    LinearProgressIndicator(
-                        progress = { disciple.spirit.toFloat() / disciple.maxSpirit.toFloat() },
-                        modifier = Modifier.weight(1f).height(6.dp),
-                        color = MaterialTheme.colorScheme.tertiary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                // 精力值（游戏风格能量条）
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "⚡ ${disciple.spirit}/${disciple.maxSpirit}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF0288D1)
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    GameEnergyBar(
+                        progress = disciple.spirit.toFloat() / disciple.maxSpirit.toFloat(),
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
         }
+    }
+}
+
+/**
+ * 游戏风格血条组件
+ */
+@Composable
+fun GameHealthBar(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    isLow: Boolean = false
+) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        label = "health_progress"
+    )
+
+    val color = if (isLow) {
+        Color(0xFFB71C1C) // 深红色警告
+    } else {
+        Color(0xFFE53935) // 红色
+    }
+
+    Box(
+        modifier = modifier
+            .height(12.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(Color(0xFF333333))
+    ) {
+        // 血条填充
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(animatedProgress)
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            color.copy(alpha = 0.8f),
+                            color,
+                            color.copy(alpha = 0.8f)
+                        )
+                    )
+                )
+        )
+
+        // 光泽效果
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(Color.White.copy(alpha = 0.2f))
+        )
+    }
+}
+
+/**
+ * 游戏风格能量条组件
+ */
+@Composable
+fun GameEnergyBar(
+    progress: Float,
+    modifier: Modifier = Modifier
+) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        label = "energy_progress"
+    )
+
+    Box(
+        modifier = modifier
+            .height(12.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(Color(0xFF333333))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(animatedProgress)
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFF29B6F6).copy(alpha = 0.8f),
+                            Color(0xFF0288D1),
+                            Color(0xFF29B6F6).copy(alpha = 0.8f)
+                        )
+                    )
+                )
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(Color.White.copy(alpha = 0.2f))
+        )
+    }
+}
+
+/**
+ * 游戏风格修为进度条组件
+ */
+@Composable
+fun GameCultivationBar(
+    progress: Float,
+    modifier: Modifier = Modifier
+) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        label = "cultivation_progress"
+    )
+
+    Box(
+        modifier = modifier
+            .height(12.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(Color(0xFF333333))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(animatedProgress)
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            Color(0xFFAB47BC).copy(alpha = 0.8f),
+                            Color(0xFF7B1FA2),
+                            Color(0xFFAB47BC).copy(alpha = 0.8f)
+                        )
+                    )
+                )
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(Color.White.copy(alpha = 0.2f))
+        )
+    }
+}
+
+/**
+ * 获取职务图标
+ */
+fun getPositionIcon(position: SectPositionType): String {
+    return when (position) {
+        SectPositionType.LEADER -> "👑"
+        SectPositionType.ELDER -> "🎓"
+        SectPositionType.DISCIPLE_INNER -> "⭐"
+        SectPositionType.DISCIPLE_OUTER -> "○"
     }
 }
 
