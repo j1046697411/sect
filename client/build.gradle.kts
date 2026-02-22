@@ -58,6 +58,7 @@ kotlin {
             implementation(projects.libs.lkoEcs)
             implementation(projects.libs.lkoCore)
             implementation(projects.businessModules.businessEngine)
+            implementation(projects.businessModules.businessBuilding)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

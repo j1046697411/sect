@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cn.jzl.sect.building.components.BuildingCost
+import cn.jzl.sect.building.components.BuildingType
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.engine.*
@@ -30,6 +32,7 @@ import cn.jzl.sect.viewmodel.*
 enum class PageType {
     OVERVIEW,      // 宗门总览
     DISCIPLES,     // 弟子管理
+    BUILDINGS,     // 建筑管理
     QUESTS,        // 任务大厅
     POLICY,        // 政策配置
 }
@@ -162,6 +165,7 @@ fun App() {
                         when (page) {
                             PageType.OVERVIEW -> OverviewPage(sectViewModel)
                             PageType.DISCIPLES -> DisciplesPage(discipleViewModel)
+                            PageType.BUILDINGS -> BuildingsPage()
                             PageType.QUESTS -> QuestsPage(gameViewModel)
                             PageType.POLICY -> PolicyPage(gameViewModel)
                         }
@@ -232,6 +236,12 @@ fun BottomNavigationBar(
             label = { Text("弟子") },
             selected = currentPage == PageType.DISCIPLES,
             onClick = { onPageSelected(PageType.DISCIPLES) }
+        )
+        NavigationBarItem(
+            icon = { Text("🏛️") },
+            label = { Text("建筑") },
+            selected = currentPage == PageType.BUILDINGS,
+            onClick = { onPageSelected(PageType.BUILDINGS) }
         )
         NavigationBarItem(
             icon = { Text("📋") },
@@ -357,6 +367,14 @@ fun CollapsibleNavigationRail(
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.DISCIPLES,
                 onClick = { onPageSelected(PageType.DISCIPLES) }
+            )
+
+            NavItem(
+                icon = "🏛️",
+                label = "建筑",
+                isExpanded = isExpanded,
+                isSelected = currentPage == PageType.BUILDINGS,
+                onClick = { onPageSelected(PageType.BUILDINGS) }
             )
 
             NavItem(
@@ -862,6 +880,381 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier) {
             )
         }
     }
+}
+
+/**
+ * 建筑管理页面
+ */
+@Composable
+fun BuildingsPage(viewModel: BuildingViewModel = viewModel { BuildingViewModel() }) {
+    val buildingList by viewModel.buildingList.collectAsState()
+    val totalProduction by viewModel.totalProduction.collectAsState()
+    val totalMaintenanceCost by viewModel.totalMaintenanceCost.collectAsState()
+    val operationResult by viewModel.operationResult.collectAsState()
+
+    // 对话框状态
+    var showBuildDialog by remember { mutableStateOf(false) }
+    var showUpgradeDialog by remember { mutableStateOf(false) }
+    var selectedBuilding by remember { mutableStateOf<BuildingUiModel?>(null) }
+
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // 标题和建造按钮
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "建筑管理",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Button(onClick = { showBuildDialog = true }) {
+                Text("+ 建造新建筑")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 产出汇总
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "📊 产出汇总",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (totalProduction.isEmpty()) {
+                    Text("暂无建筑产出", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    totalProduction.forEach { (resourceType, amount) ->
+                        InfoRow(
+                            label = resourceType.displayName,
+                            value = "+${amount}/小时"
+                        )
+                    }
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                InfoRow(
+                    label = "维护费用",
+                    value = "-${totalMaintenanceCost}灵石/小时"
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 建筑列表
+        when (val state = buildingList) {
+            is BuildingListUiState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+            is BuildingListUiState.Success -> {
+                val buildings = state.buildings
+                if (buildings.isEmpty()) {
+                    Text("暂无建筑，请建造新建筑", style = MaterialTheme.typography.bodyLarge)
+                } else {
+                    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
+                        columns = androidx.compose.foundation.lazy.grid.GridCells.Adaptive(minSize = 250.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        items(buildings.size) { index ->
+                            BuildingCard(
+                                building = buildings[index],
+                                onUpgrade = {
+                                    selectedBuilding = buildings[index]
+                                    showUpgradeDialog = true
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            is BuildingListUiState.Error -> {
+                Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+
+    // 建造对话框
+    if (showBuildDialog) {
+        BuildDialog(
+            onDismiss = { showBuildDialog = false },
+            onBuild = { name, type ->
+                viewModel.buildBuilding(name, type)
+                showBuildDialog = false
+            },
+            getConstructionCost = { viewModel.getConstructionCost(it) }
+        )
+    }
+
+    // 升级对话框
+    if (showUpgradeDialog && selectedBuilding != null) {
+        UpgradeDialog(
+            building = selectedBuilding!!,
+            upgradeCost = viewModel.getUpgradeCost(selectedBuilding!!.type, selectedBuilding!!.level),
+            onDismiss = {
+                showUpgradeDialog = false
+                selectedBuilding = null
+            },
+            onUpgrade = {
+                viewModel.upgradeBuilding(selectedBuilding!!.id)
+                showUpgradeDialog = false
+                selectedBuilding = null
+            }
+        )
+    }
+
+    // 操作结果提示
+    operationResult?.let { result ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearOperationResult() },
+            title = { Text(if (result.success) "成功" else "失败") },
+            text = { Text(result.message) },
+            confirmButton = {
+                Button(onClick = { viewModel.clearOperationResult() }) {
+                    Text("确定")
+                }
+            }
+        )
+    }
+}
+
+/**
+ * 建筑卡片组件
+ */
+@Composable
+fun BuildingCard(
+    building: BuildingUiModel,
+    onUpgrade: () -> Unit
+) {
+    val typeColor = when (building.type) {
+        BuildingType.CULTIVATION_ROOM -> Color(0xFF4CAF50)
+        BuildingType.ALCHEMY_LAB -> Color(0xFFFF9800)
+        BuildingType.SPIRIT_STONE_MINE -> Color(0xFF2196F3)
+        BuildingType.CONTRIBUTION_HALL -> Color(0xFF9C27B0)
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            // 名称和等级
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = building.name,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Surface(
+                    color = typeColor.copy(alpha = 0.2f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = "Lv.${building.level}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = typeColor
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 类型
+            Text(
+                text = building.type.displayName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 产出信息
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📦 ${building.productionType.displayName}: +${building.productionAmount}/小时",
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // 维护费用
+            Text(
+                text = "💰 维护费: ${building.maintenanceCost}灵石/小时",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 升级按钮
+            Button(
+                onClick = onUpgrade,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = building.canUpgrade
+            ) {
+                Text(if (building.canUpgrade) "升级" else "已满级")
+            }
+        }
+    }
+}
+
+/**
+ * 建造对话框
+ */
+@Composable
+fun BuildDialog(
+    onDismiss: () -> Unit,
+    onBuild: (String, BuildingType) -> Unit,
+    getConstructionCost: (BuildingType) -> BuildingCost
+) {
+    var buildingName by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf(BuildingType.CULTIVATION_ROOM) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("建造新建筑") },
+        text = {
+            Column {
+                // 建筑名称输入
+                OutlinedTextField(
+                    value = buildingName,
+                    onValueChange = { buildingName = it },
+                    label = { Text("建筑名称") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 建筑类型选择
+                Text("选择建筑类型:", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                BuildingType.entries.forEach { type ->
+                    val cost = getConstructionCost(type)
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedType = type }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type }
+                        )
+                        Column(modifier = Modifier.padding(start = 8.dp)) {
+                            Text(type.displayName, style = MaterialTheme.typography.bodyMedium)
+                            Text(
+                                type.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                "成本: ${cost.spiritStones}灵石 ${cost.contributionPoints}贡献点",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onBuild(buildingName, selectedType) },
+                enabled = buildingName.isNotBlank()
+            ) {
+                Text("建造")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
+}
+
+/**
+ * 升级对话框
+ */
+@Composable
+fun UpgradeDialog(
+    building: BuildingUiModel,
+    upgradeCost: BuildingCost,
+    onDismiss: () -> Unit,
+    onUpgrade: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("升级建筑") },
+        text = {
+            Column {
+                Text(
+                    "建筑: ${building.name}",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                Text(
+                    "当前等级: ${building.level}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    "升级后等级: ${building.level + 1}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    "升级成本:",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text("💎 ${upgradeCost.spiritStones} 灵石")
+                Text("⭐ ${upgradeCost.contributionPoints} 贡献点")
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    "升级后产出效率提升10%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onUpgrade) {
+                Text("确认升级")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
 
 /**
