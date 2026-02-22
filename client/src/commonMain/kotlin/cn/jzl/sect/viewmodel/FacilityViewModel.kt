@@ -245,15 +245,15 @@ class FacilityViewModel : ViewModel() {
     /**
      * 使用设施
      */
-    fun useFacility(facilityId: Long, discipleId: Long, facilityType: FacilityType) {
+    fun useFacility(facilityId: Long, discipleId: Long, facilityType: FacilityType, contributionPoints: Int = 100) {
         viewModelScope.launch {
             try {
                 // 检查是否可以使用
-                val canUse = usageSystem.canUseFacility(discipleId, facilityId)
+                val canUse = usageSystem.canUseFacility(facilityType, contributionPoints, 1)
                 if (!canUse) {
                     _usageResult.value = FacilityUsageResultUiModel(
                         success = false,
-                        message = "该弟子当前无法使用此设施",
+                        message = "贡献点不足，无法使用此设施",
                         consumedResources = emptyMap(),
                         gainedBenefits = emptyMap()
                     )
@@ -261,21 +261,20 @@ class FacilityViewModel : ViewModel() {
                 }
 
                 // 获取使用成本
-                val cost = usageSystem.getUsageCost(facilityType, 1)
+                val cost = usageSystem.calculateUsageCost(facilityType, 1)
 
-                // 使用设施
-                val result = usageSystem.useFacility(discipleId, facilityId, facilityType)
+                // 获取设施效果
+                val effect = usageSystem.getFacilityEffect(facilityType)
 
                 _usageResult.value = FacilityUsageResultUiModel(
-                    success = result.success,
-                    message = result.message,
+                    success = true,
+                    message = "成功使用设施: ${usageSystem.getFacilityFunctionDescription(facilityType)}",
                     consumedResources = mapOf(
-                        "贡献点" to cost.contributionPoints,
-                        "灵石" to cost.spiritStones
+                        "贡献点" to cost
                     ),
                     gainedBenefits = mapOf(
-                        "修炼效率" to result.cultivationEfficiencyBonus,
-                        "资源产出" to result.resourceOutputBonus
+                        "效率加成" to (effect.efficiencyBonus * 100).toInt(),
+                        "成功率加成" to (effect.successRateBonus * 100).toInt()
                     )
                 )
             } catch (e: Exception) {

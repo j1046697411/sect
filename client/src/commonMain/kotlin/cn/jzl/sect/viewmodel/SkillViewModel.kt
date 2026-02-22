@@ -274,15 +274,30 @@ class SkillViewModel : ViewModel() {
         skillRarity: SkillRarity
     ) {
         viewModelScope.launch {
-            val canInherit = inheritanceSystem.canInheritSkill(
-                masterProficiency = masterProficiency,
+            // 使用SkillInheritanceSystem的canInherit方法检查
+            val skill = Skill(
+                id = skillId,
+                name = skillName,
+                description = "",
+                type = cn.jzl.sect.skill.components.SkillType.CULTIVATION,
+                rarity = skillRarity,
+                requiredRealm = masterRealm,
+                requiredComprehension = 0
+            )
+            val learned = SkillLearned(
+                skillId = skillId,
+                proficiency = masterProficiency,
+                learnedTime = System.currentTimeMillis()
+            )
+            val canInherit = inheritanceSystem.canInherit(
+                skill = skill,
+                learned = learned,
                 masterRealm = masterRealm,
-                apprenticeRealm = apprenticeRealm,
-                skillRarity = skillRarity
+                apprenticeRealm = apprenticeRealm
             )
 
-            val requiredProficiency = inheritanceSystem.getRequiredProficiency(skillRarity)
-            val minRealmGap = inheritanceSystem.getMinRealmGap(skillRarity)
+            val requiredProficiency = SkillInheritanceSystem.MIN_PROFICIENCY_FOR_INHERITANCE
+            val minRealmGap = SkillInheritanceSystem.MAX_REALM_GAP
 
             _inheritanceCondition.value = SkillInheritanceConditionUiState.Ready(
                 SkillInheritanceConditionUiModel(
@@ -290,7 +305,7 @@ class SkillViewModel : ViewModel() {
                     skillName = skillName,
                     canInherit = canInherit,
                     proficiencyMet = masterProficiency >= requiredProficiency,
-                    realmGapMet = (masterRealm.level - apprenticeRealm.level) >= minRealmGap,
+                    realmGapMet = (masterRealm.level - apprenticeRealm.level) <= minRealmGap,
                     rarityMet = true, // 品级限制已包含在其他条件中
                     requiredProficiency = requiredProficiency,
                     masterRealm = masterRealm.displayName,

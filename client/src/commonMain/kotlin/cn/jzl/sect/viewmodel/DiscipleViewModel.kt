@@ -221,7 +221,18 @@ class DiscipleViewModel : ViewModel() {
      * 获取战斗等级
      */
     private fun getCombatLevel(discipleId: Long): String {
-        val power = _discipleCombatPower.value[discipleId] ?: 0
+        val stats = getDiscipleCombatStats(discipleId)
+        val combatStats = cn.jzl.sect.combat.components.CombatStats(
+            attack = stats.attack,
+            defense = stats.defense,
+            speed = stats.speed,
+            critRate = stats.critRate,
+            dodgeRate = stats.dodgeRate
+        )
+        val power = combatPowerCalculator.calculateCombatPower(
+            cn.jzl.sect.core.cultivation.Realm.QI_REFINING,
+            combatStats
+        )
         return combatPowerCalculator.assessCombatLevel(power).displayName
     }
 

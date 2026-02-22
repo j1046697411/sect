@@ -170,9 +170,9 @@ data class SkillInheritanceConditionUiModel(
 fun RelationshipType.getDisplayName(): String {
     return when (this) {
         RelationshipType.MASTER_APPRENTICE -> "师徒"
-        RelationshipType.FELLOW_DISCIPLE -> "同门"
+        RelationshipType.PEER -> "同门"
         RelationshipType.COMPETITOR -> "竞争"
-        RelationshipType.PARTNER -> "合作"
+        RelationshipType.COOPERATOR -> "合作"
         RelationshipType.FRIENDLY -> "友好"
         RelationshipType.HOSTILE -> "敌对"
     }
