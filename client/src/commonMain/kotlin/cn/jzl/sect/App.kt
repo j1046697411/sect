@@ -5,8 +5,11 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -317,6 +320,10 @@ fun RightPanel(
     val discipleStats by sectViewModel.discipleStats.collectAsState()
     val gameState by gameViewModel.gameState.collectAsState()
     val gameSpeed by gameViewModel.gameSpeed.collectAsState()
+    val detailedTime by gameViewModel.detailedGameTime.collectAsState()
+    val resourceProduction by gameViewModel.resourceProduction.collectAsState()
+    val pendingEvents by gameViewModel.pendingEvents.collectAsState()
+    val selectedDisciple by discipleViewModel.selectedDisciple.collectAsState()
 
     Card(
         modifier = modifier,
@@ -325,72 +332,274 @@ fun RightPanel(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 游戏状态
-            Text(
-                text = "游戏状态",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            InfoRow("状态", if (gameState == GameState.Running) "运行中" else "已暂停")
-            InfoRow("速度", gameSpeed.displayName)
+            // 如果有选中的弟子，显示详情；否则显示默认信息
+            if (selectedDisciple != null) {
+                DiscipleDetailPanel(
+                    disciple = selectedDisciple!!,
+                    onClose = { discipleViewModel.clearSelection() }
+                )
+            } else {
+                // 实时游戏时间
+                Text(
+                    text = "📅 游戏时间",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                detailedTime?.let { time ->
+                    Text(
+                        text = "第${time.year}年 ${time.month}月 ${time.day}日",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Text(
+                        text = "${time.timeOfDay} ⚡ ${gameSpeed.displayName}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } ?: Text("加载中...", style = MaterialTheme.typography.bodySmall)
 
-            Divider()
+                Divider()
 
-            // 宗门信息
-            Text(
-                text = "宗门信息",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            when (val state = sectInfo) {
-                is SectViewModel.SectInfoUiState.Success -> {
-                    InfoRow("名称", state.data.name)
-                    InfoRow("灵石", "${state.data.spiritStones}")
-                    InfoRow("贡献点", "${state.data.contributionPoints}")
+                // 资源产量
+                Text(
+                    text = "💎 资源产量",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                resourceProduction?.let { production ->
+                    InfoRow("灵石", "+${production.spiritStonesPerHour}/小时")
+                    InfoRow("贡献点", "+${production.contributionPointsPerHour}/小时")
+                } ?: Text("计算中...", style = MaterialTheme.typography.bodySmall)
+
+                Divider()
+
+                // 宗门信息
+                Text(
+                    text = "🏛️ 宗门信息",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                when (val state = sectInfo) {
+                    is SectViewModel.SectInfoUiState.Success -> {
+                        InfoRow("名称", state.data.name)
+                        InfoRow("灵石", "${state.data.spiritStones}")
+                        InfoRow("贡献点", "${state.data.contributionPoints}")
+                    }
+                    else -> {
+                        Text("加载中...", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
-                else -> {
-                    Text("加载中...", style = MaterialTheme.typography.bodySmall)
+
+                Divider()
+
+                // 弟子统计
+                Text(
+                    text = "👥 弟子统计",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                when (val state = discipleStats) {
+                    is SectViewModel.DiscipleStatsUiState.Success -> {
+                        InfoRow("总数", "${state.data.totalCount}")
+                        InfoRow("内门", "${state.data.innerCount}")
+                        InfoRow("外门", "${state.data.outerCount}")
+                        InfoRow("长老", "${state.data.elderCount}")
+                    }
+                    else -> {
+                        Text("加载中...", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
-            }
 
-            Divider()
+                Divider()
 
-            // 弟子统计
-            Text(
-                text = "弟子统计",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            when (val state = discipleStats) {
-                is SectViewModel.DiscipleStatsUiState.Success -> {
-                    InfoRow("总数", "${state.data.totalCount}")
-                    InfoRow("内门", "${state.data.innerCount}")
-                    InfoRow("外门", "${state.data.outerCount}")
-                    InfoRow("长老", "${state.data.elderCount}")
+                // 待处理事件
+                Text(
+                    text = "🔔 待处理事件",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (pendingEvents.isEmpty()) {
+                    Text("暂无待处理事件", style = MaterialTheme.typography.bodySmall)
+                } else {
+                    pendingEvents.forEach { event ->
+                        when (event) {
+                            is PendingEvent.BreakthroughReminder -> {
+                                EventItem(
+                                    icon = "⚡",
+                                    text = "${event.count}名弟子可突破",
+                                    color = Color(0xFFFFA000)
+                                )
+                            }
+                            is PendingEvent.SelectionCountdown -> {
+                                EventItem(
+                                    icon = "⏰",
+                                    text = "选拔还有${event.yearsRemaining}年",
+                                    color = Color(0xFF2196F3)
+                                )
+                            }
+                        }
+                    }
                 }
-                else -> {
-                    Text("加载中...", style = MaterialTheme.typography.bodySmall)
+
+                Divider()
+
+                // 快速操作
+                Text(
+                    text = "⚡ 快速操作",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Button(
+                    onClick = { gameViewModel.publishSelectionTask() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("发布选拔任务")
                 }
-            }
-
-            Divider()
-
-            // 快速操作
-            Text(
-                text = "快速操作",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Button(
-                onClick = { gameViewModel.publishSelectionTask() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("发布选拔任务")
             }
         }
+    }
+}
+
+/**
+ * 弟子详情面板组件
+ */
+@Composable
+fun DiscipleDetailPanel(
+    disciple: DiscipleUiModel,
+    onClose: () -> Unit
+) {
+    val positionColor = when (disciple.position) {
+        SectPositionType.LEADER -> MaterialTheme.colorScheme.primary
+        SectPositionType.ELDER -> MaterialTheme.colorScheme.tertiary
+        SectPositionType.DISCIPLE_INNER -> MaterialTheme.colorScheme.secondary
+        SectPositionType.DISCIPLE_OUTER -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    Column {
+        // 标题栏
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "👤 弟子详情",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+            IconButton(onClick = onClose) {
+                Text("✕", style = MaterialTheme.typography.titleMedium)
+            }
+        }
+
+        Divider()
+
+        // 基本信息
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = disciple.name,
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = getPositionIcon(disciple.position),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(end = 4.dp)
+                )
+                Surface(
+                    color = positionColor.copy(alpha = 0.2f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = disciple.positionDisplay,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = positionColor
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 境界和状态
+        InfoRow("境界", disciple.realmDisplay)
+        InfoRow("状态", disciple.currentBehavior)
+        InfoRow("年龄", "${disciple.age}岁")
+
+        Divider()
+
+        // 修为详情
+        Text(
+            text = "📿 修为详情",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.primary
+        )
+        InfoRow("当前修为", "${disciple.cultivation}/${disciple.maxCultivation}")
+        InfoRow("突破进度", "${(disciple.cultivationProgress * 100).toInt()}%")
+        GameCultivationBar(
+            progress = disciple.cultivationProgress,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Divider()
+
+        // 生命和精力
+        Text(
+            text = "❤ 生命值",
+            style = MaterialTheme.typography.titleSmall,
+            color = Color(0xFFE53935)
+        )
+        InfoRow("当前", "${disciple.health}/${disciple.maxHealth}")
+        GameHealthBar(
+            progress = disciple.health.toFloat() / disciple.maxHealth.toFloat(),
+            modifier = Modifier.fillMaxWidth(),
+            isLow = disciple.health < disciple.maxHealth * 0.3f
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = "⚡ 精力值",
+            style = MaterialTheme.typography.titleSmall,
+            color = Color(0xFF0288D1)
+        )
+        InfoRow("当前", "${disciple.spirit}/${disciple.maxSpirit}")
+        GameEnergyBar(
+            progress = disciple.spirit.toFloat() / disciple.maxSpirit.toFloat(),
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+/**
+ * 事件项组件
+ */
+@Composable
+fun EventItem(icon: String, text: String, color: Color) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(end = 8.dp)
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = color
+        )
     }
 }
 
@@ -596,6 +805,8 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
                     Text("暂无弟子", style = MaterialTheme.typography.bodyLarge)
                 } else {
                     // 使用LazyVerticalGrid展示卡片
+                    val selectedDiscipleFromVM by viewModel.selectedDisciple.collectAsState()
+
                     androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
                         columns = androidx.compose.foundation.lazy.grid.GridCells.Adaptive(minSize = 200.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -603,11 +814,14 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
                         modifier = Modifier.fillMaxSize()
                     ) {
                         items(disciples.size) { index ->
+                            val disciple = disciples[index]
+                            val isSelected = selectedDiscipleFromVM?.id == disciple.id
+
                             DiscipleCard(
-                                disciple = disciples[index],
+                                disciple = disciple,
+                                isSelected = isSelected,
                                 onClick = {
-                                    selectedDisciple = disciples[index]
-                                    showDetailDialog = true
+                                    viewModel.selectDisciple(disciple)
                                 }
                             )
                         }
@@ -633,7 +847,11 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
  * 弟子卡片组件
  */
 @Composable
-fun DiscipleCard(disciple: DiscipleUiModel, onClick: () -> Unit = {}) {
+fun DiscipleCard(
+    disciple: DiscipleUiModel,
+    isSelected: Boolean = false,
+    onClick: () -> Unit = {}
+) {
     val positionColor = when (disciple.position) {
         SectPositionType.LEADER -> MaterialTheme.colorScheme.primary
         SectPositionType.ELDER -> MaterialTheme.colorScheme.tertiary
@@ -650,13 +868,31 @@ fun DiscipleCard(disciple: DiscipleUiModel, onClick: () -> Unit = {}) {
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
+    // 选中状态边框颜色
+    val borderColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            .clickable(onClick = onClick)
+            .border(
+                width = if (isSelected) 3.dp else 1.dp,
+                color = borderColor,
+                shape = MaterialTheme.shapes.medium
+            ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 8.dp else 4.dp
+        ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
         )
     ) {
         Column(

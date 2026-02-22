@@ -35,6 +35,10 @@ class DiscipleViewModel : ViewModel() {
     private val _currentFilter = MutableStateFlow<DiscipleFilter>(DiscipleFilter.All)
     val currentFilter: StateFlow<DiscipleFilter> = _currentFilter.asStateFlow()
 
+    // 选中的弟子
+    private val _selectedDisciple = MutableStateFlow<DiscipleUiModel?>(null)
+    val selectedDisciple: StateFlow<DiscipleUiModel?> = _selectedDisciple.asStateFlow()
+
     // 自动刷新任务
     private var refreshJob: kotlinx.coroutines.Job? = null
 
@@ -161,6 +165,20 @@ class DiscipleViewModel : ViewModel() {
             is DiscipleFilter.ByRealm -> allDisciples.filter { it.realm == filter.realm }
         }
         _discipleList.value = DiscipleListUiState.Success(filtered)
+    }
+
+    /**
+     * 选中弟子
+     */
+    fun selectDisciple(disciple: DiscipleUiModel) {
+        _selectedDisciple.value = disciple
+    }
+
+    /**
+     * 清除选中
+     */
+    fun clearSelection() {
+        _selectedDisciple.value = null
     }
 
     /**
