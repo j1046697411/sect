@@ -223,6 +223,11 @@ class QuestExecutionSystem(private val world: World) {
                     Realm.MORTAL -> 0.1 + (ctx.cultivation.layer / 10.0) * 0.2
                     Realm.QI_REFINING -> 0.3 + (ctx.cultivation.layer / 10.0) * 0.3
                     Realm.FOUNDATION -> 0.6 + (ctx.cultivation.layer / 10.0) * 0.4
+                    Realm.GOLDEN_CORE -> 1.0 + (ctx.cultivation.layer / 10.0) * 0.5
+                    Realm.NASCENT_SOUL -> 1.5 + (ctx.cultivation.layer / 10.0) * 0.6
+                    Realm.SOUL_TRANSFORMATION -> 2.1 + (ctx.cultivation.layer / 10.0) * 0.7
+                    Realm.TRIBULATION -> 2.8 + (ctx.cultivation.layer / 10.0) * 0.8
+                    Realm.IMMORTAL -> 3.6
                 }
             }
         }

@@ -233,6 +233,11 @@ private val Realm.displayName: String
         Realm.MORTAL -> "凡人"
         Realm.QI_REFINING -> "炼气期"
         Realm.FOUNDATION -> "筑基期"
+        Realm.GOLDEN_CORE -> "金丹期"
+        Realm.NASCENT_SOUL -> "元婴期"
+        Realm.SOUL_TRANSFORMATION -> "化神期"
+        Realm.TRIBULATION -> "渡劫期"
+        Realm.IMMORTAL -> "成仙"
     }
 
 /**

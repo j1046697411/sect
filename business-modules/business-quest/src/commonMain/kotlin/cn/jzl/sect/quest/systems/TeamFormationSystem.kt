@@ -171,6 +171,11 @@ class TeamFormationSystem(private val world: World) {
             Realm.MORTAL -> 0
             Realm.QI_REFINING -> 1
             Realm.FOUNDATION -> 2
+            Realm.GOLDEN_CORE -> 3
+            Realm.NASCENT_SOUL -> 4
+            Realm.SOUL_TRANSFORMATION -> 5
+            Realm.TRIBULATION -> 6
+            Realm.IMMORTAL -> 7
         }
     }
 

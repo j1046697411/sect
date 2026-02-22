@@ -81,6 +81,11 @@ class CultivationConfig {
             Realm.MORTAL -> 1000L * layer
             Realm.QI_REFINING -> 5000L * layer
             Realm.FOUNDATION -> 10000L * layer
+            Realm.GOLDEN_CORE -> 50000L * layer
+            Realm.NASCENT_SOUL -> 100000L * layer
+            Realm.SOUL_TRANSFORMATION -> 500000L * layer
+            Realm.TRIBULATION -> 1000000L * layer
+            Realm.IMMORTAL -> Long.MAX_VALUE
         }
     }
 
@@ -92,6 +97,11 @@ class CultivationConfig {
             Realm.MORTAL -> 1.0
             Realm.QI_REFINING -> 0.8
             Realm.FOUNDATION -> 0.6
+            Realm.GOLDEN_CORE -> 0.5
+            Realm.NASCENT_SOUL -> 0.4
+            Realm.SOUL_TRANSFORMATION -> 0.3
+            Realm.TRIBULATION -> 0.2
+            Realm.IMMORTAL -> 0.0
         }
     }
 

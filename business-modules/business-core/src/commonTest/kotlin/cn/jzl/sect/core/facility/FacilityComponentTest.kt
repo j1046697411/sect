@@ -30,6 +30,7 @@ class FacilityTest : EntityRelationContext {
     fun testFacilityCreation() {
         val entity = world.entity {
             it.addComponent(Facility(
+                name = "修炼室",
                 type = FacilityType.CULTIVATION_ROOM,
                 level = 1,
                 capacity = 5,
@@ -38,6 +39,7 @@ class FacilityTest : EntityRelationContext {
         }
 
         val facility = entity.getComponent<Facility>()
+        assertEquals("修炼室", facility.name)
         assertEquals(FacilityType.CULTIVATION_ROOM, facility.type)
         assertEquals(1, facility.level)
     }
