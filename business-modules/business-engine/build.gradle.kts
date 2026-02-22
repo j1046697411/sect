@@ -33,6 +33,7 @@ kotlin {
                 api(project(":business-modules:business-resource"))
                 api(project(":business-modules:business-facility"))
                 api(project(":business-modules:business-quest"))
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
             }
         }
         val commonTest by getting {

@@ -39,6 +39,7 @@ import cn.jzl.sect.quest.systems.QuestExecutionSystem
 import cn.jzl.sect.quest.systems.ElderEvaluationSystem
 import cn.jzl.sect.quest.systems.PromotionSystem
 import cn.jzl.sect.quest.systems.PolicySystem
+import cn.jzl.sect.engine.systems.TimeSystem
 
 import cn.jzl.ecs.entity
 
@@ -228,6 +229,7 @@ object SectWorld {
      */
     fun getSystems(world: World): SectSystems {
         return SectSystems(
+            timeSystem = TimeSystem(world),
             cultivationSystem = CultivationSystem(world),
             behaviorSystem = SimpleBehaviorSystem(world),
             discipleInfoSystem = DiscipleInfoSystem(world),
@@ -255,6 +257,7 @@ object SectWorld {
  * 系统容器 - 统一管理所有业务系统
  */
 data class SectSystems(
+    val timeSystem: TimeSystem,
     val cultivationSystem: CultivationSystem,
     val behaviorSystem: SimpleBehaviorSystem,
     val discipleInfoSystem: DiscipleInfoSystem,

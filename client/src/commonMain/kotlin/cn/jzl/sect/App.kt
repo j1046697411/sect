@@ -9,9 +9,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.engine.*
 import cn.jzl.sect.engine.WorldProvider
-import cn.jzl.sect.viewmodel.DiscipleViewModel
-import cn.jzl.sect.viewmodel.SectViewModel
+import cn.jzl.sect.viewmodel.*
 
 /**
  * 页面类型枚举
@@ -38,17 +38,33 @@ fun App() {
         var currentPage by remember { mutableStateOf(PageType.OVERVIEW) }
 
         // 创建ViewModel（此时World已初始化）
+        val gameViewModel: GameViewModel = viewModel { GameViewModel() }
         val sectViewModel: SectViewModel = viewModel { SectViewModel() }
         val discipleViewModel: DiscipleViewModel = viewModel { DiscipleViewModel() }
-        
+
+        // 游戏状态
+        val gameState by gameViewModel.gameState.collectAsState()
+        val gameSpeed by gameViewModel.gameSpeed.collectAsState()
+        val currentTime by gameViewModel.currentTime.collectAsState()
+
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("宗门修真录") },
+                    title = { Text("宗门修真录 - $currentTime") },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
+                    ),
+                    actions = {
+                        // 游戏速度控制
+                        GameSpeedControl(
+                            gameState = gameState,
+                            gameSpeed = gameSpeed,
+                            onPause = { gameViewModel.pauseGame() },
+                            onResume = { gameViewModel.resumeGame() },
+                            onSpeedChange = { gameViewModel.setGameSpeed(it) }
+                        )
+                    }
                 )
             }
         ) { paddingValues ->
@@ -87,7 +103,7 @@ fun App() {
                         onClick = { currentPage = PageType.POLICY }
                     )
                 }
-                
+
                 // 主内容区
                 Box(
                     modifier = Modifier
@@ -97,10 +113,63 @@ fun App() {
                     when (currentPage) {
                         PageType.OVERVIEW -> OverviewPage(sectViewModel)
                         PageType.DISCIPLES -> DisciplesPage(discipleViewModel)
-                        PageType.QUESTS -> QuestsPage()
-                        PageType.POLICY -> PolicyPage()
+                        PageType.QUESTS -> QuestsPage(gameViewModel)
+                        PageType.POLICY -> PolicyPage(gameViewModel)
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * 游戏速度控制组件
+ */
+@Composable
+fun GameSpeedControl(
+    gameState: GameState,
+    gameSpeed: GameSpeed,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onSpeedChange: (GameSpeed) -> Unit
+) {
+    Row(
+        modifier = Modifier.padding(end = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 暂停/继续按钮
+        Button(
+            onClick = { if (gameState == GameState.Running) onPause() else onResume() },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (gameState == GameState.Running) 
+                    MaterialTheme.colorScheme.error 
+                else 
+                    MaterialTheme.colorScheme.primary
+            )
+        ) {
+            Text(if (gameState == GameState.Running) "暂停" else "继续")
+        }
+
+        // 速度选择
+        GameSpeed.values().filter { it != GameSpeed.PAUSE }.forEach { speed ->
+            val isSelected = gameSpeed == speed
+            Button(
+                onClick = { onSpeedChange(speed) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isSelected) 
+                        MaterialTheme.colorScheme.primary 
+                    else 
+                        MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Text(
+                    speed.displayName,
+                    color = if (isSelected) 
+                        MaterialTheme.colorScheme.onPrimary 
+                    else 
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
@@ -113,7 +182,7 @@ fun App() {
 fun OverviewPage(viewModel: SectViewModel) {
     val sectInfo by viewModel.sectInfo.collectAsState()
     val discipleStats by viewModel.discipleStats.collectAsState()
-    
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -122,7 +191,7 @@ fun OverviewPage(viewModel: SectViewModel) {
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         // 宗门信息卡片
         when (val state = sectInfo) {
             is SectViewModel.SectInfoUiState.Loading -> {
@@ -146,9 +215,9 @@ fun OverviewPage(viewModel: SectViewModel) {
                 Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
             }
         }
-        
+
         Spacer(modifier = Modifier.height(24.dp))
-        
+
         // 弟子统计
         when (val state = discipleStats) {
             is SectViewModel.DiscipleStatsUiState.Loading -> {
@@ -166,7 +235,7 @@ fun OverviewPage(viewModel: SectViewModel) {
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier.padding(bottom = 12.dp)
                         )
-                        
+
                         // 职务分布
                         Text("职务分布:", style = MaterialTheme.typography.titleSmall)
                         Row(
@@ -178,9 +247,9 @@ fun OverviewPage(viewModel: SectViewModel) {
                             StatCard(value = "${stats.innerCount}", label = "内门", modifier = Modifier.weight(1f))
                             StatCard(value = "${stats.outerCount}", label = "外门", modifier = Modifier.weight(1f))
                         }
-                        
+
                         Spacer(modifier = Modifier.height(16.dp))
-                        
+
                         // 境界分布
                         Text("境界分布:", style = MaterialTheme.typography.titleSmall)
                         Row(
@@ -230,7 +299,7 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier) {
 fun DisciplesPage(viewModel: DiscipleViewModel) {
     val discipleList by viewModel.discipleList.collectAsState()
     val currentFilter by viewModel.currentFilter.collectAsState()
-    
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -239,7 +308,7 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         // 筛选标签
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -252,26 +321,26 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
             )
             FilterChip(
                 label = "内门",
-                selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition 
+                selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition
                     && (currentFilter as? DiscipleViewModel.DiscipleFilter.ByPosition)?.position == SectPositionType.DISCIPLE_INNER,
                 onClick = { viewModel.filterByPosition(SectPositionType.DISCIPLE_INNER) }
             )
             FilterChip(
                 label = "外门",
-                selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition 
+                selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition
                     && (currentFilter as? DiscipleViewModel.DiscipleFilter.ByPosition)?.position == SectPositionType.DISCIPLE_OUTER,
                 onClick = { viewModel.filterByPosition(SectPositionType.DISCIPLE_OUTER) }
             )
             FilterChip(
                 label = "长老",
-                selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition 
+                selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition
                     && (currentFilter as? DiscipleViewModel.DiscipleFilter.ByPosition)?.position == SectPositionType.ELDER,
                 onClick = { viewModel.filterByPosition(SectPositionType.ELDER) }
             )
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // 弟子列表
         when (val state = discipleList) {
             is DiscipleViewModel.DiscipleListUiState.Loading -> {
@@ -295,9 +364,9 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
                             Text("年龄", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
                             Text("状态", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
                         }
-                        
+
                         Divider(modifier = Modifier.padding(vertical = 8.dp))
-                        
+
                         // 数据行
                         state.data.forEach { disciple ->
                             DiscipleRow(
@@ -324,13 +393,13 @@ fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     } else {
         MaterialTheme.colorScheme.surface
     }
-    
+
     val textColor = if (selected) {
         androidx.compose.ui.graphics.Color.White
     } else {
         MaterialTheme.colorScheme.onSurface
     }
-    
+
     Surface(
         color = backgroundColor,
         shape = MaterialTheme.shapes.small,
@@ -363,7 +432,7 @@ fun DiscipleRow(position: String, realm: String, age: String, status: String) {
  * 任务大厅页面
  */
 @Composable
-fun QuestsPage() {
+fun QuestsPage(gameViewModel: GameViewModel) {
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -372,19 +441,19 @@ fun QuestsPage() {
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         // 任务统计
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            StatCard(value = "3/10", label = "已接任务", modifier = Modifier.weight(1f))
-            StatCard(value = "12/20", label = "可接任务", modifier = Modifier.weight(1f))
-            StatCard(value = "45", label = "已完成", modifier = Modifier.weight(1f))
+            StatCard(value = "0", label = "进行中", modifier = Modifier.weight(1f))
+            StatCard(value = "0", label = "待审批", modifier = Modifier.weight(1f))
+            StatCard(value = "0", label = "已完成", modifier = Modifier.weight(1f))
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // 任务列表
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -394,65 +463,12 @@ fun QuestsPage() {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "待审批选拔任务",
+                    text = "任务列表",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
-                
-                // 示例任务
-                QuestItem(
-                    title = "外门弟子选拔",
-                    description = "选拔外门弟子晋升为内门弟子",
-                    status = "待审批"
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                QuestItem(
-                    title = "千绝谷灵草采集",
-                    description = "采集灵草用于炼丹",
-                    status = "进行中"
-                )
-            }
-        }
-    }
-}
 
-@Composable
-fun QuestItem(title: String, description: String, status: String) {
-    val statusColor = when (status) {
-        "待审批" -> androidx.compose.ui.graphics.Color(0xFFFF9800)
-        "进行中" -> androidx.compose.ui.graphics.Color(0xFF2196F3)
-        "已完成" -> androidx.compose.ui.graphics.Color(0xFF4CAF50)
-        else -> MaterialTheme.colorScheme.onSurface
-    }
-    
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleSmall)
-                Text(description, style = MaterialTheme.typography.bodySmall)
-            }
-            Surface(
-                color = statusColor.copy(alpha = 0.15f),
-                shape = MaterialTheme.shapes.extraSmall
-            ) {
-                Text(
-                    text = status,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    color = statusColor,
-                    style = MaterialTheme.typography.labelSmall
-                )
+                Text("暂无任务", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
@@ -462,10 +478,10 @@ fun QuestItem(title: String, description: String, status: String) {
  * 政策配置页面
  */
 @Composable
-fun PolicyPage() {
+fun PolicyPage(gameViewModel: GameViewModel) {
     var selectionCycle by remember { mutableStateOf(1) } // 0: 3年, 1: 5年, 2: 10年
     var selectionRatio by remember { mutableStateOf(0.05f) }
-    
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -474,7 +490,7 @@ fun PolicyPage() {
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
-        
+
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -494,22 +510,22 @@ fun PolicyPage() {
                         onClick = { selectionCycle = 0 }
                     )
                     Text("3年", modifier = Modifier.padding(end = 16.dp, top = 12.dp))
-                    
+
                     RadioButton(
                         selected = selectionCycle == 1,
                         onClick = { selectionCycle = 1 }
                     )
                     Text("5年", modifier = Modifier.padding(end = 16.dp, top = 12.dp))
-                    
+
                     RadioButton(
                         selected = selectionCycle == 2,
                         onClick = { selectionCycle = 2 }
                     )
                     Text("10年", modifier = Modifier.padding(top = 12.dp))
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // 选拔比例
                 Text(
                     text = "选拔比例: ${(selectionRatio * 100).toInt()}%",
@@ -522,9 +538,9 @@ fun PolicyPage() {
                     valueRange = 0.03f..0.10f,
                     steps = 6
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 // 保存按钮
                 Box(
                     modifier = Modifier.fillMaxWidth(),
