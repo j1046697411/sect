@@ -3,8 +3,14 @@ package cn.jzl.sect
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import cn.jzl.sect.core.cultivation.Realm
+import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.viewmodel.DiscipleViewModel
+import cn.jzl.sect.viewmodel.SectViewModel
 
 /**
  * 页面类型枚举
@@ -21,6 +27,10 @@ enum class PageType {
 fun App() {
     MaterialTheme {
         var currentPage by remember { mutableStateOf(PageType.OVERVIEW) }
+        
+        // 创建ViewModel
+        val sectViewModel: SectViewModel = viewModel { SectViewModel() }
+        val discipleViewModel: DiscipleViewModel = viewModel { DiscipleViewModel() }
         
         Scaffold(
             topBar = {
@@ -76,8 +86,8 @@ fun App() {
                         .padding(16.dp)
                 ) {
                     when (currentPage) {
-                        PageType.OVERVIEW -> OverviewPage()
-                        PageType.DISCIPLES -> DisciplesPage()
+                        PageType.OVERVIEW -> OverviewPage(sectViewModel)
+                        PageType.DISCIPLES -> DisciplesPage(discipleViewModel)
                         PageType.QUESTS -> QuestsPage()
                         PageType.POLICY -> PolicyPage()
                     }
@@ -91,7 +101,10 @@ fun App() {
  * 宗门总览页面
  */
 @Composable
-fun OverviewPage() {
+fun OverviewPage(viewModel: SectViewModel = viewModel()) {
+    val sectInfo by viewModel.sectInfo.collectAsState()
+    val discipleStats by viewModel.discipleStats.collectAsState()
+    
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -101,63 +114,78 @@ fun OverviewPage() {
             modifier = Modifier.padding(bottom = 16.dp)
         )
         
-        // 统计卡片行
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatCard(value = "128", label = "弟子总数", modifier = Modifier.weight(1f))
-            StatCard(value = "25,000", label = "灵石储备", modifier = Modifier.weight(1f))
-            StatCard(value = "12", label = "设施数量", modifier = Modifier.weight(1f))
-            StatCard(value = "92%", label = "宗门稳定度", modifier = Modifier.weight(1f))
+        // 宗门信息卡片
+        when (val state = sectInfo) {
+            is SectViewModel.SectInfoUiState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+            is SectViewModel.SectInfoUiState.Success -> {
+                val info = state.data
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("宗门名称: ${info.name}", style = MaterialTheme.typography.titleMedium)
+                        Text("灵石储备: ${info.spiritStones}", style = MaterialTheme.typography.bodyLarge)
+                        Text("贡献点: ${info.contributionPoints}", style = MaterialTheme.typography.bodyLarge)
+                        Text("当前时间: ${info.currentYear}年${info.currentMonth}月${info.currentDay}日", style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
+            is SectViewModel.SectInfoUiState.Error -> {
+                Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
+            }
         }
         
         Spacer(modifier = Modifier.height(24.dp))
         
-        // 境界分布
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "弟子境界分布",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-                Row(
+        // 弟子统计
+        when (val state = discipleStats) {
+            is SectViewModel.DiscipleStatsUiState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+            is SectViewModel.DiscipleStatsUiState.Success -> {
+                val stats = state.data
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    StatCard(value = "85", label = "炼气期", modifier = Modifier.weight(1f))
-                    StatCard(value = "38", label = "筑基期", modifier = Modifier.weight(1f))
-                    StatCard(value = "4", label = "金丹期", modifier = Modifier.weight(1f))
-                    StatCard(value = "1", label = "元婴期", modifier = Modifier.weight(1f))
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "弟子统计",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        
+                        // 职务分布
+                        Text("职务分布:", style = MaterialTheme.typography.titleSmall)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            StatCard(value = "${stats.totalCount}", label = "总数", modifier = Modifier.weight(1f))
+                            StatCard(value = "${stats.elderCount}", label = "长老", modifier = Modifier.weight(1f))
+                            StatCard(value = "${stats.innerCount}", label = "内门", modifier = Modifier.weight(1f))
+                            StatCard(value = "${stats.outerCount}", label = "外门", modifier = Modifier.weight(1f))
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        // 境界分布
+                        Text("境界分布:", style = MaterialTheme.typography.titleSmall)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            StatCard(value = "${stats.qiRefiningCount}", label = "炼气", modifier = Modifier.weight(1f))
+                            StatCard(value = "${stats.foundationCount}", label = "筑基", modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // 近期动态
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "近期动态",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-                Text("• 弟子张无忌突破至筑基中期")
-                Text("• 千绝谷灵草产量增加15%")
-                Text("• 新弟子报名：12人")
-                Text("• 玄水阁使者来访")
+            is SectViewModel.DiscipleStatsUiState.Error -> {
+                Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -171,7 +199,7 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier) {
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = value,
@@ -190,9 +218,9 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier) {
  * 弟子管理页面
  */
 @Composable
-fun DisciplesPage() {
-    var selectedFilter by remember { mutableStateOf(0) }
-    val filterOptions = listOf("全部", "外门", "内门", "亲传", "杂役")
+fun DisciplesPage(viewModel: DiscipleViewModel = viewModel()) {
+    val discipleList by viewModel.discipleList.collectAsState()
+    val currentFilter by viewModel.currentFilter.collectAsState()
     
     Column(
         modifier = Modifier.fillMaxSize()
@@ -208,44 +236,73 @@ fun DisciplesPage() {
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            filterOptions.forEachIndexed { index, label ->
-                FilterChip(
-                    label = label,
-                    selected = index == selectedFilter,
-                    onClick = { selectedFilter = index }
-                )
-            }
+            FilterChip(
+                label = "全部",
+                selected = currentFilter is DiscipleViewModel.DiscipleFilter.All,
+                onClick = { viewModel.filterByPosition(null) }
+            )
+            FilterChip(
+                label = "内门",
+                selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition 
+                    && (currentFilter as? DiscipleViewModel.DiscipleFilter.ByPosition)?.position == SectPositionType.DISCIPLE_INNER,
+                onClick = { viewModel.filterByPosition(SectPositionType.DISCIPLE_INNER) }
+            )
+            FilterChip(
+                label = "外门",
+                selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition 
+                    && (currentFilter as? DiscipleViewModel.DiscipleFilter.ByPosition)?.position == SectPositionType.DISCIPLE_OUTER,
+                onClick = { viewModel.filterByPosition(SectPositionType.DISCIPLE_OUTER) }
+            )
+            FilterChip(
+                label = "长老",
+                selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition 
+                    && (currentFilter as? DiscipleViewModel.DiscipleFilter.ByPosition)?.position == SectPositionType.ELDER,
+                onClick = { viewModel.filterByPosition(SectPositionType.ELDER) }
+            )
         }
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // 弟子列表
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                // 表头
-                Row(
+        when (val state = discipleList) {
+            is DiscipleViewModel.DiscipleListUiState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+            is DiscipleViewModel.DiscipleListUiState.Success -> {
+                Card(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Text("姓名", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                    Text("职务", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                    Text("境界", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
-                    Text("状态", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                    Column(
+                        modifier = Modifier.padding(16.dp)
+                    ) {
+                        // 表头
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("职务", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                            Text("境界", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                            Text("年龄", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                            Text("状态", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+                        }
+                        
+                        Divider(modifier = Modifier.padding(vertical = 8.dp))
+                        
+                        // 数据行
+                        state.data.forEach { disciple ->
+                            DiscipleRow(
+                                position = disciple.positionDisplay,
+                                realm = disciple.realmDisplay,
+                                age = "${disciple.age}岁",
+                                status = "${disciple.health}/${disciple.maxHealth}"
+                            )
+                        }
+                    }
                 }
-                
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
-                
-                // 示例数据
-                DiscipleRow("张无忌", "内门", "筑基中期", "修炼中")
-                DiscipleRow("赵敏", "外门", "炼气后期", "巡逻中")
-                DiscipleRow("周芷若", "内门", "筑基初期", "炼丹中")
-                DiscipleRow("张三丰", "亲传", "金丹中期", "闭关")
-                DiscipleRow("杨过", "外门", "炼气中期", "任务中")
+            }
+            is DiscipleViewModel.DiscipleListUiState.Error -> {
+                Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
             }
         }
     }
@@ -279,41 +336,17 @@ fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun DiscipleRow(name: String, position: String, realm: String, status: String) {
+fun DiscipleRow(position: String, realm: String, age: String, status: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(name, modifier = Modifier.weight(1f))
         Text(position, modifier = Modifier.weight(1f))
         Text(realm, modifier = Modifier.weight(1f))
-        StatusBadge(status)
-    }
-}
-
-@Composable
-fun StatusBadge(status: String) {
-    val (backgroundColor, textColor) = when (status) {
-        "修炼中" -> Pair(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f), MaterialTheme.colorScheme.primary)
-        "巡逻中" -> Pair(androidx.compose.ui.graphics.Color(0xFF4CAF50).copy(alpha = 0.15f), androidx.compose.ui.graphics.Color(0xFF2E7D32))
-        "炼丹中" -> Pair(androidx.compose.ui.graphics.Color(0xFFFF9800).copy(alpha = 0.15f), androidx.compose.ui.graphics.Color(0xFFE65100))
-        "闭关" -> Pair(androidx.compose.ui.graphics.Color(0xFF9E9E9E).copy(alpha = 0.15f), androidx.compose.ui.graphics.Color(0xFF616161))
-        "任务中" -> Pair(androidx.compose.ui.graphics.Color(0xFF2196F3).copy(alpha = 0.15f), androidx.compose.ui.graphics.Color(0xFF1565C0))
-        else -> Pair(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-    
-    Surface(
-        color = backgroundColor,
-        shape = MaterialTheme.shapes.extraSmall
-    ) {
-        Text(
-            text = status,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = textColor
-        )
+        Text(age, modifier = Modifier.weight(1f))
+        Text(status, modifier = Modifier.weight(1f))
     }
 }
 
@@ -486,7 +519,7 @@ fun PolicyPage() {
                 // 保存按钮
                 Box(
                     modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = androidx.compose.ui.Alignment.CenterEnd
+                    contentAlignment = Alignment.CenterEnd
                 ) {
                     Button(
                         onClick = { }
