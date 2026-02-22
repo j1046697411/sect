@@ -26,17 +26,18 @@ enum class PageType {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
-    // 初始化World（只执行一次）
-    LaunchedEffect(Unit) {
+    // 初始化World（同步执行，确保在创建ViewModel之前完成）
+    remember {
         if (!WorldProvider.isInitialized) {
             WorldProvider.initialize("青云宗")
         }
+        true
     }
 
     MaterialTheme {
         var currentPage by remember { mutableStateOf(PageType.OVERVIEW) }
 
-        // 创建ViewModel
+        // 创建ViewModel（此时World已初始化）
         val sectViewModel: SectViewModel = viewModel { SectViewModel() }
         val discipleViewModel: DiscipleViewModel = viewModel { DiscipleViewModel() }
         
