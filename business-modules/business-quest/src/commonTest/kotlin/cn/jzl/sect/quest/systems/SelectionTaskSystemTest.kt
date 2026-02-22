@@ -241,7 +241,12 @@ class SelectionTaskSystemTest : EntityRelationContext {
         val policy = PolicyComponent(
             selectionCycleYears = 3,
             selectionRatio = 0.15f,
-            resourceAllocationRatio = 0.25f
+            resourceAllocationRatio = 0.25f,
+            resourceAllocation = cn.jzl.sect.core.quest.ResourceAllocation(
+                cultivation = 40,
+                facility = 30,
+                reserve = 30
+            )
         )
         world.entity {
             it.addComponent(policy)
