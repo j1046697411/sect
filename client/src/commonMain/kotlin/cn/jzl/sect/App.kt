@@ -1,9 +1,7 @@
 package cn.jzl.sect
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cn.jzl.sect.core.cultivation.Realm
@@ -50,6 +49,8 @@ fun App() {
         var currentPage by remember { mutableStateOf(PageType.OVERVIEW) }
         // 导航栏展开/折叠状态
         var isNavExpanded by remember { mutableStateOf(true) }
+        // 右侧面板显示/隐藏状态
+        var isRightPanelVisible by remember { mutableStateOf(true) }
 
         // 创建ViewModel（此时World已初始化）
         val gameViewModel: GameViewModel = viewModel { GameViewModel() }
@@ -61,6 +62,30 @@ fun App() {
         val gameSpeed by gameViewModel.gameSpeed.collectAsState()
         val currentTime by gameViewModel.currentTime.collectAsState()
 
+        // 响应式布局检测
+        val windowSizeClass = rememberWindowSizeClass()
+
+        // 根据窗口尺寸自动调整布局
+        LaunchedEffect(windowSizeClass) {
+            when (windowSizeClass) {
+                WindowSizeClass.COMPACT -> {
+                    // 超窄屏：隐藏导航和右侧面板
+                    isNavExpanded = false
+                    isRightPanelVisible = false
+                }
+                WindowSizeClass.MEDIUM -> {
+                    // 中屏：折叠导航，显示右侧面板
+                    isNavExpanded = false
+                    isRightPanelVisible = true
+                }
+                WindowSizeClass.EXPANDED -> {
+                    // 宽屏：展开导航，显示右侧面板
+                    isNavExpanded = true
+                    isRightPanelVisible = true
+                }
+            }
+        }
+
         Scaffold(
             topBar = {
                 TopAppBar(
@@ -70,6 +95,13 @@ fun App() {
                         titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                     ),
                     actions = {
+                        // 右侧面板切换按钮（中屏时显示）
+                        if (windowSizeClass == WindowSizeClass.MEDIUM) {
+                            IconButton(onClick = { isRightPanelVisible = !isRightPanelVisible }) {
+                                Text(if (isRightPanelVisible) "📊" else "📋")
+                            }
+                        }
+
                         // 游戏速度控制
                         GameSpeedControl(
                             gameState = gameState,
@@ -80,6 +112,15 @@ fun App() {
                         )
                     }
                 )
+            },
+            bottomBar = {
+                // 超窄屏时显示底部导航
+                if (windowSizeClass == WindowSizeClass.COMPACT) {
+                    BottomNavigationBar(
+                        currentPage = currentPage,
+                        onPageSelected = { currentPage = it }
+                    )
+                }
             }
         ) { paddingValues ->
             Row(
@@ -87,41 +128,123 @@ fun App() {
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                // 左侧可折叠导航栏
-                CollapsibleNavigationRail(
-                    isExpanded = isNavExpanded,
-                    onToggle = { isNavExpanded = !isNavExpanded },
-                    currentPage = currentPage,
-                    onPageSelected = { currentPage = it }
-                )
+                // 左侧可折叠导航栏（超窄屏时隐藏）
+                if (windowSizeClass != WindowSizeClass.COMPACT) {
+                    CollapsibleNavigationRail(
+                        isExpanded = isNavExpanded,
+                        onToggle = { isNavExpanded = !isNavExpanded },
+                        currentPage = currentPage,
+                        onPageSelected = { currentPage = it }
+                    )
+                }
 
-                // 中间主内容区
-                Box(
+                // 中间主内容区（带动画）
+                AnimatedContent(
+                    targetState = currentPage,
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                        .padding(16.dp)
-                ) {
-                    when (currentPage) {
-                        PageType.OVERVIEW -> OverviewPage(sectViewModel)
-                        PageType.DISCIPLES -> DisciplesPage(discipleViewModel)
-                        PageType.QUESTS -> QuestsPage(gameViewModel)
-                        PageType.POLICY -> PolicyPage(gameViewModel)
+                        .fillMaxHeight(),
+                    transitionSpec = {
+                        fadeIn(animationSpec = tween(300)) togetherWith
+                        fadeOut(animationSpec = tween(300))
+                    }
+                ) { page ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                start = if (windowSizeClass == WindowSizeClass.COMPACT) 8.dp else 16.dp,
+                                end = if (isRightPanelVisible && windowSizeClass != WindowSizeClass.COMPACT) 8.dp else 16.dp,
+                                top = 16.dp,
+                                bottom = 16.dp
+                            )
+                    ) {
+                        when (page) {
+                            PageType.OVERVIEW -> OverviewPage(sectViewModel)
+                            PageType.DISCIPLES -> DisciplesPage(discipleViewModel)
+                            PageType.QUESTS -> QuestsPage(gameViewModel)
+                            PageType.POLICY -> PolicyPage(gameViewModel)
+                        }
                     }
                 }
 
-                // 右侧信息面板
-                RightPanel(
-                    sectViewModel = sectViewModel,
-                    discipleViewModel = discipleViewModel,
-                    gameViewModel = gameViewModel,
-                    modifier = Modifier
-                        .width(280.dp)
-                        .fillMaxHeight()
-                        .padding(vertical = 16.dp, horizontal = 8.dp)
-                )
+                // 右侧信息面板（根据状态显示）
+                if (isRightPanelVisible && windowSizeClass != WindowSizeClass.COMPACT) {
+                    RightPanel(
+                        sectViewModel = sectViewModel,
+                        discipleViewModel = discipleViewModel,
+                        gameViewModel = gameViewModel,
+                        modifier = Modifier
+                            .width(280.dp)
+                            .fillMaxHeight()
+                            .padding(vertical = 16.dp, horizontal = 8.dp)
+                    )
+                }
             }
         }
+    }
+}
+
+/**
+ * 窗口尺寸分类
+ */
+enum class WindowSizeClass {
+    COMPACT,    // < 600dp (手机)
+    MEDIUM,     // 600-1200dp (平板/小窗口)
+    EXPANDED    // > 1200dp (桌面/大窗口)
+}
+
+/**
+ * 记住窗口尺寸分类
+ */
+@Composable
+fun rememberWindowSizeClass(): WindowSizeClass {
+    val density = LocalDensity.current
+    val windowSize = androidx.compose.ui.platform.LocalWindowInfo.current.containerSize
+
+    return remember(windowSize) {
+        val widthDp = with(density) { windowSize.width.toDp() }
+        when {
+            widthDp < 600.dp -> WindowSizeClass.COMPACT
+            widthDp < 1200.dp -> WindowSizeClass.MEDIUM
+            else -> WindowSizeClass.EXPANDED
+        }
+    }
+}
+
+/**
+ * 底部导航栏（超窄屏使用）
+ */
+@Composable
+fun BottomNavigationBar(
+    currentPage: PageType,
+    onPageSelected: (PageType) -> Unit
+) {
+    NavigationBar {
+        NavigationBarItem(
+            icon = { Text("🏠") },
+            label = { Text("总览") },
+            selected = currentPage == PageType.OVERVIEW,
+            onClick = { onPageSelected(PageType.OVERVIEW) }
+        )
+        NavigationBarItem(
+            icon = { Text("👥") },
+            label = { Text("弟子") },
+            selected = currentPage == PageType.DISCIPLES,
+            onClick = { onPageSelected(PageType.DISCIPLES) }
+        )
+        NavigationBarItem(
+            icon = { Text("📋") },
+            label = { Text("任务") },
+            selected = currentPage == PageType.QUESTS,
+            onClick = { onPageSelected(PageType.QUESTS) }
+        )
+        NavigationBarItem(
+            icon = { Text("⚙️") },
+            label = { Text("政策") },
+            selected = currentPage == PageType.POLICY,
+            onClick = { onPageSelected(PageType.POLICY) }
+        )
     }
 }
 
