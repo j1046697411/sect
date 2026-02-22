@@ -22,7 +22,10 @@ class DiscipleViewModel : ViewModel() {
     private val world: World = WorldProvider.world
     private val queryService = WorldQueryService(world)
 
-    // 弟子列表状态
+    // 原始弟子列表（从ECS查询的完整数据）
+    private var allDisciples: List<DiscipleUiModel> = emptyList()
+
+    // 弟子列表状态（经过筛选后的数据）
     private val _discipleList = MutableStateFlow<DiscipleListUiState>(DiscipleListUiState.Loading)
     val discipleList: StateFlow<DiscipleListUiState> = _discipleList.asStateFlow()
 
@@ -42,7 +45,7 @@ class DiscipleViewModel : ViewModel() {
             _discipleList.value = DiscipleListUiState.Loading
             try {
                 val disciples = queryService.queryAllDisciples()
-                val uiDisciples = disciples.map { dto ->
+                allDisciples = disciples.map { dto ->
                     DiscipleUiModel(
                         id = dto.id,
                         position = dto.position,
@@ -57,7 +60,8 @@ class DiscipleViewModel : ViewModel() {
                         maxSpirit = dto.maxSpirit
                     )
                 }
-                _discipleList.value = DiscipleListUiState.Success(uiDisciples)
+                // 应用当前筛选条件
+                applyFilter()
             } catch (e: Exception) {
                 _discipleList.value = DiscipleListUiState.Error(e.message ?: "未知错误")
             }
@@ -90,20 +94,15 @@ class DiscipleViewModel : ViewModel() {
 
     /**
      * 应用筛选
+     * 从allDisciples中筛选数据，而不是从当前状态
      */
     private fun applyFilter() {
-        viewModelScope.launch {
-            val currentState = _discipleList.value
-            if (currentState is DiscipleListUiState.Success) {
-                val allDisciples = currentState.data
-                val filtered = when (val filter = _currentFilter.value) {
-                    is DiscipleFilter.All -> allDisciples
-                    is DiscipleFilter.ByPosition -> allDisciples.filter { it.position == filter.position }
-                    is DiscipleFilter.ByRealm -> allDisciples.filter { it.realm == filter.realm }
-                }
-                _discipleList.value = DiscipleListUiState.Success(filtered)
-            }
+        val filtered = when (val filter = _currentFilter.value) {
+            is DiscipleFilter.All -> allDisciples
+            is DiscipleFilter.ByPosition -> allDisciples.filter { it.position == filter.position }
+            is DiscipleFilter.ByRealm -> allDisciples.filter { it.realm == filter.realm }
         }
+        _discipleList.value = DiscipleListUiState.Success(filtered)
     }
 
     /**
