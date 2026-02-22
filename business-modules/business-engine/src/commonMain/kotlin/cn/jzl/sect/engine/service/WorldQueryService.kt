@@ -5,6 +5,7 @@ import cn.jzl.ecs.entity.id
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.disciple.Age
@@ -53,7 +54,9 @@ class WorldQueryService(private val world: World) {
         val health: Int,
         val maxHealth: Int,
         val spirit: Int,
-        val maxSpirit: Int
+        val maxSpirit: Int,
+        val currentBehavior: String,  // 当前行为状态
+        val cultivationProgress: Float // 修为进度 (0.0 - 1.0)
     )
 
     /**
@@ -109,6 +112,10 @@ class WorldQueryService(private val world: World) {
         val disciples = mutableListOf<DiscipleInfo>()
 
         query.forEach { ctx ->
+            val progress = if (ctx.cultivation.maxCultivation > 0) {
+                ctx.cultivation.cultivation.toFloat() / ctx.cultivation.maxCultivation.toFloat()
+            } else 0f
+
             disciples.add(
                 DiscipleInfo(
                     id = ctx.entity.id.toLong(),
@@ -121,12 +128,26 @@ class WorldQueryService(private val world: World) {
                     health = ctx.vitality.currentHealth,
                     maxHealth = ctx.vitality.maxHealth,
                     spirit = ctx.spirit.currentSpirit,
-                    maxSpirit = ctx.spirit.maxSpirit
+                    maxSpirit = ctx.spirit.maxSpirit,
+                    currentBehavior = getBehaviorDisplayName(ctx.behavior.type),
+                    cultivationProgress = progress
                 )
             )
         }
 
         return disciples
+    }
+
+    /**
+     * 获取行为显示名称
+     */
+    private fun getBehaviorDisplayName(type: cn.jzl.sect.core.ai.BehaviorType): String {
+        return when (type) {
+            cn.jzl.sect.core.ai.BehaviorType.CULTIVATE -> "修炼中"
+            cn.jzl.sect.core.ai.BehaviorType.WORK -> "工作中"
+            cn.jzl.sect.core.ai.BehaviorType.REST -> "休息中"
+            cn.jzl.sect.core.ai.BehaviorType.SOCIAL -> "社交中"
+        }
     }
 
     /**
@@ -221,6 +242,7 @@ class WorldQueryService(private val world: World) {
         val age: Age by component()
         val vitality: Vitality by component()
         val spirit: Spirit by component()
+        val behavior: CurrentBehavior by component()
     }
 
     /**

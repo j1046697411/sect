@@ -57,7 +57,11 @@ class DiscipleViewModel : ViewModel() {
                         health = dto.health,
                         maxHealth = dto.maxHealth,
                         spirit = dto.spirit,
-                        maxSpirit = dto.maxSpirit
+                        maxSpirit = dto.maxSpirit,
+                        cultivation = dto.cultivation,
+                        maxCultivation = dto.maxCultivation,
+                        currentBehavior = dto.currentBehavior,
+                        cultivationProgress = dto.cultivationProgress
                     )
                 }
                 // 应用当前筛选条件
@@ -162,5 +166,9 @@ data class DiscipleUiModel(
     val health: Int,
     val maxHealth: Int,
     val spirit: Int,
-    val maxSpirit: Int
+    val maxSpirit: Int,
+    val cultivation: Long,           // 当前修为
+    val maxCultivation: Long,        // 最大修为
+    val currentBehavior: String,     // 当前行为状态
+    val cultivationProgress: Float   // 修为进度 (0.0 - 1.0)
 )

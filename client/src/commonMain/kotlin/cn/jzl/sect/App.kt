@@ -383,6 +383,15 @@ fun DiscipleCard(disciple: DiscipleUiModel) {
         SectPositionType.DISCIPLE_OUTER -> MaterialTheme.colorScheme.surfaceVariant
     }
 
+    // 行为状态颜色
+    val behaviorColor = when (disciple.currentBehavior) {
+        "修炼中" -> MaterialTheme.colorScheme.primary
+        "工作中" -> MaterialTheme.colorScheme.tertiary
+        "休息中" -> MaterialTheme.colorScheme.secondary
+        "社交中" -> MaterialTheme.colorScheme.error
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -422,6 +431,30 @@ fun DiscipleCard(disciple: DiscipleUiModel) {
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // 当前状态（行为）
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "状态: ",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Surface(
+                    color = behaviorColor.copy(alpha = 0.15f),
+                    shape = MaterialTheme.shapes.extraSmall
+                ) {
+                    Text(
+                        text = disciple.currentBehavior,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = behaviorColor
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             // 年龄
             Row(
                 verticalAlignment = Alignment.CenterVertically
@@ -437,58 +470,99 @@ fun DiscipleCard(disciple: DiscipleUiModel) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 修为进度
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "修为进度",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${(disciple.cultivationProgress * 100).toInt()}%",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { disciple.cultivationProgress },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             // 生命值
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "生命: ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${disciple.health}/${disciple.maxHealth}",
-                    style = MaterialTheme.typography.bodyLarge,
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "生命值",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${disciple.health}/${disciple.maxHealth}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (disciple.health < disciple.maxHealth * 0.3f) {
+                            MaterialTheme.colorScheme.error
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { disciple.health.toFloat() / disciple.maxHealth.toFloat() },
+                    modifier = Modifier.fillMaxWidth(),
                     color = if (disciple.health < disciple.maxHealth * 0.3f) {
                         MaterialTheme.colorScheme.error
                     } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
+                        MaterialTheme.colorScheme.primary
+                    },
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
             // 精力值
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "精力: ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${disciple.spirit}/${disciple.maxSpirit}",
-                    style = MaterialTheme.typography.bodyLarge
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "精力值",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${disciple.spirit}/${disciple.maxSpirit}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    progress = { disciple.spirit.toFloat() / disciple.maxSpirit.toFloat() },
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.tertiary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 进度条：生命
-            LinearProgressIndicator(
-                progress = { disciple.health.toFloat() / disciple.maxHealth.toFloat() },
-                modifier = Modifier.fillMaxWidth(),
-                color = if (disciple.health < disciple.maxHealth * 0.3f) {
-                    MaterialTheme.colorScheme.error
-                } else {
-                    MaterialTheme.colorScheme.primary
-                },
-                trackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
         }
     }
 }
