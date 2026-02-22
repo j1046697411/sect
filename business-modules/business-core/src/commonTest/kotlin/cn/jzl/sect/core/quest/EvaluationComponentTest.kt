@@ -33,41 +33,45 @@ class EvaluationComponentTest : EntityRelationContext {
     @Test
     fun testCandidateScoreCreation() {
         val dimensionScores = mapOf(
-            EvaluationDimension.CULTIVATION to 0.8f,
-            EvaluationDimension.COMBAT to 0.9f,
-            EvaluationDimension.LOYALTY to 0.7f,
-            EvaluationDimension.EXPERIENCE to 0.6f,
-            EvaluationDimension.SPECIALTY to 0.85f
+            EvaluationDimension.CULTIVATION to 0.8,
+            EvaluationDimension.COMBAT to 0.9,
+            EvaluationDimension.LOYALTY to 0.7,
+            EvaluationDimension.EXPERIENCE to 0.6,
+            EvaluationDimension.SPECIALTY to 0.85
         )
 
+        val entity = world.entity {}
         val candidate = CandidateScore(
-            discipleId = 101L,
-            totalScore = 0.77f,
+            discipleId = entity,
+            totalScore = 0.77,
             dimensionScores = dimensionScores
         )
 
-        assertEquals(101L, candidate.discipleId)
-        assertEquals(0.77f, candidate.totalScore)
+        assertEquals(entity, candidate.discipleId)
+        assertEquals(0.77, candidate.totalScore, 0.001)
         assertEquals(dimensionScores, candidate.dimensionScores)
     }
 
     @Test
     fun testEvaluationComponentCreation() {
+        val entity1 = world.entity {}
+        val entity2 = world.entity {}
+        
         val candidates = listOf(
             CandidateScore(
-                discipleId = 101L,
-                totalScore = 0.85f,
+                discipleId = entity1,
+                totalScore = 0.85,
                 dimensionScores = mapOf(
-                    EvaluationDimension.CULTIVATION to 0.8f,
-                    EvaluationDimension.COMBAT to 0.9f
+                    EvaluationDimension.CULTIVATION to 0.8,
+                    EvaluationDimension.COMBAT to 0.9
                 )
             ),
             CandidateScore(
-                discipleId = 102L,
-                totalScore = 0.75f,
+                discipleId = entity2,
+                totalScore = 0.75,
                 dimensionScores = mapOf(
-                    EvaluationDimension.CULTIVATION to 0.7f,
-                    EvaluationDimension.COMBAT to 0.8f
+                    EvaluationDimension.CULTIVATION to 0.7,
+                    EvaluationDimension.COMBAT to 0.8
                 )
             )
         )
@@ -86,37 +90,39 @@ class EvaluationComponentTest : EntityRelationContext {
 
     @Test
     fun testGetDimensionScore() {
+        val entity = world.entity {}
         val candidate = CandidateScore(
-            discipleId = 101L,
-            totalScore = 0.8f,
+            discipleId = entity,
+            totalScore = 0.8,
             dimensionScores = mapOf(
-                EvaluationDimension.CULTIVATION to 0.9f,
-                EvaluationDimension.COMBAT to 0.8f
+                EvaluationDimension.CULTIVATION to 0.9,
+                EvaluationDimension.COMBAT to 0.8
             )
         )
 
-        assertEquals(0.9f, candidate.getDimensionScore(EvaluationDimension.CULTIVATION))
-        assertEquals(0.8f, candidate.getDimensionScore(EvaluationDimension.COMBAT))
-        assertEquals(0.0f, candidate.getDimensionScore(EvaluationDimension.LOYALTY))
+        assertEquals(0.9, candidate.getDimensionScore(EvaluationDimension.CULTIVATION), 0.001)
+        assertEquals(0.8, candidate.getDimensionScore(EvaluationDimension.COMBAT), 0.001)
+        assertEquals(0.0, candidate.getDimensionScore(EvaluationDimension.LOYALTY), 0.001)
     }
 
     @Test
     fun testGetTopCandidate() {
+        val entity1 = world.entity {}
+        val entity2 = world.entity {}
+        val entity3 = world.entity {}
+        
         val candidates = listOf(
             CandidateScore(
-                discipleId = 101L,
-                totalScore = 0.75f,
-                dimensionScores = emptyMap()
+                discipleId = entity1,
+                totalScore = 0.75
             ),
             CandidateScore(
-                discipleId = 102L,
-                totalScore = 0.95f,
-                dimensionScores = emptyMap()
+                discipleId = entity2,
+                totalScore = 0.95
             ),
             CandidateScore(
-                discipleId = 103L,
-                totalScore = 0.85f,
-                dimensionScores = emptyMap()
+                discipleId = entity3,
+                totalScore = 0.85
             )
         )
 
@@ -127,8 +133,8 @@ class EvaluationComponentTest : EntityRelationContext {
 
         val topCandidate = evaluation.getTopCandidate()
         assertNotNull(topCandidate)
-        assertEquals(102L, topCandidate.discipleId)
-        assertEquals(0.95f, topCandidate.totalScore)
+        assertEquals(entity2, topCandidate.discipleId)
+        assertEquals(0.95, topCandidate.totalScore, 0.001)
     }
 
     @Test
@@ -144,26 +150,27 @@ class EvaluationComponentTest : EntityRelationContext {
 
     @Test
     fun testGetTopNCandidates() {
+        val entity1 = world.entity {}
+        val entity2 = world.entity {}
+        val entity3 = world.entity {}
+        val entity4 = world.entity {}
+        
         val candidates = listOf(
             CandidateScore(
-                discipleId = 101L,
-                totalScore = 0.75f,
-                dimensionScores = emptyMap()
+                discipleId = entity1,
+                totalScore = 0.75
             ),
             CandidateScore(
-                discipleId = 102L,
-                totalScore = 0.95f,
-                dimensionScores = emptyMap()
+                discipleId = entity2,
+                totalScore = 0.95
             ),
             CandidateScore(
-                discipleId = 103L,
-                totalScore = 0.85f,
-                dimensionScores = emptyMap()
+                discipleId = entity3,
+                totalScore = 0.85
             ),
             CandidateScore(
-                discipleId = 104L,
-                totalScore = 0.65f,
-                dimensionScores = emptyMap()
+                discipleId = entity4,
+                totalScore = 0.65
             )
         )
 
@@ -174,17 +181,18 @@ class EvaluationComponentTest : EntityRelationContext {
 
         val top2 = evaluation.getTopNCandidates(2)
         assertEquals(2, top2.size)
-        assertEquals(102L, top2[0].discipleId)
-        assertEquals(103L, top2[1].discipleId)
+        assertEquals(entity2, top2[0].discipleId)
+        assertEquals(entity3, top2[1].discipleId)
     }
 
     @Test
     fun testGetTopNCandidatesWithNGreaterThanSize() {
+        val entity1 = world.entity {}
+        
         val candidates = listOf(
             CandidateScore(
-                discipleId = 101L,
-                totalScore = 0.75f,
-                dimensionScores = emptyMap()
+                discipleId = entity1,
+                totalScore = 0.75
             )
         )
 
@@ -195,7 +203,7 @@ class EvaluationComponentTest : EntityRelationContext {
 
         val top5 = evaluation.getTopNCandidates(5)
         assertEquals(1, top5.size)
-        assertEquals(101L, top5[0].discipleId)
+        assertEquals(entity1, top5[0].discipleId)
     }
 
     @Test
@@ -209,11 +217,13 @@ class EvaluationComponentTest : EntityRelationContext {
 
     @Test
     fun testSingleCandidate() {
+        val entity1 = world.entity {}
+        
         val candidates = listOf(
             CandidateScore(
-                discipleId = 101L,
-                totalScore = 0.8f,
-                dimensionScores = mapOf(EvaluationDimension.CULTIVATION to 0.8f)
+                discipleId = entity1,
+                totalScore = 0.8,
+                dimensionScores = mapOf(EvaluationDimension.CULTIVATION to 0.8)
             )
         )
 
@@ -226,6 +236,6 @@ class EvaluationComponentTest : EntityRelationContext {
 
         val evaluation = entity.getComponent<EvaluationComponent>()
         assertEquals(1, evaluation.candidates.size)
-        assertEquals(101L, evaluation.getTopCandidate()?.discipleId)
+        assertEquals(entity1, evaluation.getTopCandidate()?.discipleId)
     }
 }

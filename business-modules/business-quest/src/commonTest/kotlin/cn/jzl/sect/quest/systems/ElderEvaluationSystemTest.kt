@@ -350,7 +350,7 @@ class ElderEvaluationSystemTest : EntityRelationContext {
 
             // 偏爱高根骨的长老更可能选择高根骨弟子
             assertEquals(
-                highPhysiqueDisciple.id.toLong(),
+                highPhysiqueDisciple,
                 biasedTopId,
                 "偏爱高根骨的长老应该选择高根骨弟子作为首选"
             )

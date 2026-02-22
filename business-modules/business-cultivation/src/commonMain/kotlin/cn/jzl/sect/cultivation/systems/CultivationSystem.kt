@@ -37,8 +37,8 @@ class CultivationSystem(private val world: World) {
             val talent = ctx.talent
             val pos = ctx.position
 
-            // 计算修为增长
-            val gain = calculateCultivationGain(talent, hours)
+            // 计算修为增长（内门弟子有20%加成）
+            val gain = calculateCultivationGain(talent, hours, pos.position)
             var newCultivation = cult.cultivation + gain
             var newRealm = cult.realm
             var newLayer = cult.layer
@@ -105,12 +105,24 @@ class CultivationSystem(private val world: World) {
 
     /**
      * 计算修为增长
+     * @param talent 弟子天赋
+     * @param hours 修炼时间（小时）
+     * @param positionType 弟子职位类型，内门弟子有20%加成
+     * @return 修为增长值
      */
-    private fun calculateCultivationGain(talent: Talent, hours: Int): Long {
+    private fun calculateCultivationGain(
+        talent: Talent,
+        hours: Int,
+        positionType: SectPositionType = SectPositionType.DISCIPLE_OUTER
+    ): Long {
         // 基础增长 = 悟性 * 根骨 / 100 * 时间系数
         val baseGain = (talent.comprehension * talent.physique) / 100.0
         val timeMultiplier = hours * config.cultivation.baseCultivationGainPerHour
-        return (baseGain * timeMultiplier).toLong().coerceAtLeast(1)
+
+        // 内门弟子修炼效率加成 ×1.2
+        val positionMultiplier = if (positionType == SectPositionType.DISCIPLE_INNER) 1.2 else 1.0
+
+        return (baseGain * timeMultiplier * positionMultiplier).toLong().coerceAtLeast(1)
     }
 
     /**

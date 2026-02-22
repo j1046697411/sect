@@ -1,5 +1,7 @@
 package cn.jzl.sect.core.quest
 
+import cn.jzl.ecs.entity.Entity
+
 /**
  * 评估维度枚举
  */
@@ -15,9 +17,9 @@ enum class EvaluationDimension {
  * 候选人评分数据类
  */
 data class CandidateScore(
-    val discipleId: Long,                       // 弟子ID
-    val totalScore: Float,                      // 总分
-    val dimensionScores: Map<EvaluationDimension, Float> // 各维度得分
+    val discipleId: Entity,                     // 弟子实体ID
+    val totalScore: Double,                     // 总分
+    val dimensionScores: Map<EvaluationDimension, Double> = emptyMap() // 各维度得分
 )
 
 /**
@@ -31,8 +33,8 @@ data class EvaluationComponent(
 /**
  * 获取指定维度的得分
  */
-fun CandidateScore.getDimensionScore(dimension: EvaluationDimension): Float {
-    return dimensionScores[dimension] ?: 0.0f
+fun CandidateScore.getDimensionScore(dimension: EvaluationDimension): Double {
+    return dimensionScores[dimension] ?: 0.0
 }
 
 /**

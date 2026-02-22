@@ -69,14 +69,14 @@ class ElderEvaluationSystem(private val world: World) {
 
             // 转换为 CandidateScore
             CandidateScore(
-                discipleId = disciple.id.toLong(),
-                totalScore = score.toFloat(),
+                discipleId = disciple,
+                totalScore = score,
                 dimensionScores = mapOf(
-                    EvaluationDimension.CULTIVATION to (talent.physique / 100.0f),
-                    EvaluationDimension.COMBAT to (talent.comprehension / 100.0f),
-                    EvaluationDimension.LOYALTY to (talent.fortune / 100.0f),
-                    EvaluationDimension.EXPERIENCE to (talent.charm / 100.0f),
-                    EvaluationDimension.SPECIALTY to score.toFloat()
+                    EvaluationDimension.CULTIVATION to (talent.physique / 100.0),
+                    EvaluationDimension.COMBAT to (talent.comprehension / 100.0),
+                    EvaluationDimension.LOYALTY to (talent.fortune / 100.0),
+                    EvaluationDimension.EXPERIENCE to (talent.charm / 100.0),
+                    EvaluationDimension.SPECIALTY to score
                 )
             )
         }

@@ -9,6 +9,8 @@ import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.world
 import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
+import cn.jzl.sect.core.ai.Personality6
+import cn.jzl.sect.core.ai.Personality8
 import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.cultivation.Talent
@@ -31,6 +33,12 @@ import cn.jzl.sect.disciples.systems.DiscipleInfoSystem
 import cn.jzl.sect.resource.systems.ResourceProductionSystem
 import cn.jzl.sect.resource.systems.ResourceConsumptionSystem
 import cn.jzl.sect.facility.systems.SectStatusSystem
+import cn.jzl.sect.quest.systems.SelectionTaskSystem
+import cn.jzl.sect.quest.systems.TeamFormationSystem
+import cn.jzl.sect.quest.systems.QuestExecutionSystem
+import cn.jzl.sect.quest.systems.ElderEvaluationSystem
+import cn.jzl.sect.quest.systems.PromotionSystem
+import cn.jzl.sect.quest.systems.PolicySystem
 
 import cn.jzl.ecs.entity
 
@@ -129,6 +137,33 @@ object SectWorld {
             }
         }
 
+        // 内门弟子（8 名）- 筑基期1-3层，有完整AI性格属性
+        repeat(8) { i ->
+            val layer = 1 + (i % 3) // 1,2,3,1,2,3,1,2
+            world.entity {
+                it.addComponent(CultivationProgress(
+                    realm = Realm.FOUNDATION,
+                    layer = layer,
+                    cultivation = layer * 2000L,
+                    maxCultivation = 10000L
+                ))
+                it.addComponent(Talent(
+                    physique = 45 + i * 3,
+                    comprehension = 45 + i * 3,
+                    fortune = 50 + i * 2,
+                    charm = 50 + i * 2
+                ))
+                it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
+                it.addComponent(Spirit(currentSpirit = 60, maxSpirit = 60))
+                it.addComponent(Age(age = 25 + i * 2))
+                it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_INNER))
+                it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
+                it.addComponent(SectLoyalty(value = 85))
+                // 内门弟子有完整的AI性格属性（使用Personality6）
+                it.addComponent(Personality6.random())
+            }
+        }
+
         // 外门弟子（5 名）
         repeat(5) { i ->
             val layer = 3 + (i % 3) // 3,4,5,3,4
@@ -195,7 +230,13 @@ object SectWorld {
             discipleInfoSystem = DiscipleInfoSystem(world),
             resourceProductionSystem = ResourceProductionSystem(world),
             resourceConsumptionSystem = ResourceConsumptionSystem(world),
-            sectStatusSystem = SectStatusSystem(world)
+            sectStatusSystem = SectStatusSystem(world),
+            selectionTaskSystem = SelectionTaskSystem(world),
+            teamFormationSystem = TeamFormationSystem(world),
+            questExecutionSystem = QuestExecutionSystem(world),
+            elderEvaluationSystem = ElderEvaluationSystem(world),
+            promotionSystem = PromotionSystem(world),
+            policySystem = PolicySystem(world)
         )
     }
 
@@ -216,5 +257,11 @@ data class SectSystems(
     val discipleInfoSystem: DiscipleInfoSystem,
     val resourceProductionSystem: ResourceProductionSystem,
     val resourceConsumptionSystem: ResourceConsumptionSystem,
-    val sectStatusSystem: SectStatusSystem
+    val sectStatusSystem: SectStatusSystem,
+    val selectionTaskSystem: SelectionTaskSystem,
+    val teamFormationSystem: TeamFormationSystem,
+    val questExecutionSystem: QuestExecutionSystem,
+    val elderEvaluationSystem: ElderEvaluationSystem,
+    val promotionSystem: PromotionSystem,
+    val policySystem: PolicySystem
 )
