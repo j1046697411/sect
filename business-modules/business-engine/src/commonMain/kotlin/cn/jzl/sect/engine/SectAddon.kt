@@ -25,6 +25,7 @@ import cn.jzl.sect.core.quest.QuestComponent
 import cn.jzl.sect.core.quest.QuestExecutionComponent
 import cn.jzl.sect.core.quest.EvaluationComponent
 import cn.jzl.sect.core.quest.PolicyComponent
+import cn.jzl.sect.core.quest.ElderPersonality
 
 // 集中注册第一阶段所需的组件类型
 object SectAddon {
@@ -70,6 +71,7 @@ object SectAddon {
             world.componentId<QuestExecutionComponent>()
             world.componentId<EvaluationComponent>()
             world.componentId<PolicyComponent>()
+            world.componentId<ElderPersonality>()
         }
     }
 }
