@@ -5,9 +5,12 @@ import androidx.lifecycle.viewModelScope
 import cn.jzl.ecs.World
 import cn.jzl.sect.engine.WorldProvider
 import cn.jzl.sect.engine.service.WorldQueryService
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
@@ -28,13 +31,68 @@ class SectViewModel : ViewModel() {
     private val _discipleStats = MutableStateFlow<DiscipleStatsUiState>(DiscipleStatsUiState.Loading)
     val discipleStats: StateFlow<DiscipleStatsUiState> = _discipleStats.asStateFlow()
 
+    // 自动刷新任务
+    private var refreshJob: Job? = null
+
     init {
         loadSectInfo()
         loadDiscipleStats()
+        startAutoRefresh()
     }
 
     /**
-     * 加载宗门信息
+     * 启动自动刷新
+     */
+    private fun startAutoRefresh() {
+        refreshJob = viewModelScope.launch {
+            while (isActive) {
+                delay(1000) // 每秒刷新一次
+                refreshData()
+            }
+        }
+    }
+
+    /**
+     * 刷新数据（不显示Loading状态）
+     */
+    private fun refreshData() {
+        viewModelScope.launch {
+            try {
+                // 刷新宗门信息
+                val info = queryService.querySectInfo()
+                if (info != null) {
+                    _sectInfo.value = SectInfoUiState.Success(
+                        SectInfo(
+                            name = info.name,
+                            spiritStones = info.spiritStones,
+                            contributionPoints = info.contributionPoints,
+                            currentYear = info.currentYear,
+                            currentMonth = info.currentMonth,
+                            currentDay = info.currentDay
+                        )
+                    )
+                }
+
+                // 刷新弟子统计
+                val stats = queryService.queryDiscipleStatistics()
+                _discipleStats.value = DiscipleStatsUiState.Success(
+                    DiscipleStats(
+                        totalCount = stats.totalCount,
+                        innerCount = stats.innerCount,
+                        outerCount = stats.outerCount,
+                        elderCount = stats.elderCount,
+                        qiRefiningCount = stats.qiRefiningCount,
+                        foundationCount = stats.foundationCount
+                    )
+                )
+            } catch (e: Exception) {
+                // 刷新失败不更新UI，保持旧数据
+            }
+        }
+    }
+
+    /**
+     * 加载宗门信息（带Loading状态）
      */
     fun loadSectInfo() {
         viewModelScope.launch {
@@ -62,7 +120,7 @@ class SectViewModel : ViewModel() {
     }
 
     /**
-     * 加载弟子统计
+     * 加载弟子统计（带Loading状态）
      */
     fun loadDiscipleStats() {
         viewModelScope.launch {
@@ -101,6 +159,11 @@ class SectViewModel : ViewModel() {
         data object Loading : DiscipleStatsUiState()
         data class Success(val data: DiscipleStats) : DiscipleStatsUiState()
         data class Error(val message: String) : DiscipleStatsUiState()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        refreshJob?.cancel()
     }
 }
 

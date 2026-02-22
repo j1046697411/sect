@@ -7,9 +7,11 @@ import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.engine.WorldProvider
 import cn.jzl.sect.engine.service.WorldQueryService
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
@@ -33,12 +35,62 @@ class DiscipleViewModel : ViewModel() {
     private val _currentFilter = MutableStateFlow<DiscipleFilter>(DiscipleFilter.All)
     val currentFilter: StateFlow<DiscipleFilter> = _currentFilter.asStateFlow()
 
+    // 自动刷新任务
+    private var refreshJob: kotlinx.coroutines.Job? = null
+
     init {
         loadDisciples()
+        startAutoRefresh()
     }
 
     /**
-     * 加载弟子列表
+     * 启动自动刷新
+     */
+    private fun startAutoRefresh() {
+        refreshJob = viewModelScope.launch {
+            while (isActive) {
+                delay(1000) // 每秒刷新一次
+                refreshDisciples()
+            }
+        }
+    }
+
+    /**
+     * 刷新弟子数据（不显示Loading状态）
+     */
+    private fun refreshDisciples() {
+        viewModelScope.launch {
+            try {
+                val disciples = queryService.queryAllDisciples()
+                allDisciples = disciples.map { dto ->
+                    DiscipleUiModel(
+                        id = dto.id,
+                        position = dto.position,
+                        positionDisplay = getPositionDisplay(dto.position),
+                        realm = dto.realm,
+                        realmDisplay = getRealmDisplay(dto.realm, dto.layer),
+                        layer = dto.layer,
+                        age = dto.age,
+                        health = dto.health,
+                        maxHealth = dto.maxHealth,
+                        spirit = dto.spirit,
+                        maxSpirit = dto.maxSpirit,
+                        cultivation = dto.cultivation,
+                        maxCultivation = dto.maxCultivation,
+                        currentBehavior = dto.currentBehavior,
+                        cultivationProgress = dto.cultivationProgress
+                    )
+                }
+                // 应用当前筛选条件
+                applyFilter()
+            } catch (e: Exception) {
+                // 刷新失败不更新UI，保持旧数据
+            }
+        }
+    }
+
+    /**
+     * 加载弟子列表（带Loading状态）
      */
     fun loadDisciples() {
         viewModelScope.launch {
@@ -149,6 +201,11 @@ class DiscipleViewModel : ViewModel() {
         data object All : DiscipleFilter()
         data class ByPosition(val position: SectPositionType) : DiscipleFilter()
         data class ByRealm(val realm: Realm) : DiscipleFilter()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        refreshJob?.cancel()
     }
 }
 
