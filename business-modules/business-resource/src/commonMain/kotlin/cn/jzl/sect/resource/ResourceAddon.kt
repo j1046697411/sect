@@ -29,6 +29,7 @@ import cn.jzl.ecs.addon.createAddon
 import cn.jzl.ecs.component.componentId
 import cn.jzl.sect.resource.components.ResourceConsumption
 import cn.jzl.sect.resource.components.ResourceProduction
+import cn.jzl.sect.resource.events.ResourceChangedEvent
 import cn.jzl.sect.resource.services.ResourceConsumptionService
 import cn.jzl.sect.resource.services.ResourceProductionService
 
@@ -51,6 +52,7 @@ val resourceAddon = createAddon("resourceAddon") {
     components {
         world.componentId<ResourceProduction>()
         world.componentId<ResourceConsumption>()
+        world.componentId<ResourceChangedEvent>()
     }
 
     // 注册服务
