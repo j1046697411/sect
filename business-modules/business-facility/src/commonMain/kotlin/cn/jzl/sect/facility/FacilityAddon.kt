@@ -31,7 +31,9 @@ package cn.jzl.sect.facility
 import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.Phase
+import cn.jzl.ecs.addon.components
 import cn.jzl.ecs.addon.createAddon
+import cn.jzl.ecs.component.componentId
 import cn.jzl.sect.facility.components.Facility
 import cn.jzl.sect.facility.components.FacilityStatus
 import cn.jzl.sect.facility.services.SectStatusService

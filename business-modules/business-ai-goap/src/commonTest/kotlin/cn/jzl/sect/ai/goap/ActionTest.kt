@@ -1,5 +1,6 @@
 package cn.jzl.sect.ai.goap
 
+import cn.jzl.ecs.*
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.world
@@ -50,7 +51,7 @@ class ActionTest : EntityRelationContext {
         val preconditions = action.preconditions.toList()
         assertEquals(1, preconditions.size, "应该有1个前置条件")
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val state = WorldStateImpl(emptyMap())
         val result = preconditions[0].satisfiesCondition(state, entity)
         
@@ -79,7 +80,7 @@ class ActionTest : EntityRelationContext {
         val effects = action.effects.toList()
         assertEquals(1, effects.size, "应该有1个效果")
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val mutableState = MutableWorldState()
         effects[0].apply(mutableState, entity)
         
@@ -124,7 +125,7 @@ class ActionTest : EntityRelationContext {
         val effects = action.effects.toList()
         assertEquals(2, effects.size, "应该有2个效果")
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val mutableState = MutableWorldState()
         effects.forEach { it.apply(mutableState, entity) }
         

@@ -1,5 +1,6 @@
 package cn.jzl.sect.ai.goap
 
+import cn.jzl.ecs.*
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.world
@@ -27,7 +28,7 @@ class PreconditionTest : EntityRelationContext {
     fun testSatisfiesConditionTrue() {
         val precondition = Precondition { _, _ -> true }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val state = WorldStateImpl(emptyMap())
         val result = precondition.satisfiesCondition(state, entity)
         
@@ -38,7 +39,7 @@ class PreconditionTest : EntityRelationContext {
     fun testSatisfiesConditionFalse() {
         val precondition = Precondition { _, _ -> false }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val state = WorldStateImpl(emptyMap())
         val result = precondition.satisfiesCondition(state, entity)
         
@@ -54,7 +55,7 @@ class PreconditionTest : EntityRelationContext {
             stateReader.getValue(agent, healthKey) >= 50
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val result = precondition.satisfiesCondition(state, entity)
         
         assertTrue(result, "生命值100应该满足>=50的条件")
@@ -76,7 +77,7 @@ class PreconditionTest : EntityRelationContext {
             health > 50 && stamina > 50
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val result = precondition.satisfiesCondition(state, entity)
         
         assertTrue(result, "两个条件都应该满足")
@@ -88,7 +89,7 @@ class PreconditionTest : EntityRelationContext {
             agent.id >= 0
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val state = WorldStateImpl(emptyMap())
         val result = precondition.satisfiesCondition(state, entity)
         

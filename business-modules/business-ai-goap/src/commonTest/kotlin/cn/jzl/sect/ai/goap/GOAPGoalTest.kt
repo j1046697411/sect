@@ -1,5 +1,6 @@
 package cn.jzl.sect.ai.goap
 
+import cn.jzl.ecs.*
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.world
@@ -35,7 +36,7 @@ class GOAPGoalTest : EntityRelationContext {
             override fun calculateHeuristic(worldState: WorldStateReader, agent: cn.jzl.ecs.entity.Entity): Double = 0.0
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val state = WorldStateImpl(emptyMap())
         
         assertTrue(alwaysSatisfiedGoal.isSatisfied(state, entity), "目标应该被满足")
@@ -53,7 +54,7 @@ class GOAPGoalTest : EntityRelationContext {
             override fun calculateHeuristic(worldState: WorldStateReader, agent: cn.jzl.ecs.entity.Entity): Double = 10.0
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val state = WorldStateImpl(emptyMap())
         
         assertFalse(neverSatisfiedGoal.isSatisfied(state, entity), "目标不应该被满足")
@@ -71,7 +72,7 @@ class GOAPGoalTest : EntityRelationContext {
             override fun calculateHeuristic(worldState: WorldStateReader, agent: cn.jzl.ecs.entity.Entity): Double = 1.0
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val state = WorldStateImpl(emptyMap())
         val desirability = goal.calculateDesirability(state, entity)
         
@@ -102,7 +103,7 @@ class GOAPGoalTest : EntityRelationContext {
             }
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         
         val lowHealthState = WorldStateImpl(mapOf(healthKey to 30))
         assertFalse(goal.isSatisfied(lowHealthState, entity), "生命值30不应该满足>50的条件")

@@ -1,5 +1,6 @@
 package cn.jzl.sect.ai.goap
 
+import cn.jzl.ecs.*
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.world
@@ -45,7 +46,7 @@ class WorldStateImplTest : EntityRelationContext {
         val healthKey = object : StateKey<Int> {}
         val state = WorldStateImpl(mapOf(healthKey to 100))
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val value = state.getValue(entity, healthKey)
         
         assertEquals(100, value, "应该能获取状态值")
@@ -63,7 +64,7 @@ class WorldStateImplTest : EntityRelationContext {
             boolKey to true
         ))
         
-        val entity = world.entity()
+        val entity = world.entity { }
         
         assertEquals(42, state.getValue(entity, intKey), "应该能获取整数值")
         assertEquals("hello", state.getValue(entity, stringKey), "应该能获取字符串值")
@@ -82,7 +83,7 @@ class WorldStateImplTest : EntityRelationContext {
     @Test
     fun testGetNonExistentKey() {
         val state = WorldStateImpl(emptyMap())
-        val entity = world.entity()
+        val entity = world.entity { }
         val key = object : StateKey<Int> {}
         
         assertFailsWith<NoSuchElementException> {

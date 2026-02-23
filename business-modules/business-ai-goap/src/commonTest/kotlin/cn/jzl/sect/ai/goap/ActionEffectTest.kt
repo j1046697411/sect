@@ -1,5 +1,6 @@
 package cn.jzl.sect.ai.goap
 
+import cn.jzl.ecs.*
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.world
@@ -30,7 +31,7 @@ class ActionEffectTest : EntityRelationContext {
             stateWriter.setValue(healthKey, 100)
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val mutableState = MutableWorldState()
         effect.apply(mutableState, entity)
         
@@ -49,7 +50,7 @@ class ActionEffectTest : EntityRelationContext {
             stateWriter.setValue(staminaKey, 50)
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val mutableState = MutableWorldState()
         effect1.apply(mutableState, entity)
         effect2.apply(mutableState, entity)
@@ -62,11 +63,11 @@ class ActionEffectTest : EntityRelationContext {
     fun testEffectWithStateRead() {
         val healthKey = object : StateKey<Int> {}
         val effect = ActionEffect { stateWriter, _ ->
-            val currentHealth = stateWriter.getValue(world.entity(), healthKey)
+            val currentHealth = stateWriter.getValue(world.entity { }, healthKey)
             stateWriter.setValue(healthKey, currentHealth + 10)
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val mutableState = MutableWorldState()
         mutableState.setValue(healthKey, 90)
         
@@ -82,8 +83,8 @@ class ActionEffectTest : EntityRelationContext {
             stateWriter.setValue(healthKey, agent.id * 10)
         }
         
-        val entity1 = world.entity()
-        val entity2 = world.entity()
+        val entity1 = world.entity { }
+        val entity2 = world.entity { }
         
         val mutableState1 = MutableWorldState()
         val mutableState2 = MutableWorldState()
@@ -106,7 +107,7 @@ class ActionEffectTest : EntityRelationContext {
             stateWriter.setValue(healthKey, 50)
         }
         
-        val entity = world.entity()
+        val entity = world.entity { }
         val mutableState = MutableWorldState()
         
         effect1.apply(mutableState, entity)
