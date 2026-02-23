@@ -10,13 +10,19 @@
 package cn.jzl.sect.quest.services
 
 import cn.jzl.ecs.World
+import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
-import cn.jzl.sect.core.quest.PolicyComponent
-import cn.jzl.sect.core.quest.PolicyValidationResult
-import cn.jzl.sect.core.quest.ResourceAllocation
-import cn.jzl.sect.quest.systems.PolicySystem
-import cn.jzl.sect.quest.systems.PolicyUpdateResult
+import cn.jzl.ecs.entity.addComponent
+import cn.jzl.ecs.entity
+import cn.jzl.ecs.query
+import cn.jzl.ecs.query.EntityQueryContext
+import cn.jzl.ecs.query.forEach
+import cn.jzl.sect.quest.components.PolicyComponent
+import cn.jzl.sect.quest.components.PolicyValidationResult
+import cn.jzl.sect.quest.components.ResourceAllocation
+import cn.jzl.sect.quest.components.defaultPolicy
+import cn.jzl.sect.quest.components.validatePolicy
 
 /**
  * 政策服务
@@ -37,8 +43,12 @@ import cn.jzl.sect.quest.systems.PolicyUpdateResult
  */
 class PolicyService(override val world: World) : EntityRelationContext {
 
-    private val policySystem by lazy {
-        PolicySystem(world)
+    companion object {
+        // 配置约束常量
+        const val MIN_SELECTION_CYCLE = 3
+        const val MAX_SELECTION_CYCLE = 10
+        const val MIN_SELECTION_RATIO = 0.03f
+        const val MAX_SELECTION_RATIO = 0.10f
     }
 
     /**
@@ -47,7 +57,14 @@ class PolicyService(override val world: World) : EntityRelationContext {
      * @return 当前政策配置，如果不存在则返回默认配置
      */
     fun getCurrentPolicy(): PolicyComponent {
-        return policySystem.getCurrentPolicy(world)
+        val query = world.query { PolicyQueryContext(world) }
+        var policy: PolicyComponent? = null
+
+        query.forEach { ctx ->
+            policy = ctx.policy
+        }
+
+        return policy ?: defaultPolicy()
     }
 
     /**
@@ -56,7 +73,14 @@ class PolicyService(override val world: World) : EntityRelationContext {
      * @return 政策配置实体，如果不存在则返回null
      */
     fun getPolicyEntity(): Entity? {
-        return policySystem.getPolicyEntity(world)
+        val query = world.query { PolicyQueryContext(world) }
+        var entity: Entity? = null
+
+        query.forEach { ctx ->
+            entity = ctx.entity
+        }
+
+        return entity
     }
 
     /**
@@ -66,7 +90,28 @@ class PolicyService(override val world: World) : EntityRelationContext {
      * @return 是否更新成功
      */
     fun updatePolicy(newPolicy: PolicyComponent): Boolean {
-        return policySystem.updatePolicy(world, newPolicy)
+        // 验证新配置
+        val validationResult = validatePolicy(newPolicy)
+        if (validationResult is PolicyValidationResult.Invalid) {
+            return false
+        }
+
+        // 查找现有政策实体
+        val existingEntity = getPolicyEntity()
+
+        if (existingEntity != null) {
+            // 使用 editor 更新组件
+            world.editor(existingEntity) {
+                it.addComponent(newPolicy)
+            }
+        } else {
+            // 创建新政策实体
+            world.entity {
+                it.addComponent(newPolicy)
+            }
+        }
+
+        return true
     }
 
     /**
@@ -76,7 +121,7 @@ class PolicyService(override val world: World) : EntityRelationContext {
      * @return 验证结果
      */
     fun validatePolicy(policy: PolicyComponent): PolicyValidationResult {
-        return policySystem.validatePolicy(policy)
+        return cn.jzl.sect.quest.components.validatePolicy(policy)
     }
 
     /**
@@ -85,7 +130,9 @@ class PolicyService(override val world: World) : EntityRelationContext {
      * @return 重置后的默认配置
      */
     fun resetToDefault(): PolicyComponent {
-        return policySystem.resetToDefault(world)
+        val defaultConfig = defaultPolicy()
+        updatePolicy(defaultConfig)
+        return defaultConfig
     }
 
     /**
@@ -94,7 +141,15 @@ class PolicyService(override val world: World) : EntityRelationContext {
      * @return 当前政策配置
      */
     fun initialize(): PolicyComponent {
-        return policySystem.initialize(world)
+        val existingEntity = getPolicyEntity()
+        if (existingEntity == null) {
+            val defaultConfig = defaultPolicy()
+            world.entity {
+                it.addComponent(defaultConfig)
+            }
+            return defaultConfig
+        }
+        return getCurrentPolicy()
     }
 
     /**
@@ -114,13 +169,23 @@ class PolicyService(override val world: World) : EntityRelationContext {
         facilityRatio: Int,
         reserveRatio: Int
     ): PolicyComponent {
-        return policySystem.createPolicy(
-            selectionCycleYears,
-            selectionRatio,
-            cultivationRatio,
-            facilityRatio,
-            reserveRatio
+        return PolicyComponent(
+            selectionCycleYears = selectionCycleYears,
+            selectionRatio = selectionRatio,
+            resourceAllocationRatio = 1.0f,
+            resourceAllocation = ResourceAllocation(
+                cultivation = cultivationRatio,
+                facility = facilityRatio,
+                reserve = reserveRatio
+            )
         )
+    }
+
+    /**
+     * 查询上下文 - 政策配置
+     */
+    class PolicyQueryContext(world: World) : EntityQueryContext(world) {
+        val policy: PolicyComponent by component()
     }
 }
 
