@@ -13,7 +13,7 @@
 ├─────────────────────────┼───────────────────────────────┤
 │  lko-ecs                │  ECS 框架核心（核心逻辑层）     │
 ├─────────────────────────┼───────────────────────────────┤
-│  lko-di                 │  依赖注入（服务层）             │
+│  lko-di    │  lko-log   │  依赖注入 & 日志（服务层）      │
 ├─────────────────────────┼───────────────────────────────┤
 │  lko-core               │  基础工具库（基础设施层）       │
 └─────────────────────────┴───────────────────────────────┘
@@ -32,6 +32,7 @@
 | 模块 | 职责 | 依赖 | 设计原则 |
 |------|------|------|----------|
 | **lko-di** | 依赖注入容器 | lko-core | 轻量级，作用域管理 |
+| **lko-log** | 日志框架 | lko-di, lko-ecs | 轻量级，多级别 |
 
 ### 核心逻辑层
 
@@ -54,10 +55,18 @@
 
 ## 子模块索引
 
-- [lko-core](./lko-core/AGENTS.md): 基础工具库
-- [lko-di](./lko-di/AGENTS.md): 依赖注入框架
-- [lko-ecs](./lko-ecs/AGENTS.md): ECS 框架核心
-- [lko-ecs-serialization](./lko-ecs-serialization/AGENTS.md): ECS 序列化支持
+### 基础设施层
+- [lko-core](./lko-core/AGENTS.md): 基础工具库，高性能集合和位操作
+
+### 服务层
+- [lko-di](./lko-di/AGENTS.md): 依赖注入框架，上下文感知的依赖管理
+- [lko-log](./lko-log/AGENTS.md): 日志框架，多级别日志输出
+
+### 核心逻辑层
+- [lko-ecs](./lko-ecs/AGENTS.md): ECS 框架核心，实体-组件-系统架构
+
+### 可选扩展层
+- [lko-ecs-serialization](./lko-ecs-serialization/AGENTS.md): ECS 序列化支持，JSON/CBOR 格式
 
 ## 分模块强制规则
 
