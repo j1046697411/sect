@@ -11,10 +11,10 @@ package cn.jzl.sect.building.services
 
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
-import cn.jzl.sect.building.systems.FacilityProductionSystem
-import cn.jzl.sect.building.systems.ProductionApplyResult
-import cn.jzl.sect.building.systems.ProductionDetail
-import cn.jzl.sect.core.facility.ResourceType
+import cn.jzl.ecs.query
+import cn.jzl.ecs.query.EntityQueryContext
+import cn.jzl.ecs.query.forEach
+import cn.jzl.sect.core.facility.*
 
 /**
  * 设施产出服务
@@ -35,16 +35,30 @@ import cn.jzl.sect.core.facility.ResourceType
  */
 class FacilityProductionService(override val world: World) : EntityRelationContext {
 
-    private val productionSystem by lazy {
-        FacilityProductionSystem(world)
-    }
-
     /**
      * 计算所有设施的总产出
      * @return 产出明细列表
      */
     fun calculateTotalProduction(): List<ProductionDetail> {
-        return productionSystem.calculateTotalProduction()
+        val productions = mutableListOf<ProductionDetail>()
+        val query = world.query { FacilityProductionQueryContext(this) }
+
+        query.forEach { ctx ->
+            if (ctx.status.isActive) {
+                val actualOutput = ctx.production.calculateActualOutput(ctx.facility.level)
+                productions.add(
+                    ProductionDetail(
+                        facilityName = ctx.facility.name,
+                        facilityType = ctx.facility.type,
+                        resourceType = ctx.production.productionType,
+                        amount = actualOutput,
+                        maintenanceCost = ctx.status.maintenanceCost
+                    )
+                )
+            }
+        }
+
+        return productions
     }
 
     /**
@@ -52,7 +66,15 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
      * @return 资源类型到总产出的映射
      */
     fun summarizeProductionByResource(): Map<ResourceType, Int> {
-        return productionSystem.summarizeProductionByResource()
+        val summary = mutableMapOf<ResourceType, Int>()
+        val productions = calculateTotalProduction()
+
+        productions.forEach { detail ->
+            val current = summary.getOrDefault(detail.resourceType, 0)
+            summary[detail.resourceType] = current + detail.amount
+        }
+
+        return summary
     }
 
     /**
@@ -60,7 +82,16 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
      * @return 总维护费用
      */
     fun calculateTotalMaintenanceCost(): Int {
-        return productionSystem.calculateTotalMaintenanceCost()
+        var totalCost = 0
+        val query = world.query { FacilityStatusQueryContext(this) }
+
+        query.forEach { ctx ->
+            if (ctx.status.isActive) {
+                totalCost += ctx.status.maintenanceCost
+            }
+        }
+
+        return totalCost
     }
 
     /**
@@ -68,7 +99,20 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
      * @return 应用结果
      */
     fun applyProduction(): ProductionApplyResult {
-        return productionSystem.applyProduction()
+        val productions = calculateTotalProduction()
+        val summary = summarizeProductionByResource()
+        val maintenanceCost = calculateTotalMaintenanceCost()
+
+        // 这里应该调用资源系统添加产出和扣除维护费用
+        // 暂时只返回计算结果
+
+        return ProductionApplyResult(
+            success = true,
+            productions = productions,
+            summary = summary,
+            totalMaintenanceCost = maintenanceCost,
+            message = "产出计算完成"
+        )
     }
 
     /**
@@ -77,6 +121,60 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
      * @return 产出详情
      */
     fun getFacilityProduction(facilityName: String): ProductionDetail? {
-        return productionSystem.getFacilityProduction(facilityName)
+        val query = world.query { FacilityProductionQueryContext(this) }
+        var result: ProductionDetail? = null
+
+        query.forEach { ctx ->
+            if (ctx.facility.name == facilityName && ctx.status.isActive) {
+                val actualOutput = ctx.production.calculateActualOutput(ctx.facility.level)
+                result = ProductionDetail(
+                    facilityName = ctx.facility.name,
+                    facilityType = ctx.facility.type,
+                    resourceType = ctx.production.productionType,
+                    amount = actualOutput,
+                    maintenanceCost = ctx.status.maintenanceCost
+                )
+            }
+        }
+
+        return result
+    }
+
+    /**
+     * 查询上下文 - 设施产出查询
+     */
+    class FacilityProductionQueryContext(world: World) : EntityQueryContext(world) {
+        val facility: Facility by component()
+        val status: FacilityStatus by component()
+        val production: FacilityProduction by component()
+    }
+
+    /**
+     * 查询上下文 - 设施状态查询
+     */
+    class FacilityStatusQueryContext(world: World) : EntityQueryContext(world) {
+        val status: FacilityStatus by component()
     }
 }
+
+/**
+ * 产出明细
+ */
+data class ProductionDetail(
+    val facilityName: String,
+    val facilityType: FacilityType,
+    val resourceType: ResourceType,
+    val amount: Int,
+    val maintenanceCost: Int
+)
+
+/**
+ * 产出应用结果
+ */
+data class ProductionApplyResult(
+    val success: Boolean,
+    val productions: List<ProductionDetail>,
+    val summary: Map<ResourceType, Int>,
+    val totalMaintenanceCost: Int,
+    val message: String
+)

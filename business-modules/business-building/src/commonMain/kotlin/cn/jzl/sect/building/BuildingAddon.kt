@@ -29,6 +29,8 @@ import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.Phase
 import cn.jzl.ecs.addon.createAddon
+import cn.jzl.ecs.componentId
+import cn.jzl.sect.building.components.FacilityBuildProgress
 import cn.jzl.sect.building.services.FacilityConstructionService
 import cn.jzl.sect.building.services.FacilityProductionService
 import cn.jzl.sect.building.services.FacilityUpgradeService
@@ -49,6 +51,11 @@ import cn.jzl.sect.building.services.FacilityUpgradeService
 val buildingAddon = createAddon("buildingAddon") {
     // 依赖设施系统
     install(cn.jzl.sect.facility.facilityAddon)
+
+    // 注册建筑系统相关组件
+    components {
+        world.componentId<FacilityBuildProgress>()
+    }
 
     // 注册服务
     injects {
