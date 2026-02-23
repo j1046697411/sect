@@ -27,6 +27,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(libs.kodein.kaverit)
+                implementation(projects.businessModules.businessCore)
                 implementation(projects.businessModules.businessCommon)
                 implementation(projects.businessModules.businessSkill)
                 implementation(projects.libs.lkoEcs)
