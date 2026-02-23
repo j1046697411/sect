@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.dokka)
 }
 
 kotlin {
@@ -12,44 +13,43 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
+
     jvm()
+
     js {
         browser()
         binaries.executable()
     }
+
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
         browser()
         binaries.executable()
     }
-    sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation(projects.libs.lkoEcs)
-                implementation(projects.libs.lkoLog)
-                implementation(projects.businessModules.businessCommon)
 
-                implementation(libs.kotlinx.coroutines.core)
-            }
+    sourceSets {
+        commonMain.dependencies {
+            implementation(projects.libs.lkoEcs)
         }
-        val commonTest by getting {
-            dependencies {
-                implementation(libs.kotlin.test)
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
         }
     }
 }
 
 android {
-    namespace = "cn.jzl.sect.ai.goap"
+    namespace = "cn.jzl.log"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
     buildTypes {
-        release { isMinifyEnabled = false }
+        release {
+            isMinifyEnabled = false
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

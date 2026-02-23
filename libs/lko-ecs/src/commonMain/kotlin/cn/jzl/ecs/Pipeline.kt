@@ -1,6 +1,7 @@
 package cn.jzl.ecs
 
 import cn.jzl.ecs.addon.Phase
+import kotlin.time.Duration
 
 /**
  * 管道接口，管理世界的初始化和生命周期任务
@@ -43,4 +44,6 @@ interface Pipeline {
      * 此方法通常由 [world] 函数自动调用
      */
     fun runStartupTasks()
+
+    fun update(delta: Duration)
 }

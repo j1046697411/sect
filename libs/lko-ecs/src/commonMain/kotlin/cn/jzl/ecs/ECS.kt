@@ -17,6 +17,7 @@ import cn.jzl.ecs.query.Query
 import cn.jzl.ecs.query.QueryService
 import cn.jzl.ecs.relation.RelationProvider
 import cn.jzl.ecs.relation.RelationService
+import kotlin.time.Duration
 
 /**
  * 检查实体是否处于活动状态
@@ -108,7 +109,7 @@ fun Entity.editor(configuration: EntityUpdateContext.(Entity) -> Unit): Unit = w
  */
 @ECSDsl
 context(worldOwner: WorldOwner)
-fun Entity.childOf(configuration: EntityCreateContext.(Entity) -> Unit): Entity = with(worldOwner){
+fun Entity.childOf(configuration: EntityCreateContext.(Entity) -> Unit): Entity = with(worldOwner) {
     return world.childOf(this@childOf, configuration)
 }
 
@@ -122,10 +123,11 @@ fun Entity.childOf(configuration: EntityCreateContext.(Entity) -> Unit): Entity 
  * @return 创建的子实体
  */
 @ECSDsl
-fun World.childOf(parent: Entity, configuration: EntityCreateContext.(Entity) -> Unit): Entity = entity {
-    configuration(it)
-    it.parent(parent)
-}
+fun World.childOf(parent: Entity, configuration: EntityCreateContext.(Entity) -> Unit): Entity =
+    entity {
+        configuration(it)
+        it.parent(parent)
+    }
 
 /**
  * 在当前上下文中从预制体实例化
@@ -151,10 +153,11 @@ fun Entity.instanceOf(configuration: EntityCreateContext.(Entity) -> Unit): Enti
  * @return 创建的实例实体
  */
 @ECSDsl
-fun World.instanceOf(prefab: Entity, configuration: EntityCreateContext.(Entity) -> Unit): Entity = entity {
-    configuration(it)
-    it.addRelation(components.instanceOf, prefab)
-}
+fun World.instanceOf(prefab: Entity, configuration: EntityCreateContext.(Entity) -> Unit): Entity =
+    entity {
+        configuration(it)
+        it.addRelation(components.instanceOf, prefab)
+    }
 
 /**
  * 销毁实体
@@ -305,3 +308,5 @@ fun world(configuration: WorldSetup.() -> Unit): World {
     pipeline.runStartupTasks()
     return world
 }
+
+fun World.update(delta: Duration): Unit = pipeline.update(delta)

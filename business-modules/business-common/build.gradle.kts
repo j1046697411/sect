@@ -27,7 +27,6 @@ kotlin {
             dependencies {
                 implementation(projects.libs.lkoEcs)
                 implementation(projects.libs.lkoLog)
-                implementation(projects.businessModules.businessCommon)
 
                 implementation(libs.kotlinx.coroutines.core)
             }
@@ -41,7 +40,7 @@ kotlin {
 }
 
 android {
-    namespace = "cn.jzl.sect.ai.goap"
+    namespace = "cn.jzl.sect.common"
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     packaging {
         resources {

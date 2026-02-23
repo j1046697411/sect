@@ -9,6 +9,7 @@ import cn.jzl.ecs.family.Family
 import cn.jzl.ecs.family.FamilyBuilder
 import cn.jzl.ecs.family.or
 import cn.jzl.ecs.relation.EntityType
+import cn.jzl.ecs.relation.Relation
 
 /**
  * 实体查询上下文，定义查询条件和提供组件访问
@@ -138,5 +139,9 @@ open class EntityQueryContext(override val world: World) : AccessorOperations(),
         } finally {
             entityEditor.apply(world, event = true)
         }
+    }
+
+    fun removeRelation(relation: Relation) {
+        entityEditor.removeRelation(entity, relation)
     }
 }

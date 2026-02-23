@@ -9,7 +9,6 @@ plugins {
 kotlin {
     androidTarget {
         compilerOptions {
-            // 兼容当前目标 JVM 11
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
@@ -26,16 +25,19 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.kodein.kaverit)
-                implementation(project(":business-modules:business-core"))
-                implementation(project(":libs:lko-ecs"))
+                implementation(projects.libs.lkoEcs)
+                implementation(projects.libs.lkoLog)
+                implementation(projects.businessModules.businessCommon)
+                implementation(projects.businessModules.businessCore)
+
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
 
         val commonTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
-                implementation(project(":business-modules:business-engine"))
+                implementation(projects.businessModules.businessEngine)
             }
         }
     }
