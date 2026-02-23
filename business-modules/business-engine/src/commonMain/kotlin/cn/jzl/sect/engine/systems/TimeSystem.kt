@@ -1,13 +1,14 @@
 package cn.jzl.sect.engine.systems
 
-import cn.jzl.di.instance
+import cn.jzl.core.log.ConsoleLogger
+import cn.jzl.core.log.LogLevel
+import cn.jzl.core.log.Logger
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.log.Logger
 import cn.jzl.sect.core.time.GameTime
 import cn.jzl.sect.core.time.Season
 import cn.jzl.sect.core.time.toDisplayString
@@ -20,7 +21,7 @@ import cn.jzl.sect.engine.state.TimeChangeInfo as StateTimeChangeInfo
  */
 class TimeSystem(private val world: World) {
 
-    private val log: Logger by world.di.instance(argProvider = { "TimeSystem" })
+    private val log: Logger = ConsoleLogger(LogLevel.DEBUG, "TimeSystem")
     private val gameState = GameState.getInstance()
 
     init {

@@ -1,6 +1,8 @@
 package cn.jzl.sect.engine.systems
 
-import cn.jzl.di.instance
+import cn.jzl.core.log.ConsoleLogger
+import cn.jzl.core.log.LogLevel
+import cn.jzl.core.log.Logger
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
@@ -9,7 +11,6 @@ import cn.jzl.ecs.family.component
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.log.Logger
 import cn.jzl.sect.core.demo.Name
 import cn.jzl.sect.core.demo.Position
 import cn.jzl.sect.core.demo.Velocity
@@ -22,7 +23,7 @@ import cn.jzl.sect.core.demo.Velocity
  */
 class MovementSystem(private val world: World) {
 
-    private val log: Logger by world.di.instance(argProvider = { "MovementSystem" })
+    private val log: Logger = ConsoleLogger(LogLevel.DEBUG, "MovementSystem")
 
     /**
      * 更新所有匹配实体的位置

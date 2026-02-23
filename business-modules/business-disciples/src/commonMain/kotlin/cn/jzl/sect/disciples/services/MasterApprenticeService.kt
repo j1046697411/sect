@@ -44,11 +44,10 @@ class MasterApprenticeService : EntityRelationContext {
 
     override lateinit var world: World
 
-    private val log: Logger by world.di.instance(argProvider = { "MasterApprenticeService" })
+    private val log: Logger = cn.jzl.core.log.ConsoleLogger(cn.jzl.core.log.LogLevel.DEBUG, "MasterApprenticeService")
 
-    private val relationshipService by lazy {
-        RelationshipService()
-    }
+    @PublishedApi
+    internal var relationshipService: RelationshipService = RelationshipService()
 
     /**
      * 拜师

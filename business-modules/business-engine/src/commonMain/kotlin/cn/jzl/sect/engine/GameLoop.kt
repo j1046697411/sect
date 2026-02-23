@@ -1,8 +1,9 @@
 package cn.jzl.sect.engine
 
-import cn.jzl.di.instance
+import cn.jzl.core.log.ConsoleLogger
+import cn.jzl.core.log.LogLevel
+import cn.jzl.core.log.Logger
 import cn.jzl.ecs.World
-import cn.jzl.log.Logger
 import cn.jzl.sect.engine.service.WorldQueryService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +20,7 @@ class GameLoop(
     private val world: World,
     private val systems: SectSystems
 ) {
-    private val log: Logger by world.di.instance(argProvider = { "GameLoop" })
+    private val log: Logger = ConsoleLogger(LogLevel.DEBUG, "GameLoop")
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var gameJob: Job? = null
 

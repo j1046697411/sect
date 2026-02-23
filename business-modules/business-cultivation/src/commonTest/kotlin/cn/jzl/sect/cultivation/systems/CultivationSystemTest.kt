@@ -14,6 +14,7 @@ import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.ecs.world
+import cn.jzl.log.logAddon
 import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
 import cn.jzl.sect.core.config.GameConfig
@@ -43,6 +44,7 @@ class CultivationServiceTest : EntityRelationContext {
                     world.componentId<CurrentBehavior>()
                 }
             })
+            WorldSetupInstallHelper.install(this, logAddon)
         }
         return testWorld
     }

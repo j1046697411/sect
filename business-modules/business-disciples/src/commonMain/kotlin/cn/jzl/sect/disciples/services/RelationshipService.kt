@@ -43,7 +43,7 @@ class RelationshipService : EntityRelationContext {
 
     override lateinit var world: World
 
-    private val log: Logger by world.di.instance(argProvider = { "RelationshipService" })
+    private val log: Logger = cn.jzl.core.log.ConsoleLogger(cn.jzl.core.log.LogLevel.DEBUG, "RelationshipService")
 
     // 存储所有关系，使用Pair(sourceId, targetId)作为键
     private val relationships = mutableMapOf<Pair<Long, Long>, Relationship>()

@@ -7,6 +7,7 @@ import cn.jzl.ecs.addon.WorldSetup
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.world
+import cn.jzl.log.logAddon
 import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
 import cn.jzl.sect.core.ai.Personality6
@@ -57,6 +58,7 @@ object SectWorld {
     @OptIn(ECSDsl::class)
     fun create(sectName: String): World {
         val world = world {
+            WorldSetupInstallHelper.install(this, logAddon)
             WorldSetupInstallHelper.install(this, SectAddon.addon)
         }
 

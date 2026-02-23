@@ -4,6 +4,7 @@ import cn.jzl.core.log.ConsoleLogger as CoreConsoleLogger
 import cn.jzl.core.log.Logger as CoreLogger
 import cn.jzl.di.argPrototype
 import cn.jzl.di.instance
+import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.createAddon
 
 /**
@@ -18,6 +19,9 @@ typealias ConsoleLogger = CoreConsoleLogger
 
 val logAddon = createAddon("logAddon") {
     injects {
-        this bind argPrototype { ConsoleLogger(instance(), it) }
+        // 绑定默认的 LogLevel 为 DEBUG
+        this bind singleton<Any, LogLevel> { LogLevel.DEBUG }
+        // 绑定 Logger 工厂，使用 argPrototype 接收标签参数
+        this bind argPrototype<Any, String, Logger> { ConsoleLogger(instance(), it) }
     }
 }
