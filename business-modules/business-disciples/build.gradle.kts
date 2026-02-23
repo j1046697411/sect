@@ -28,7 +28,10 @@ kotlin {
             dependencies {
                 implementation(libs.kodein.kaverit)
                 implementation(project(":business-modules:business-core"))
+                implementation(project(":business-modules:business-common"))
+                implementation(project(":business-modules:business-cultivation"))
                 implementation(project(":libs:lko-ecs"))
+                implementation(project(":libs:lko-log"))
             }
         }
         val commonTest by getting {

@@ -27,9 +27,10 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(libs.kodein.kaverit)
-                implementation(project(":business-modules:business-core"))
-                implementation(project(":business-modules:business-skill"))
-                implementation(project(":libs:lko-ecs"))
+                implementation(projects.businessModules.businessCommon)
+                implementation(projects.businessModules.businessSkill)
+                implementation(projects.libs.lkoEcs)
+                implementation(projects.libs.lkoLog)
             }
         }
         val commonTest by getting {

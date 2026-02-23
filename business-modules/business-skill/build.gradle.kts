@@ -26,9 +26,13 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
+                implementation(projects.libs.lkoEcs)
+                implementation(projects.libs.lkoLog)
+                implementation(projects.businessModules.businessCommon)
+                implementation(projects.businessModules.businessDisciples)
+                implementation(projects.businessModules.businessCore)
+
                 implementation(libs.kodein.kaverit)
-                implementation(project(":business-modules:business-core"))
-                implementation(project(":libs:lko-ecs"))
             }
         }
         val commonTest by getting {

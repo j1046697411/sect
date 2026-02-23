@@ -25,6 +25,8 @@ package cn.jzl.sect.ai.goap
 import cn.jzl.di.instance
 import cn.jzl.ecs.Updatable
 import cn.jzl.ecs.World
+import cn.jzl.ecs.childOf
+import cn.jzl.ecs.destroy
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.observer.Observer
@@ -37,7 +39,6 @@ import cn.jzl.sect.common.time.TimeService
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.isActive
 import kotlin.coroutines.Continuation
-import kotlin.coroutines.ContinuationInterceptor
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.RestrictsSuspension
