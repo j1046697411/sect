@@ -385,10 +385,71 @@ SectWorld.initialize()
 ./gradlew :libs:lko-ecs:test            # 运行 ECS 核心测试
 ./gradlew :business-modules:business-engine:test # 运行业务逻辑测试
 
+# 运行单个测试
+./gradlew :libs:lko-ecs:test --tests "cn.jzl.ecs.WorldTest.testBasicEntityCreation"
+./gradlew :libs:lko-core:test --tests "cn.jzl.core.list.IntFastListTest"
+
 # 质量
 ./gradlew allCoverage                   # 生成覆盖率报告
 ./gradlew lint                          # 静态代码检查
 ```
+
+## 代码规范
+
+### 代码风格
+- **语言**: Kotlin (100%)
+- **包名命名**: 使用 `cn.jzl.{模块名}` 格式（如 `cn.jzl.ecs`, `cn.jzl.core.list`）
+- **组件命名**: 使用名词（如 `Position`, `Health`, `Cultivation`）
+- **标签命名**: 使用形容词+Tag后缀（如 `AliveTag`, `IdleTag`, `CultivatingTag`）
+- **系统命名**: 使用名词+System后缀（如 `CultivationSystem`, `ResourceProductionSystem`）
+
+### 格式化规范
+- 缩进: 4空格
+- 行宽: 120字符
+- 括号: K&R风格（左括号不换行）
+- 导入: 按字母顺序排列，每行一个import
+
+### 导入规范（避免混淆）
+```kotlin
+// 禁止使用通配符导入
+import cn.jzl.ecs.component.*  // ❌
+
+// 正确做法：明确导入每个需要的类
+import cn.jzl.ecs.component.Position  // ✓
+import cn.jzl.ecs.component.Health
+
+// 特别警惕：区分不同包的同名类
+import cn.jzl.ecs.family.component  // ECS 族组件
+import cn.jzl.ecs.relation.component  // 关系组件
+```
+
+### 类型规范
+- **ECS组件**: 使用 `data class`，所有字段必须是值类型或不可变类型
+- **标签**: 使用 `sealed class` 或 `object`
+- **系统**: 纯逻辑类，不持有状态（状态存储在组件中）
+- **集合**: ECS内部优先使用 `FastList`/`IntFastList` 等高性能集合，避免使用 stdlib `List/ArrayList`
+
+### 错误处理
+- 使用 Kotlin 内置的 `check()` 进行参数校验
+- 使用 `require()` 进行前置条件检查
+- 避免捕获通用异常，捕获具体异常类型
+- 在系统逻辑中使用 Result 类型进行错误传播
+
+### 空安全
+- 优先使用非空类型
+- 必要时使用 `?.` 和 `?:`
+- 避免使用 `!!`，使用 `checkNotNull()` 替代
+
+### 注释规范
+- 所有代码注释使用中文
+- 公开API必须添加KDoc文档
+- 复杂逻辑添加行内注释说明
+
+### 测试规范
+- 测试类命名: `{类名}Test`
+- 测试方法命名: `test{测试场景}` 或 `should{预期行为}`
+- 使用 BDD 风格: `// Given`, `// When`, `// Then`
+- 每个测试用例必须覆盖功能的一个方面
 
 ## 复杂度热点
 
