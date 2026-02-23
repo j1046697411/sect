@@ -31,7 +31,7 @@ kotlin {
                 implementation(project(":business-modules:business-common"))
                 implementation(project(":business-modules:business-cultivation"))
                 implementation(project(":libs:lko-ecs"))
-                implementation(project(":libs:lko-log"))
+                implementation(projects.libs.lkoLog)
             }
         }
         val commonTest by getting {

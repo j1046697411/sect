@@ -9,6 +9,7 @@
  */
 package cn.jzl.sect.quest.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
@@ -17,6 +18,7 @@ import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.ai.Personality6
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
@@ -41,6 +43,8 @@ import cn.jzl.sect.quest.components.CandidateScore
  * @property world ECS 世界实例
  */
 class PromotionService(override val world: World) : EntityRelationContext {
+
+    private val log: Logger by world.di.instance(argProvider = { "PromotionService" })
 
     /**
      * 晋升弟子
@@ -95,6 +99,7 @@ class PromotionService(override val world: World) : EntityRelationContext {
                 it.addComponent(personality)
             }
 
+            log.debug { "晋升弟子完成: 成功，discipleId=${discipleId}" }
             PromotionResult(
                 success = true,
                 discipleId = discipleId,
@@ -104,6 +109,7 @@ class PromotionService(override val world: World) : EntityRelationContext {
                 message = "晋升成功"
             )
         } catch (e: Exception) {
+            log.debug { "晋升弟子完成: 失败，${e.message}" }
             PromotionResult(
                 success = false,
                 discipleId = discipleId,
@@ -167,9 +173,11 @@ class PromotionService(override val world: World) : EntityRelationContext {
      * @param newPosition 新职位
      */
     fun updatePosition(discipleId: Entity, newPosition: SectPositionType) {
+        log.debug { "开始更新弟子职位: discipleId=${discipleId}, newPosition=$newPosition" }
         world.editor(discipleId) {
             it.addComponent(SectPositionInfo(position = newPosition))
         }
+        log.debug { "更新弟子职位完成" }
     }
 
     /**

@@ -9,11 +9,13 @@
  */
 package cn.jzl.sect.building.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.facility.FacilityType
 import cn.jzl.sect.facility.components.Facility
 import cn.jzl.sect.facility.components.FacilityProduction
@@ -38,12 +40,14 @@ import cn.jzl.sect.facility.components.ResourceType
  * @property world ECS 世界实例
  */
 class FacilityProductionService(override val world: World) : EntityRelationContext {
+    private val log: Logger by world.di.instance(argProvider = { "FacilityProductionService" })
 
     /**
      * 计算所有设施的总产出
      * @return 产出明细列表
      */
     fun calculateTotalProduction(): List<ProductionDetail> {
+        log.debug { "开始计算所有设施的总产出" }
         val productions = mutableListOf<ProductionDetail>()
         val query = world.query { FacilityProductionQueryContext(this) }
 
@@ -62,6 +66,7 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
             }
         }
 
+        log.debug { "计算所有设施的总产出完成: 共 ${productions.size} 个设施" }
         return productions
     }
 
@@ -70,6 +75,7 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
      * @return 资源类型到总产出的映射
      */
     fun summarizeProductionByResource(): Map<ResourceType, Int> {
+        log.debug { "开始按资源类型汇总产出" }
         val summary = mutableMapOf<ResourceType, Int>()
         val productions = calculateTotalProduction()
 
@@ -78,6 +84,7 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
             summary[detail.resourceType] = current + detail.amount
         }
 
+        log.debug { "按资源类型汇总产出完成: $summary" }
         return summary
     }
 
@@ -86,6 +93,7 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
      * @return 总维护费用
      */
     fun calculateTotalMaintenanceCost(): Int {
+        log.debug { "开始计算总维护费用" }
         var totalCost = 0
         val query = world.query { FacilityStatusQueryContext(this) }
 
@@ -95,6 +103,7 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
             }
         }
 
+        log.debug { "计算总维护费用完成: totalCost=$totalCost" }
         return totalCost
     }
 
@@ -103,6 +112,7 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
      * @return 应用结果
      */
     fun applyProduction(): ProductionApplyResult {
+        log.debug { "开始应用产出" }
         val productions = calculateTotalProduction()
         val summary = summarizeProductionByResource()
         val maintenanceCost = calculateTotalMaintenanceCost()
@@ -110,13 +120,15 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
         // 这里应该调用资源系统添加产出和扣除维护费用
         // 暂时只返回计算结果
 
-        return ProductionApplyResult(
+        val result = ProductionApplyResult(
             success = true,
             productions = productions,
             summary = summary,
             totalMaintenanceCost = maintenanceCost,
             message = "产出计算完成"
         )
+        log.debug { "应用产出完成: success=${result.success}, totalMaintenanceCost=${result.totalMaintenanceCost}" }
+        return result
     }
 
     /**
@@ -125,6 +137,7 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
      * @return 产出详情
      */
     fun getFacilityProduction(facilityName: String): ProductionDetail? {
+        log.debug { "开始获取设施产出详情: facilityName=$facilityName" }
         val query = world.query { FacilityProductionQueryContext(this) }
         var result: ProductionDetail? = null
 
@@ -141,6 +154,7 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
             }
         }
 
+        log.debug { "获取设施产出详情完成: $result" }
         return result
     }
 

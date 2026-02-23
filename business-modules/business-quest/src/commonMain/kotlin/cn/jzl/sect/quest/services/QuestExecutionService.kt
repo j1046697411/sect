@@ -8,6 +8,7 @@
  */
 package cn.jzl.sect.quest.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
@@ -17,6 +18,7 @@ import cn.jzl.ecs.entity.id
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.cultivation.components.CultivationProgress
 import cn.jzl.sect.quest.components.ExecutionResult
@@ -45,6 +47,7 @@ import kotlin.time.Clock
  */
 class QuestExecutionService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "QuestExecutionService" })
     private val random = Random.Default
 
     /**
@@ -55,7 +58,11 @@ class QuestExecutionService(override val world: World) : EntityRelationContext {
      * @return 成功率（0.0 - 1.0）
      */
     fun calculateSuccessRate(difficulty: QuestDifficulty, team: TeamFormationResult): Double {
-        if (!team.success || team.elder == null) return 0.0
+        log.debug { "开始计算任务成功率" }
+        if (!team.success || team.elder == null) {
+            log.debug { "计算任务成功率完成: 团队组建失败，成功率 0.0" }
+            return 0.0
+        }
 
         // 基础成功率
         val baseRate = when (difficulty) {
@@ -74,7 +81,9 @@ class QuestExecutionService(override val world: World) : EntityRelationContext {
 
         // 最终成功率
         val finalRate = baseRate + strengthBonus + countBonus
-        return finalRate.coerceIn(0.1, 0.95)
+        val result = finalRate.coerceIn(0.1, 0.95)
+        log.debug { "计算任务成功率完成: 成功率 $result" }
+        return result
     }
 
     /**
@@ -85,7 +94,11 @@ class QuestExecutionService(override val world: World) : EntityRelationContext {
      * @return 伤亡人数
      */
     fun calculateCasualties(outerDisciples: List<Entity>, difficulty: QuestDifficulty): Int {
-        if (outerDisciples.isEmpty()) return 0
+        log.debug { "开始计算伤亡人数" }
+        if (outerDisciples.isEmpty()) {
+            log.debug { "计算伤亡人数完成: 无外门弟子，伤亡 0" }
+            return 0
+        }
 
         // 基础伤亡率
         val baseCasualtyRate = when (difficulty) {
@@ -100,7 +113,9 @@ class QuestExecutionService(override val world: World) : EntityRelationContext {
 
         // 计算伤亡人数
         val casualties = (outerDisciples.size * actualRate).toInt()
-        return casualties.coerceIn(0, outerDisciples.size)
+        val result = casualties.coerceIn(0, outerDisciples.size)
+        log.debug { "计算伤亡人数完成: 伤亡 $result" }
+        return result
     }
 
     /**
@@ -110,6 +125,7 @@ class QuestExecutionService(override val world: World) : EntityRelationContext {
      * @return 执行结果
      */
     fun executeQuest(questId: Long): ExecutionResult {
+        log.debug { "开始执行任务: questId=$questId" }
         // 查找任务
         val questQuery = world.query { QuestQueryContext(world) }
         var targetQuest: QuestComponent? = null
@@ -199,13 +215,15 @@ class QuestExecutionService(override val world: World) : EntityRelationContext {
             )
         }
 
-        return ExecutionResult(
+        val result = ExecutionResult(
             completionRate = completionRate,
             efficiency = efficiency,
             quality = quality,
             survivalRate = survivalRate,
             casualties = casualties
         )
+        log.debug { "执行任务完成: questId=$questId, success=$isSuccess, casualties=$casualties" }
+        return result
     }
 
     /**

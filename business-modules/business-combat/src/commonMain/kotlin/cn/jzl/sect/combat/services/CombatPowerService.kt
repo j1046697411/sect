@@ -11,8 +11,10 @@
  */
 package cn.jzl.sect.combat.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.combat.components.CombatStats
 import cn.jzl.sect.core.cultivation.Realm
 
@@ -37,6 +39,8 @@ import cn.jzl.sect.core.cultivation.Realm
  * @property world ECS 世界实例
  */
 class CombatPowerService(override val world: World) : EntityRelationContext {
+
+    private val log: Logger by world.di.instance(argProvider = { "CombatPowerService" })
 
     companion object {
         // 境界实力权重: 50%
@@ -89,15 +93,20 @@ class CombatPowerService(override val world: World) : EntityRelationContext {
         skillPower: Double = 0.0,
         equipmentPower: Double = 0.0
     ): Int {
+        log.debug { "计算战斗实力: 境界=${realm.displayName}" }
+
         val realmPower = calculateRealmPower(realm)
         val attributePower = calculateAttributePower(stats)
 
-        return (
+        val totalPower = (
             realmPower * REALM_WEIGHT +
             attributePower * ATTRIBUTE_WEIGHT +
             skillPower * SKILL_WEIGHT +
             equipmentPower * EQUIPMENT_WEIGHT
         ).toInt()
+
+        log.debug { "战斗实力: 境界实力=${realmPower}, 属性实力=${attributePower}, 总实力=${totalPower}" }
+        return totalPower
     }
 
     /**
@@ -163,9 +172,11 @@ class CombatPowerService(override val world: World) : EntityRelationContext {
      * @return 难度描述
      */
     fun assessDifficulty(playerPower: Int, enemyPower: Int): String {
+        log.debug { "评估战斗难度: 玩家实力=${playerPower}, 敌人实力=${enemyPower}" }
+
         val ratio = calculatePowerRatio(enemyPower, playerPower)
 
-        return when {
+        val difficulty = when {
             ratio < 0.5 -> "简单"
             ratio < 0.8 -> "较易"
             ratio < 1.2 -> "适中"
@@ -173,5 +184,8 @@ class CombatPowerService(override val world: World) : EntityRelationContext {
             ratio < 2.0 -> "极难"
             else -> "不可能"
         }
+
+        log.debug { "战斗难度: ${difficulty}, 实力比率=${ratio}" }
+        return difficulty
     }
 }

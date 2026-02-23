@@ -8,6 +8,7 @@
  */
 package cn.jzl.sect.cultivation.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.Updatable
 import cn.jzl.ecs.editor
@@ -16,6 +17,7 @@ import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
 import cn.jzl.sect.core.vitality.Vitality
@@ -42,11 +44,14 @@ import kotlin.time.Clock
  */
 class SimpleBehaviorService(override val world: World) : EntityRelationContext, Updatable {
 
+    private val log: Logger by world.di.instance(argProvider = { "SimpleBehaviorService" })
+
     /**
      * 更新实体行为
      * @param delta 时间增量
      */
     override fun update(delta: Duration) {
+        log.debug { "开始更新弟子行为状态，时间增量: ${delta.inWholeSeconds}秒" }
         val dt = delta.inWholeSeconds.toFloat()
         val query = world.query { BehaviorQueryContext(this) }
 
@@ -109,6 +114,7 @@ class SimpleBehaviorService(override val world: World) : EntityRelationContext, 
 
             // 更新行为状态
             if (newBehavior != behavior.type) {
+                log.debug { "弟子行为切换: ${behavior.type.displayName} → ${newBehavior.displayName}" }
                 world.editor(ctx.entity) {
                     it.addComponent(
                         CurrentBehavior(
@@ -120,6 +126,7 @@ class SimpleBehaviorService(override val world: World) : EntityRelationContext, 
                 }
             }
         }
+        log.debug { "弟子行为状态更新完成" }
     }
 
     /**
@@ -132,3 +139,14 @@ class SimpleBehaviorService(override val world: World) : EntityRelationContext, 
         val cultivation: CultivationProgress by component()
     }
 }
+
+/**
+ * 行为类型显示名称扩展
+ */
+private val BehaviorType.displayName: String
+    get() = when (this) {
+        BehaviorType.CULTIVATE -> "修炼"
+        BehaviorType.REST -> "休息"
+        BehaviorType.WORK -> "工作"
+        BehaviorType.SOCIAL -> "社交"
+    }

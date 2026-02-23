@@ -8,6 +8,7 @@
  */
 package cn.jzl.sect.cultivation.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.EntityRelationContext
@@ -15,6 +16,7 @@ import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.config.GameConfig
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.sect.SectPositionInfo
@@ -41,6 +43,7 @@ import kotlin.random.Random
  */
 class CultivationService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "CultivationService" })
     private val config = GameConfig
 
     /**
@@ -49,6 +52,7 @@ class CultivationService(override val world: World) : EntityRelationContext {
      * @return 突破事件列表
      */
     fun update(hours: Int): List<BreakthroughEvent> {
+        log.debug { "开始更新修炼状态，时间: ${hours}小时" }
         val breakthroughs = mutableListOf<BreakthroughEvent>()
         val query = world.query { CultivatorQueryContext(this) }
 
@@ -85,6 +89,7 @@ class CultivationService(override val world: World) : EntityRelationContext {
             }
 
             if (breakthrough) {
+                log.info { "弟子突破成功！${cult.realm.displayName}${cult.layer}层 → ${newRealm.displayName}${newLayer}层" }
                 breakthroughs.add(
                     BreakthroughEvent(
                         entity = ctx.entity,
@@ -123,6 +128,7 @@ class CultivationService(override val world: World) : EntityRelationContext {
             }
         }
 
+        log.debug { "修炼状态更新完成，突破事件数: ${breakthroughs.size}" }
         return breakthroughs
     }
 
@@ -145,7 +151,9 @@ class CultivationService(override val world: World) : EntityRelationContext {
         // 内门弟子修炼效率加成 ×1.2
         val positionMultiplier = if (positionType == SectPositionType.DISCIPLE_INNER) 1.2 else 1.0
 
-        return (baseGain * timeMultiplier * positionMultiplier).toLong().coerceAtLeast(1)
+        val gain = (baseGain * timeMultiplier * positionMultiplier).toLong().coerceAtLeast(1)
+        log.debug { "修为增长计算: 悟性=${talent.comprehension}, 根骨=${talent.physique}, 增长=${gain}" }
+        return gain
     }
 
     /**

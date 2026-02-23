@@ -29,8 +29,10 @@
  */
 package cn.jzl.sect.facility.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.facility.FacilityType
 import kotlin.math.max
 
@@ -42,6 +44,8 @@ import kotlin.math.max
  * @property world ECS 世界实例
  */
 class FacilityValueService(override val world: World) : EntityRelationContext {
+
+    private val log: Logger by world.di.instance(argProvider = { "FacilityValueService" })
 
     companion object {
         // 建设成本权重
@@ -101,6 +105,7 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
         productionEfficiency: Double,
         facilityType: FacilityType = FacilityType.CULTIVATION_ROOM
     ): Int {
+        log.debug { "开始计算设施综合价值: $facilityType, 建设成本=$constructionCost" }
         // 建设成本评分(成本越高评分越低，但有一个上限)
         val constructionScore = max(0, 100 - constructionCost / 100)
 
@@ -114,12 +119,14 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
         val strategicScore = calculateStrategicValue(facilityType)
 
         // 加权计算综合价值
-        return (
+        val value = (
             constructionScore * CONSTRUCTION_COST_WEIGHT +
             maintenanceScore * MAINTENANCE_COST_WEIGHT +
             efficiencyScore * EFFICIENCY_WEIGHT +
             strategicScore * STRATEGIC_WEIGHT
         ).toInt()
+        log.debug { "设施综合价值计算完成: $facilityType, 价值=$value" }
+        return value
     }
 
     /**
@@ -135,10 +142,15 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
         dailyRevenue: Int,
         dailyMaintenance: Int
     ): Double {
-        if (constructionCost <= 0) return 0.0
+        log.debug { "开始计算投资回报率: 建设成本=$constructionCost, 日收益=$dailyRevenue" }
+        if (constructionCost <= 0) return 0.0.also {
+            log.debug { "投资回报率计算完成: 建设成本无效" }
+        }
 
         val netDailyProfit = dailyRevenue - dailyMaintenance
-        return netDailyProfit.toDouble() / constructionCost
+        val roi = netDailyProfit.toDouble() / constructionCost
+        log.debug { "投资回报率计算完成: ROI=$roi" }
+        return roi
     }
 
     /**
@@ -154,12 +166,15 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
         dailyRevenue: Int,
         dailyMaintenance: Int
     ): Int {
+        log.debug { "开始计算回收期: 建设成本=$constructionCost, 日收益=$dailyRevenue" }
         val netDailyProfit = dailyRevenue - dailyMaintenance
-        return if (netDailyProfit > 0) {
+        val paybackPeriod = if (netDailyProfit > 0) {
             (constructionCost / netDailyProfit).coerceAtLeast(1)
         } else {
             Int.MAX_VALUE // 无法回收
         }
+        log.debug { "回收期计算完成: $paybackPeriod 天" }
+        return paybackPeriod
     }
 
     /**
@@ -217,7 +232,8 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
         roi: Double,
         paybackPeriod: Int
     ): ValueReport {
-        return ValueReport(
+        log.debug { "开始生成设施价值报告: $facilityName, 价值=$value" }
+        val report = ValueReport(
             facilityName = facilityName,
             valueScore = value,
             valueLevel = assessValueLevel(value),
@@ -225,6 +241,8 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
             paybackPeriod = paybackPeriod,
             recommendation = generateRecommendation(roi, paybackPeriod)
         )
+        log.debug { "设施价值报告生成完成: $facilityName, 建议=${report.recommendation}" }
+        return report
     }
 
     /**

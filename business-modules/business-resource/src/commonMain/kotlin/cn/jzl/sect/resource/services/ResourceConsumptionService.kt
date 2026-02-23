@@ -8,6 +8,7 @@
  */
 package cn.jzl.sect.resource.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
@@ -16,6 +17,7 @@ import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.config.GameConfig
 import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.sect.SectPositionInfo
@@ -39,6 +41,7 @@ import cn.jzl.sect.core.sect.SectTreasury
  */
 class ResourceConsumptionService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "ResourceConsumptionService" })
     private val config = GameConfig
 
     /**
@@ -47,8 +50,12 @@ class ResourceConsumptionService(override val world: World) : EntityRelationCont
      * @return 消耗结算结果
      */
     fun monthlyConsumption(maintenanceCost: Long = 0L): ConsumptionResult {
-        val sect = getSectEntity() ?: return ConsumptionResult(false, 0, 0, 0, emptyList())
+        log.debug { "开始月度资源消耗结算" }
+        val sect = getSectEntity() ?: return ConsumptionResult(false, 0, 0, 0, emptyList()).also {
+            log.warn { "未找到宗门实体，结算失败" }
+        }
         val sectTreasury = getSectTreasury(sect)
+        log.debug { "宗门当前灵石: ${sectTreasury.spiritStones}" }
 
         // 计算各项支出
         val salaryCost = calculateSalaryCost()
@@ -69,6 +76,9 @@ class ResourceConsumptionService(override val world: World) : EntityRelationCont
 
         // 支付俸禄
         val salaryQuery = world.query { SalaryQueryContext(this) }
+        var salaryCount = 0
+        salaryQuery.forEach { salaryCount++ }
+        log.debug { "开始发放俸禄，待支付人数: $salaryCount" }
         salaryQuery.forEach { ctx ->
             val expectedSalary = getSalaryByPosition(ctx.position.position)
             val actualSalary = if (remainingSpiritStones >= expectedSalary) {
@@ -82,6 +92,8 @@ class ResourceConsumptionService(override val world: World) : EntityRelationCont
 
             val paid = actualSalary == expectedSalary
             updateLoyaltyAfterPayment(ctx.entity, ctx.loyalty, paid)
+
+            log.info { "俸禄发放: ${ctx.position.position.displayName} ${if (paid) "✓" else "✗"} ${actualSalary}/${expectedSalary} 灵石" }
 
             paymentRecords.add(
                 PaymentRecord(
@@ -106,6 +118,8 @@ class ResourceConsumptionService(override val world: World) : EntityRelationCont
 
         val totalPaid = paymentRecords.sumOf { it.actualAmount }
         val allPaid = paymentRecords.all { it.paid }
+
+        log.debug { "月度资源消耗结算完成，总支出: $totalCost，支付成功: $allPaid" }
 
         return ConsumptionResult(
             success = allPaid,

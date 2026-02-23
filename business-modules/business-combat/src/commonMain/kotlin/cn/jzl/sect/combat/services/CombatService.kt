@@ -10,8 +10,10 @@
  */
 package cn.jzl.sect.combat.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.combat.components.CombatStats
 import cn.jzl.sect.combat.components.Combatant
 import kotlin.math.max
@@ -36,6 +38,8 @@ import kotlin.random.Random
  * @property world ECS 世界实例
  */
 class CombatService(override val world: World) : EntityRelationContext {
+
+    private val log: Logger by world.di.instance(argProvider = { "CombatService" })
 
     companion object {
         // 暴击伤害倍率
@@ -134,8 +138,12 @@ class CombatService(override val world: World) : EntityRelationContext {
         defender: Combatant,
         defenderStats: CombatStats
     ): AttackResult {
+        log.debug { "执行攻击: 攻击者=${attacker}, 防守者=${defender}" }
+
         // 检查闪避
         if (checkDodge(defenderStats)) {
+            log.debug { "攻击被闪避！" }
+            log.debug { "攻击完成: 伤害=0, 暴击=false, 闪避=true" }
             return AttackResult(0, false, true)
         }
 
@@ -145,10 +153,13 @@ class CombatService(override val world: World) : EntityRelationContext {
 
         // 检查暴击
         if (checkCritical(attackerStats)) {
+            log.debug { "触发暴击！伤害翻倍" }
             damage = calculateCriticalDamage(damage)
             isCritical = true
         }
 
-        return AttackResult(damage, isCritical, false)
+        val result = AttackResult(damage, isCritical, false)
+        log.debug { "攻击完成: 伤害=${result.damage}, 暴击=${result.isCritical}, 闪避=${result.isDodged}" }
+        return result
     }
 }

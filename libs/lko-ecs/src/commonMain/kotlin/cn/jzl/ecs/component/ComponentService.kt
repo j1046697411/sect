@@ -10,6 +10,9 @@ import cn.jzl.ecs.entity.id
 import cn.jzl.ecs.relation.Relation
 import cn.jzl.ecs.relation.kind
 import cn.jzl.ecs.relation.target
+import cn.jzl.core.log.ConsoleLogger
+import cn.jzl.core.log.LogLevel
+import cn.jzl.core.log.Logger
 import kotlin.reflect.KClassifier
 
 /**
@@ -33,6 +36,7 @@ import kotlin.reflect.KClassifier
  * @property singleRelationBits 标记为单例关系的位图
  */
 class ComponentService(override val world: World) : WorldOwner, ComponentProvider, ComponentStoreFactory<Any> {
+    private val log: Logger by lazy { ConsoleLogger(LogLevel.DEBUG, "ComponentService") }
     private val componentIdEntities = mutableScatterMapOf<KClassifier, ComponentId>()
     private val componentStoreFactories = mutableIntObjectMapOf<ComponentStoreFactory<*>>()
 

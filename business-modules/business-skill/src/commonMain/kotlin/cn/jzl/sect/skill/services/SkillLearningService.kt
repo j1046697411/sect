@@ -8,8 +8,10 @@
  */
 package cn.jzl.sect.skill.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.cultivation.components.Talent
 import cn.jzl.sect.skill.components.Skill
@@ -35,6 +37,8 @@ import kotlin.time.Clock
  */
 class SkillLearningService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "SkillLearningService" })
+
     /**
      * 检查是否可以学习功法
      *
@@ -50,13 +54,17 @@ class SkillLearningService(override val world: World) : EntityRelationContext {
         talent: Talent,
         learnedSkillIds: List<Long>
     ): Boolean {
+        log.debug { "开始检查功法学习条件" }
+
         // 检查境界要求
         if (currentRealm.level < skill.requiredRealm.level) {
+            log.debug { "功法学习条件检查失败：境界不足" }
             return false
         }
 
         // 检查悟性要求
         if (talent.comprehension < skill.requiredComprehension) {
+            log.debug { "功法学习条件检查失败：悟性不足" }
             return false
         }
 
@@ -66,10 +74,12 @@ class SkillLearningService(override val world: World) : EntityRelationContext {
                 learnedSkillIds.contains(prereqId)
             }
             if (!hasAllPrerequisites) {
+                log.debug { "功法学习条件检查失败：前置功法未满足" }
                 return false
             }
         }
 
+        log.debug { "功法学习条件检查通过" }
         return true
     }
 
@@ -81,11 +91,14 @@ class SkillLearningService(override val world: World) : EntityRelationContext {
      * @return 已学习功法对象
      */
     fun learnSkill(skill: Skill): SkillLearned {
-        return SkillLearned(
+        log.debug { "开始学习功法" }
+        val learned = SkillLearned(
             skillId = skill.id,
             proficiency = 0,
             learnedTime = Clock.System.now().toEpochMilliseconds()
         )
+        log.debug { "功法学习完成" }
+        return learned
     }
 
     /**
@@ -97,6 +110,7 @@ class SkillLearningService(override val world: World) : EntityRelationContext {
      * @return 成功率(0.0 - 1.0)
      */
     fun calculateLearningSuccessRate(skill: Skill, talent: Talent): Double {
+        log.debug { "开始计算学习成功率" }
         val difficulty = skill.getLearningDifficulty()
         val comprehensionBonus = talent.comprehension / 100.0 * 0.5 // 悟性提供最多50%加成
 
@@ -104,7 +118,9 @@ class SkillLearningService(override val world: World) : EntityRelationContext {
         val baseRate = 0.6
         val difficultyPenalty = difficulty / 200.0 // 难度惩罚
 
-        return (baseRate + comprehensionBonus - difficultyPenalty).coerceIn(0.1, 0.95)
+        val rate = (baseRate + comprehensionBonus - difficultyPenalty).coerceIn(0.1, 0.95)
+        log.debug { "学习成功率计算完成" }
+        return rate
     }
 
     /**
@@ -116,9 +132,12 @@ class SkillLearningService(override val world: World) : EntityRelationContext {
      * @return 学习时间(游戏时间单位)
      */
     fun calculateLearningTime(skill: Skill, talent: Talent): Int {
+        log.debug { "开始计算学习所需时间" }
         val difficulty = skill.getLearningDifficulty()
         val comprehensionFactor = 1.0 - (talent.comprehension / 200.0) // 悟性越高时间越短
 
-        return (difficulty * 10 * comprehensionFactor).toInt()
+        val time = (difficulty * 10 * comprehensionFactor).toInt()
+        log.debug { "学习所需时间计算完成" }
+        return time
     }
 }

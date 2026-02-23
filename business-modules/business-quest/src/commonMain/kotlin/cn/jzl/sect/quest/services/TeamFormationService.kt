@@ -9,6 +9,7 @@
  */
 package cn.jzl.sect.quest.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
@@ -19,6 +20,7 @@ import cn.jzl.ecs.family.FamilyBuilder
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
@@ -46,6 +48,8 @@ import kotlin.time.Clock
  */
 class TeamFormationService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "TeamFormationService" })
+
     /**
      * 查找可用的长老
      *
@@ -67,6 +71,7 @@ class TeamFormationService(override val world: World) : EntityRelationContext {
             }
         }
 
+        log.debug { "查找可用长老完成: ${if (selectedElder != null) "找到" else "未找到"}" }
         return selectedElder
     }
 
@@ -106,6 +111,7 @@ class TeamFormationService(override val world: World) : EntityRelationContext {
      * @return 外门弟子实体列表，如果人数不足则返回空列表
      */
     fun findAvailableOuterDisciples(min: Int = 10, max: Int = 20): List<Entity> {
+        log.debug { "开始查找可用外门弟子: min=$min, max=$max" }
         val query = world.query { OuterDiscipleQueryContext(world) }
         val disciples = mutableListOf<Entity>()
 
@@ -168,6 +174,7 @@ class TeamFormationService(override val world: World) : EntityRelationContext {
             }
         }
 
+        log.debug { "组建团队完成: 成功，长老=${elder.id}, 内门=${innerDisciples.size}人, 外门=${outerDisciples.size}人" }
         return TeamFormationResult(
             success = true,
             elder = elder,

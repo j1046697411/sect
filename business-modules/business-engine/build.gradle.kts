@@ -27,6 +27,7 @@ kotlin {
             dependencies {
                 api(project(":libs:lko-core"))
                 api(project(":libs:lko-ecs"))
+                api(project(":libs:lko-log"))
                 api(project(":business-modules:business-core"))
                 api(project(":business-modules:business-cultivation"))
                 api(project(":business-modules:business-disciples"))

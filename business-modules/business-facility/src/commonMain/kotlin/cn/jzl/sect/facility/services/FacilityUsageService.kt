@@ -24,8 +24,10 @@
  */
 package cn.jzl.sect.facility.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.facility.FacilityType
 
 /**
@@ -36,6 +38,8 @@ import cn.jzl.sect.core.facility.FacilityType
  * @property world ECS 世界实例
  */
 class FacilityUsageService(override val world: World) : EntityRelationContext {
+
+    private val log: Logger by world.di.instance(argProvider = { "FacilityUsageService" })
 
     companion object {
         // 基础使用成本
@@ -59,7 +63,8 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
      * @return 设施效果
      */
     fun getFacilityEffect(facilityType: FacilityType): FacilityEffect {
-        return when (facilityType) {
+        log.debug { "开始获取设施使用效果: $facilityType" }
+        val effect = when (facilityType) {
             FacilityType.CULTIVATION_ROOM -> FacilityEffect(
                 efficiencyBonus = 0.2,  // +20%修炼效率
                 targetActivity = "cultivation"
@@ -95,6 +100,8 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
                 targetActivity = "contribution"
             )
         }
+        log.debug { "设施使用效果获取完成: $facilityType, 效率加成=${effect.efficiencyBonus}" }
+        return effect
     }
 
     /**
@@ -105,6 +112,7 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
      * @return 使用成本(贡献点)
      */
     fun calculateUsageCost(facilityType: FacilityType, duration: Int): Int {
+        log.debug { "开始计算使用成本: $facilityType, 时长=$duration" }
         val baseCost = when (facilityType) {
             FacilityType.CULTIVATION_ROOM -> BASE_USAGE_COST
             FacilityType.ALCHEMY_ROOM -> BASE_USAGE_COST * 2
@@ -115,7 +123,9 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
             FacilityType.SPIRIT_STONE_MINE -> BASE_USAGE_COST
             FacilityType.CONTRIBUTION_HALL -> BASE_USAGE_COST / 2
         }
-        return baseCost * duration
+        val cost = baseCost * duration
+        log.debug { "使用成本计算完成: $facilityType, 成本=$cost" }
+        return cost
     }
 
     /**
@@ -131,8 +141,11 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
         contributionPoints: Int,
         duration: Int = 1
     ): Boolean {
+        log.debug { "开始检查设施使用权限: $facilityType, 贡献点=$contributionPoints" }
         val cost = calculateUsageCost(facilityType, duration)
-        return contributionPoints >= cost
+        val canUse = contributionPoints >= cost
+        log.debug { "设施使用权限检查完成: $facilityType, 结果=$canUse" }
+        return canUse
     }
 
     /**

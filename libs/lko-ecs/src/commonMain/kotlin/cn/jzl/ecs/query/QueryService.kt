@@ -2,6 +2,9 @@ package cn.jzl.ecs.query
 
 import cn.jzl.ecs.World
 import cn.jzl.ecs.WorldOwner
+import cn.jzl.core.log.ConsoleLogger
+import cn.jzl.core.log.LogLevel
+import cn.jzl.core.log.Logger
 
 /**
  * 查询服务，管理和缓存查询实例
@@ -27,6 +30,7 @@ import cn.jzl.ecs.WorldOwner
  * @property queryCache 查询缓存映射表
  */
 class QueryService(override val world: World) : WorldOwner {
+    private val log: Logger by lazy { ConsoleLogger(LogLevel.DEBUG, "QueryService") }
     private val queryCache = mutableMapOf<Any, Query<*>>()
 
     /**
@@ -40,6 +44,9 @@ class QueryService(override val world: World) : WorldOwner {
      */
     @Suppress("UNCHECKED_CAST")
     fun <E : EntityQueryContext> query(factory: World.() -> E): Query<E> {
-        return queryCache.getOrPut(factory) { Query(world.factory()) } as Query<E>
+        log.debug { "开始执行查询" }
+        val result = queryCache.getOrPut(factory) { Query(world.factory()) } as Query<E>
+        log.debug { "查询完成" }
+        return result
     }
 }

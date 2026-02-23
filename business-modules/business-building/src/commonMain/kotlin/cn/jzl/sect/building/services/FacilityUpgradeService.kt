@@ -8,12 +8,14 @@
  */
 package cn.jzl.sect.building.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.facility.FacilityType
 import cn.jzl.sect.facility.components.Facility
 import cn.jzl.sect.facility.components.FacilityCost
@@ -35,6 +37,7 @@ import cn.jzl.sect.facility.components.FacilityCost
  * @property world ECS 世界实例
  */
 class FacilityUpgradeService(override val world: World) : EntityRelationContext {
+    private val log: Logger by world.di.instance(argProvider = { "FacilityUpgradeService" })
 
     /**
      * 检查设施是否可以升级
@@ -42,6 +45,7 @@ class FacilityUpgradeService(override val world: World) : EntityRelationContext 
      * @return 升级检查结果
      */
     fun canUpgrade(facility: Entity): UpgradeCheckResult {
+        log.debug { "开始检查设施是否可以升级: facility=$facility" }
         val query = world.query { FacilityQueryContext(this) }
         var result: UpgradeCheckResult? = null
 
@@ -60,7 +64,9 @@ class FacilityUpgradeService(override val world: World) : EntityRelationContext 
             }
         }
 
-        return result ?: UpgradeCheckResult(false, "未找到设施", null)
+        val finalResult = result ?: UpgradeCheckResult(false, "未找到设施", null)
+        log.debug { "检查设施是否可以升级完成: canUpgrade=${finalResult.canUpgrade}, reason=${finalResult.reason}" }
+        return finalResult
     }
 
     /**
@@ -69,27 +75,35 @@ class FacilityUpgradeService(override val world: World) : EntityRelationContext 
      * @return 升级结果
      */
     fun upgrade(facility: Entity): UpgradeResult {
+        log.debug { "开始升级设施: facility=$facility" }
         val checkResult = canUpgrade(facility)
         if (!checkResult.canUpgrade) {
+            log.debug { "升级设施失败: ${checkResult.reason}" }
             return UpgradeResult(false, checkResult.reason)
         }
 
         val cost = checkResult.cost
-            ?: return UpgradeResult(false, "无法获取升级成本")
+            ?: return UpgradeResult(false, "无法获取升级成本").also {
+                log.debug { "升级设施失败: 无法获取升级成本" }
+            }
 
         // 扣除资源
         if (!deductResources(cost)) {
+            log.debug { "升级设施失败: 扣除资源失败" }
             return UpgradeResult(false, "扣除资源失败")
         }
 
         // 执行升级
-        return performUpgrade(facility)
+        val result = performUpgrade(facility)
+        log.debug { "升级设施完成: success=${result.success}, message=${result.message}" }
+        return result
     }
 
     /**
      * 执行升级
      */
     private fun performUpgrade(facility: Entity): UpgradeResult {
+        log.debug { "开始执行升级: facility=$facility" }
         val query = world.query { FacilityQueryContext(this) }
         var success = false
         var newLevel = 0
@@ -106,6 +120,7 @@ class FacilityUpgradeService(override val world: World) : EntityRelationContext 
             }
         }
 
+        log.debug { "执行升级完成: success=$success, newLevel=$newLevel" }
         return if (success) {
             UpgradeResult(true, "升级成功，当前等级：$newLevel")
         } else {
@@ -117,8 +132,10 @@ class FacilityUpgradeService(override val world: World) : EntityRelationContext 
      * 扣除资源
      */
     private fun deductResources(cost: FacilityCost): Boolean {
+        log.debug { "开始扣除资源: cost=$cost" }
         // 这里应该调用资源系统扣除资源
         // 暂时返回成功，实际实现需要与ResourceSystem集成
+        log.debug { "扣除资源完成" }
         return true
     }
 

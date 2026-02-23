@@ -9,6 +9,7 @@
  */
 package cn.jzl.sect.quest.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
@@ -18,6 +19,7 @@ import cn.jzl.ecs.entity
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.quest.components.PolicyComponent
 import cn.jzl.sect.quest.components.PolicyValidationResult
 import cn.jzl.sect.quest.components.ResourceAllocation
@@ -42,6 +44,8 @@ import cn.jzl.sect.quest.components.validatePolicy
  * @property world ECS 世界实例
  */
 class PolicyService(override val world: World) : EntityRelationContext {
+
+    private val log: Logger by world.di.instance(argProvider = { "PolicyService" })
 
     companion object {
         // 配置约束常量
@@ -111,6 +115,7 @@ class PolicyService(override val world: World) : EntityRelationContext {
             }
         }
 
+        log.debug { "更新政策配置完成: 成功" }
         return true
     }
 
@@ -130,8 +135,10 @@ class PolicyService(override val world: World) : EntityRelationContext {
      * @return 重置后的默认配置
      */
     fun resetToDefault(): PolicyComponent {
+        log.debug { "开始重置为默认配置" }
         val defaultConfig = defaultPolicy()
         updatePolicy(defaultConfig)
+        log.debug { "重置为默认配置完成" }
         return defaultConfig
     }
 
@@ -141,15 +148,20 @@ class PolicyService(override val world: World) : EntityRelationContext {
      * @return 当前政策配置
      */
     fun initialize(): PolicyComponent {
+        log.debug { "开始初始化政策系统" }
         val existingEntity = getPolicyEntity()
-        if (existingEntity == null) {
+        val result = if (existingEntity == null) {
             val defaultConfig = defaultPolicy()
             world.entity {
                 it.addComponent(defaultConfig)
             }
-            return defaultConfig
+            log.debug { "初始化政策系统完成: 创建默认配置" }
+            defaultConfig
+        } else {
+            log.debug { "初始化政策系统完成: 使用现有配置" }
+            getCurrentPolicy()
         }
-        return getCurrentPolicy()
+        return result
     }
 
     /**

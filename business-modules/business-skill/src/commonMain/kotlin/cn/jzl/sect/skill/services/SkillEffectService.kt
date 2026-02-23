@@ -8,8 +8,10 @@
  */
 package cn.jzl.sect.skill.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.skill.components.SkillEffect
 import cn.jzl.sect.skill.components.SkillEffectType
 
@@ -32,6 +34,8 @@ import cn.jzl.sect.skill.components.SkillEffectType
  */
 class SkillEffectService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "SkillEffectService" })
+
     /**
      * 应用效果
      * 根据熟练度计算实际效果值
@@ -41,8 +45,11 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
      * @return 实际效果值
      */
     fun applyEffect(effect: SkillEffect, proficiency: Int): Double {
+        log.debug { "开始应用功法效果" }
         val multiplier = proficiency / 100.0 * 0.5 + 0.5 // 熟练度倍率：0.5 - 1.0
-        return effect.baseValue * multiplier
+        val result = effect.baseValue * multiplier
+        log.debug { "功法效果应用完成" }
+        return result
     }
 
     /**
@@ -100,7 +107,10 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
      * @return 主动技能效果列表
      */
     fun getActiveSkillEffects(effects: List<SkillEffect>): List<SkillEffect> {
-        return effects.filter { it.type == SkillEffectType.ACTIVE_SKILL }
+        log.debug { "开始获取主动技能效果" }
+        val result = effects.filter { it.type == SkillEffectType.ACTIVE_SKILL }
+        log.debug { "主动技能效果获取完成" }
+        return result
     }
 
     /**
@@ -111,7 +121,10 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
      * @return 指定类型的效果列表
      */
     fun getEffectsByType(effects: List<SkillEffect>, type: SkillEffectType): List<SkillEffect> {
-        return effects.filter { it.type == type }
+        log.debug { "开始获取指定类型效果" }
+        val result = effects.filter { it.type == type }
+        log.debug { "指定类型效果获取完成" }
+        return result
     }
 
     /**
@@ -140,6 +153,9 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
         attribute: String,
         proficiency: Int
     ): Double {
-        return calculateTotalAttributeBonus(effects, attribute, proficiency)
+        log.debug { "开始计算战斗属性加成" }
+        val bonus = calculateTotalAttributeBonus(effects, attribute, proficiency)
+        log.debug { "战斗属性加成计算完成" }
+        return bonus
     }
 }

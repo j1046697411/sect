@@ -1,6 +1,8 @@
 package cn.jzl.sect.engine
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
+import cn.jzl.log.Logger
 import cn.jzl.sect.engine.service.WorldQueryService
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,7 @@ class GameLoop(
     private val world: World,
     private val systems: SectSystems
 ) {
+    private val log: Logger by world.di.instance(argProvider = { "GameLoop" })
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var gameJob: Job? = null
 
@@ -37,6 +40,7 @@ class GameLoop(
     fun start() {
         if (gameJob?.isActive == true) return
 
+        log.info { "游戏循环启动" }
         _gameState.value = GameState.Running
         gameJob = scope.launch {
             while (isActive) {
@@ -52,6 +56,7 @@ class GameLoop(
      * 暂停游戏
      */
     fun pause() {
+        log.info { "游戏循环暂停" }
         _gameState.value = GameState.Paused
     }
 
@@ -59,6 +64,7 @@ class GameLoop(
      * 恢复游戏
      */
     fun resume() {
+        log.info { "游戏循环恢复" }
         _gameState.value = GameState.Running
     }
 
@@ -66,6 +72,7 @@ class GameLoop(
      * 停止游戏循环
      */
     fun stop() {
+        log.info { "游戏循环停止" }
         gameJob?.cancel()
         gameJob = null
         _gameState.value = GameState.Stopped
@@ -100,6 +107,8 @@ class GameLoop(
         val ticksPerSecond = 1000f / speed.tickIntervalMs.toFloat()
         val hoursPerTick = (speed.daysPerSecond * 24) / ticksPerSecond
         val hoursToAdvance = hoursPerTick.toInt().coerceAtLeast(1)
+
+        log.debug { "执行游戏刻，推进时间: ${hoursToAdvance}小时" }
 
         // 1. 推进时间系统
         systems.timeSystem.advance(hoursToAdvance)

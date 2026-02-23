@@ -8,8 +8,10 @@
  */
 package cn.jzl.sect.disciples.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.disciples.components.RelationshipType
 
 /**
@@ -42,6 +44,8 @@ class MasterApprenticeService : EntityRelationContext {
 
     override lateinit var world: World
 
+    private val log: Logger by world.di.instance(argProvider = { "MasterApprenticeService" })
+
     private val relationshipService by lazy {
         RelationshipService()
     }
@@ -55,8 +59,10 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 是否成功建立关系（如果徒弟已有师父则返回false）
      */
     fun apprenticeToMaster(apprenticeId: Long, masterId: Long): Boolean {
+        log.debug { "拜师: apprenticeId=$apprenticeId, masterId=$masterId" }
         // 检查徒弟是否已有师父
         if (getMaster(apprenticeId) != null) {
+            log.debug { "拜师失败: 徒弟已有师父" }
             return false
         }
 
@@ -67,7 +73,7 @@ class MasterApprenticeService : EntityRelationContext {
             type = RelationshipType.MASTER_APPRENTICE,
             level = 60
         )
-
+        log.debug { "拜师成功: apprenticeId=$apprenticeId, masterId=$masterId" }
         return true
     }
 
@@ -78,11 +84,14 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 师父ID，如果没有师父返回null
      */
     fun getMaster(apprenticeId: Long): Long? {
+        log.debug { "获取徒弟的师父: apprenticeId=$apprenticeId" }
         val relationships = relationshipService.getRelationshipsByType(
             apprenticeId,
             RelationshipType.MASTER_APPRENTICE
         )
-        return relationships.firstOrNull()?.targetId
+        val masterId = relationships.firstOrNull()?.targetId
+        log.debug { "获取师父结果: $masterId" }
+        return masterId
     }
 
     /**
@@ -92,11 +101,14 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 徒弟ID列表
      */
     fun getApprentices(masterId: Long): List<Long> {
+        log.debug { "获取师父的所有徒弟: masterId=$masterId" }
         // 遍历所有师徒关系，找到目标为masterId的关系
         // 注意：师徒关系是徒弟->师父存储的
-        return relationshipService.getAllRelationshipsByType(RelationshipType.MASTER_APPRENTICE)
+        val result = relationshipService.getAllRelationshipsByType(RelationshipType.MASTER_APPRENTICE)
             .filter { it.targetId == masterId }
             .map { it.sourceId }
+        log.debug { "获取徒弟结果: ${result.size} 人" }
+        return result
     }
 
     /**
@@ -106,7 +118,9 @@ class MasterApprenticeService : EntityRelationContext {
      * @param masterId 师父ID
      */
     fun dissolveMasterApprenticeRelationship(apprenticeId: Long, masterId: Long) {
+        log.debug { "解除师徒关系: apprenticeId=$apprenticeId, masterId=$masterId" }
         relationshipService.dissolveRelationship(apprenticeId, masterId)
+        log.debug { "师徒关系解除完成" }
     }
 
     /**
@@ -117,11 +131,14 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 加成百分比
      */
     fun getCultivationEfficiencyBonus(apprenticeId: Long): Int {
-        return if (getMaster(apprenticeId) != null) {
+        log.debug { "获取修炼效率加成: apprenticeId=$apprenticeId" }
+        val bonus = if (getMaster(apprenticeId) != null) {
             CULTIVATION_EFFICIENCY_BONUS
         } else {
             0
         }
+        log.debug { "修炼效率加成: $bonus%" }
+        return bonus
     }
 
     /**
@@ -132,11 +149,14 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 加成百分比
      */
     fun getSkillLearningBonus(apprenticeId: Long): Int {
-        return if (getMaster(apprenticeId) != null) {
+        log.debug { "获取功法学习加成: apprenticeId=$apprenticeId" }
+        val bonus = if (getMaster(apprenticeId) != null) {
             SKILL_LEARNING_BONUS
         } else {
             0
         }
+        log.debug { "功法学习加成: $bonus%" }
+        return bonus
     }
 
     /**

@@ -8,6 +8,7 @@
  */
 package cn.jzl.sect.resource.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
@@ -16,6 +17,7 @@ import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.sect.SectTreasury
 import cn.jzl.sect.resource.components.ResourceProduction
 import cn.jzl.sect.resource.components.ResourceType
@@ -40,11 +42,14 @@ import cn.jzl.sect.resource.components.displayName
  */
 class ResourceProductionService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "ResourceProductionService" })
+
     /**
      * 每日资源产出
      * @return 产出记录列表
      */
     fun dailyProduction(): List<ProductionRecord> {
+        log.debug { "开始计算每日资源产出" }
         val records = mutableListOf<ProductionRecord>()
         val query = world.query { ProductionQueryContext(this) }
 
@@ -69,6 +74,8 @@ class ResourceProductionService(override val world: World) : EntityRelationConte
                     )
                 }
 
+                log.info { "产出 ${production.type.displayName} +${output} (效率: ${(production.efficiency * 100).toInt()}%)" }
+
                 records.add(
                     ProductionRecord(
                         entity = ctx.entity,
@@ -80,6 +87,7 @@ class ResourceProductionService(override val world: World) : EntityRelationConte
             }
         }
 
+        log.debug { "每日资源产出计算完成，记录数: ${records.size}" }
         return records
     }
 

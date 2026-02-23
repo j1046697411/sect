@@ -29,6 +29,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            implementation(projects.libs.lkoCore)
             implementation(projects.libs.lkoEcs)
         }
         commonTest.dependencies {

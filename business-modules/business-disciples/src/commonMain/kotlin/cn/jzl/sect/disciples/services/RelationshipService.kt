@@ -8,8 +8,10 @@
  */
 package cn.jzl.sect.disciples.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.disciples.components.Relationship
 import cn.jzl.sect.disciples.components.RelationshipType
 import kotlin.time.Clock
@@ -41,6 +43,8 @@ class RelationshipService : EntityRelationContext {
 
     override lateinit var world: World
 
+    private val log: Logger by world.di.instance(argProvider = { "RelationshipService" })
+
     // 存储所有关系，使用Pair(sourceId, targetId)作为键
     private val relationships = mutableMapOf<Pair<Long, Long>, Relationship>()
 
@@ -61,6 +65,7 @@ class RelationshipService : EntityRelationContext {
         level: Int = 50,
         establishedTime: Long = Clock.System.now().toEpochMilliseconds()
     ): Relationship {
+        log.debug { "建立关系: sourceId=$sourceId, targetId=$targetId, type=$type, level=$level" }
         val relationship = Relationship(
             sourceId = sourceId,
             targetId = targetId,
@@ -69,6 +74,7 @@ class RelationshipService : EntityRelationContext {
             establishedTime = establishedTime
         )
         relationships[Pair(sourceId, targetId)] = relationship
+        log.debug { "关系建立完成: ${relationships.size} 个关系" }
         return relationship
     }
 
@@ -79,7 +85,9 @@ class RelationshipService : EntityRelationContext {
      * @param targetId 关系目标ID
      */
     fun dissolveRelationship(sourceId: Long, targetId: Long) {
+        log.debug { "解除关系: sourceId=$sourceId, targetId=$targetId" }
         relationships.remove(Pair(sourceId, targetId))
+        log.debug { "关系解除完成: ${relationships.size} 个关系" }
     }
 
     /**
@@ -89,7 +97,10 @@ class RelationshipService : EntityRelationContext {
      * @return 关系列表
      */
     fun getRelationships(entityId: Long): List<Relationship> {
-        return relationships.values.filter { it.sourceId == entityId }
+        log.debug { "获取角色关系: entityId=$entityId" }
+        val result = relationships.values.filter { it.sourceId == entityId }
+        log.debug { "获取角色关系完成: ${result.size} 个关系" }
+        return result
     }
 
     /**
@@ -143,9 +154,11 @@ class RelationshipService : EntityRelationContext {
      * @param amount 增加的等级
      */
     fun improveRelationship(sourceId: Long, targetId: Long, amount: Int) {
+        log.debug { "改善关系: sourceId=$sourceId, targetId=$targetId, amount=$amount" }
         val key = Pair(sourceId, targetId)
         relationships[key]?.let { relationship ->
             relationships[key] = relationship.improve(amount)
+            log.debug { "关系改善完成: 新等级 ${relationships[key]?.level}" }
         }
     }
 
@@ -157,9 +170,11 @@ class RelationshipService : EntityRelationContext {
      * @param amount 降低的等级
      */
     fun worsenRelationship(sourceId: Long, targetId: Long, amount: Int) {
+        log.debug { "恶化关系: sourceId=$sourceId, targetId=$targetId, amount=$amount" }
         val key = Pair(sourceId, targetId)
         relationships[key]?.let { relationship ->
             relationships[key] = relationship.worsen(amount)
+            log.debug { "关系恶化完成: 新等级 ${relationships[key]?.level}" }
         }
     }
 

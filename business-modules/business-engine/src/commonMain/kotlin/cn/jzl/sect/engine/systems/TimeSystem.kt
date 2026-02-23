@@ -1,11 +1,13 @@
 package cn.jzl.sect.engine.systems
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.time.GameTime
 import cn.jzl.sect.core.time.Season
 import cn.jzl.sect.core.time.toDisplayString
@@ -18,6 +20,7 @@ import cn.jzl.sect.engine.state.TimeChangeInfo as StateTimeChangeInfo
  */
 class TimeSystem(private val world: World) {
 
+    private val log: Logger by world.di.instance(argProvider = { "TimeSystem" })
     private val gameState = GameState.getInstance()
 
     init {
@@ -33,8 +36,25 @@ class TimeSystem(private val world: World) {
      * @return 时间变化信息
      */
     fun advance(hours: Int): cn.jzl.sect.engine.systems.TimeChangeInfo {
+        log.debug { "开始推进时间: ${hours}小时" }
+
         // 使用 GameState 推进时间
         val stateInfo = gameState.advanceTime(hours)
+
+        // 检查是否新的一天/月
+        val oldTime = stateInfo.oldTime
+        val newTime = stateInfo.newTime
+
+        if (oldTime.day != newTime.day) {
+            log.info { "新的一天: 第${newTime.day}天" }
+        }
+
+        if (oldTime.month != newTime.month || oldTime.year != newTime.year) {
+            log.info { "新的一月: ${newTime.year}年${newTime.month}月" }
+        }
+
+        log.debug { "时间推进完成" }
+
         return TimeChangeInfo(
             oldTime = stateInfo.oldTime,
             newTime = stateInfo.newTime,

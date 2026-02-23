@@ -8,8 +8,10 @@
  */
 package cn.jzl.sect.skill.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.skill.components.Skill
 import cn.jzl.sect.skill.components.SkillLearned
@@ -35,6 +37,8 @@ import kotlin.time.Clock
  */
 class SkillInheritanceService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "SkillInheritanceService" })
+
     companion object {
         // 传承所需的最低熟练度
         const val MIN_PROFICIENCY_FOR_INHERITANCE = 50
@@ -58,22 +62,28 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
         masterRealm: Realm,
         apprenticeRealm: Realm
     ): Boolean {
+        log.debug { "开始检查功法传承条件" }
+
         // 检查熟练度要求
         if (!learned.canInherit()) {
+            log.debug { "功法传承条件检查失败：熟练度不足" }
             return false
         }
 
         // 检查师父境界是否足够
         if (masterRealm.level < skill.requiredRealm.level) {
+            log.debug { "功法传承条件检查失败：师父境界不足" }
             return false
         }
 
         // 检查境界差距
         val realmGap = masterRealm.level - apprenticeRealm.level
         if (realmGap > MAX_REALM_GAP) {
+            log.debug { "功法传承条件检查失败：境界差距过大" }
             return false
         }
 
+        log.debug { "功法传承条件检查通过" }
         return true
     }
 
@@ -85,11 +95,14 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
      * @return 徒弟的已学习功法对象
      */
     fun inheritSkill(skill: Skill): SkillLearned {
-        return SkillLearned(
+        log.debug { "开始传承功法" }
+        val learned = SkillLearned(
             skillId = skill.id,
             proficiency = 0, // 传承后熟练度从0开始
             learnedTime = Clock.System.now().toEpochMilliseconds()
         )
+        log.debug { "功法传承完成" }
+        return learned
     }
 
     /**
@@ -100,7 +113,8 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
      * @return 获得的声望值
      */
     fun calculateMasterReputation(rarity: SkillRarity): Int {
-        return when (rarity) {
+        log.debug { "开始计算师父声望" }
+        val reputation = when (rarity) {
             SkillRarity.COMMON -> 10
             SkillRarity.UNCOMMON -> 20
             SkillRarity.RARE -> 35
@@ -109,6 +123,8 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
             SkillRarity.MYTHIC -> 110
             SkillRarity.DIVINE -> 150
         }
+        log.debug { "师父声望计算完成" }
+        return reputation
     }
 
     /**
@@ -148,7 +164,8 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
      * @return 最低境界
      */
     fun getRequiredMasterRealm(rarity: SkillRarity): Realm {
-        return when (rarity) {
+        log.debug { "开始获取传承所需最低师父境界" }
+        val realm = when (rarity) {
             SkillRarity.COMMON -> Realm.QI_REFINING
             SkillRarity.UNCOMMON -> Realm.QI_REFINING
             SkillRarity.RARE -> Realm.FOUNDATION
@@ -157,5 +174,7 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
             SkillRarity.MYTHIC -> Realm.SOUL_TRANSFORMATION
             SkillRarity.DIVINE -> Realm.TRIBULATION
         }
+        log.debug { "传承所需最低师父境界获取完成" }
+        return realm
     }
 }

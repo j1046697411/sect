@@ -8,11 +8,13 @@
  */
 package cn.jzl.sect.quest.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.entity
+import cn.jzl.log.Logger
 import cn.jzl.sect.quest.components.QuestComponent
 import cn.jzl.sect.quest.components.QuestDifficulty
 import cn.jzl.sect.quest.components.QuestExecutionComponent
@@ -38,6 +40,7 @@ import kotlin.time.Clock
  */
 class SelectionTaskService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "SelectionTaskService" })
     private var nextQuestId: Long = 1
 
     /**
@@ -49,8 +52,14 @@ class SelectionTaskService(override val world: World) : EntityRelationContext {
      * @return 是否到达选拔时间
      */
     fun checkSelectionCycle(currentYear: Int, lastSelectionYear: Int, cycleYears: Int): Boolean {
-        if (cycleYears <= 0) return true
-        return (currentYear - lastSelectionYear) >= cycleYears
+        log.debug { "开始检查选拔周期: currentYear=$currentYear, lastSelectionYear=$lastSelectionYear, cycleYears=$cycleYears" }
+        if (cycleYears <= 0) {
+            log.debug { "检查选拔周期完成: true (cycleYears <= 0)" }
+            return true
+        }
+        val result = (currentYear - lastSelectionYear) >= cycleYears
+        log.debug { "检查选拔周期完成: $result" }
+        return result
     }
 
     /**
@@ -73,10 +82,11 @@ class SelectionTaskService(override val world: World) : EntityRelationContext {
      * @return 创建的任务实体
      */
     fun createSelectionTask(quota: Int): Entity {
+        log.debug { "开始创建选拔任务: quota=$quota" }
         val questId = generateQuestId()
         val currentTime = Clock.System.now().toEpochMilliseconds()
 
-        return world.entity {
+        val entity = world.entity {
             it.addComponent(
                 QuestComponent(
                     questId = questId,
@@ -100,6 +110,8 @@ class SelectionTaskService(override val world: World) : EntityRelationContext {
                 )
             )
         }
+        log.debug { "创建选拔任务完成: questId=$questId" }
+        return entity
     }
 
     /**

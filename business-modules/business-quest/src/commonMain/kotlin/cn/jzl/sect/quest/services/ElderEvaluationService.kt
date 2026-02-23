@@ -8,6 +8,7 @@
  */
 package cn.jzl.sect.quest.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
@@ -15,6 +16,7 @@ import cn.jzl.ecs.entity.id
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.cultivation.components.Talent
 import cn.jzl.sect.quest.components.CandidateScore
 import cn.jzl.sect.quest.components.ElderPersonality
@@ -41,6 +43,8 @@ import cn.jzl.sect.quest.components.QuestExecutionComponent
  * @property world ECS 世界实例
  */
 class ElderEvaluationService(override val world: World) : EntityRelationContext {
+
+    private val log: Logger by world.di.instance(argProvider = { "ElderEvaluationService" })
 
     /**
      * 评估单个弟子
@@ -75,6 +79,7 @@ class ElderEvaluationService(override val world: World) : EntityRelationContext 
         quota: Int,
         elderId: Entity
     ): List<CandidateScore> {
+        log.debug { "开始提名候选人: 外门弟子=${outerDisciples.size}, 名额=$quota, elderId=${elderId.id}" }
         // 获取长老性格
         val elderPersonality = getElderPersonality(elderId)
             ?: ElderPersonality.impartial() // 默认公正型
@@ -111,9 +116,11 @@ class ElderEvaluationService(override val world: World) : EntityRelationContext 
 
         // 按分数降序排序，取前150%名额的候选人
         val targetCount = (quota * 1.5).toInt().coerceAtLeast(quota)
-        return candidateScores
+        val result = candidateScores
             .sortedByDescending { it.totalScore }
             .take(targetCount)
+        log.debug { "提名候选人完成: 提名 ${result.size} 人" }
+        return result
     }
 
     /**
@@ -169,7 +176,9 @@ class ElderEvaluationService(override val world: World) : EntityRelationContext 
         }
 
         // 确保分数在0-1范围内
-        return finalScore.coerceIn(0.0, 1.0)
+        val result = finalScore.coerceIn(0.0, 1.0)
+        log.debug { "计算最终分数完成: $result" }
+        return result
     }
 
     /**

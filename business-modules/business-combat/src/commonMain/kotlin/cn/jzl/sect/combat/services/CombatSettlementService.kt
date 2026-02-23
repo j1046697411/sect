@@ -12,8 +12,10 @@
  */
 package cn.jzl.sect.combat.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.log.Logger
 import cn.jzl.sect.combat.components.Combatant
 import kotlin.math.min
 import kotlin.random.Random
@@ -40,6 +42,8 @@ import kotlin.random.Random
  * @property world ECS 世界实例
  */
 class CombatSettlementService(override val world: World) : EntityRelationContext {
+
+    private val log: Logger by world.di.instance(argProvider = { "CombatSettlementService" })
 
     /**
      * 战斗结果枚举
@@ -96,15 +100,20 @@ class CombatSettlementService(override val world: World) : EntityRelationContext
         playerTeam: List<Combatant>,
         enemyTeam: List<Combatant>
     ): CombatResult {
+        log.debug { "评估战斗结果: 玩家队伍=${playerTeam.size}人, 敌人队伍=${enemyTeam.size}人" }
+
         val playerAlive = playerTeam.any { it.isAlive }
         val enemyAlive = enemyTeam.any { it.isAlive }
 
-        return when {
+        val result = when {
             playerAlive && !enemyAlive -> CombatResult.VICTORY
             !playerAlive && enemyAlive -> CombatResult.DEFEAT
             !playerAlive && !enemyAlive -> CombatResult.DRAW
             else -> CombatResult.ESCAPE // 双方都有存活，可能是逃跑
         }
+
+        log.debug { "战斗结果: ${result}" }
+        return result
     }
 
     /**
@@ -115,6 +124,8 @@ class CombatSettlementService(override val world: World) : EntityRelationContext
      * @return 战斗评价
      */
     fun calculateCombatRating(playerTeam: List<Combatant>): CombatRating {
+        log.debug { "计算战斗评价" }
+
         val totalMaxHp = playerTeam.sumOf { it.maxHp }
         val totalCurrentHp = playerTeam.sumOf { it.currentHp }
 
@@ -124,7 +135,9 @@ class CombatSettlementService(override val world: World) : EntityRelationContext
             0.0
         }
 
-        return CombatRating.fromHpPercentage(hpPercentage)
+        val rating = CombatRating.fromHpPercentage(hpPercentage)
+        log.debug { "战斗评价: ${rating.displayName}, 生命值比例=${hpPercentage}" }
+        return rating
     }
 
     /**
@@ -209,12 +222,17 @@ class CombatSettlementService(override val world: World) : EntityRelationContext
         resources: Int,
         reputation: Int
     ): SettlementReport {
-        return SettlementReport(
+        log.debug { "生成战斗结算报告: 结果=${result}, 评价=${rating.displayName}" }
+
+        val report = SettlementReport(
             result = result,
             rating = rating,
             experienceGained = experience,
             resourcesGained = resources,
             reputationGained = reputation
         )
+
+        log.debug { "结算报告: 经验=${report.experienceGained}, 资源=${report.resourcesGained}, 声望=${report.reputationGained}" }
+        return report
     }
 }

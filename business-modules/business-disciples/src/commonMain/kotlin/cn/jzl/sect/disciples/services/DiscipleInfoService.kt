@@ -8,11 +8,13 @@
  */
 package cn.jzl.sect.disciples.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.sect.SectPositionInfo
@@ -41,12 +43,15 @@ import cn.jzl.sect.cultivation.components.Talent
  */
 class DiscipleInfoService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "DiscipleInfoService" })
+
     /**
      * 获取所有弟子列表
      *
      * @return 按职位排序的弟子信息列表
      */
     fun getAllDisciples(): List<DiscipleInfo> {
+        log.debug { "开始获取所有弟子列表" }
         val disciples = mutableListOf<DiscipleInfo>()
         val query = world.query { DiscipleQueryContext(this) }
 
@@ -75,7 +80,9 @@ class DiscipleInfoService(override val world: World) : EntityRelationContext {
         }
 
         // 按职位等级排序
-        return disciples.sortedBy { it.position.sortOrder }
+        val result = disciples.sortedBy { it.position.sortOrder }
+        log.debug { "获取弟子列表完成，共 ${result.size} 人" }
+        return result
     }
 
     /**
@@ -94,9 +101,10 @@ class DiscipleInfoService(override val world: World) : EntityRelationContext {
      * @return 弟子统计数据
      */
     fun getDiscipleStatistics(): DiscipleStatistics {
+        log.debug { "开始获取弟子统计信息" }
         val allDisciples = getAllDisciples()
 
-        return DiscipleStatistics(
+        val statistics = DiscipleStatistics(
             totalCount = allDisciples.size,
             leaderCount = allDisciples.count { it.position == SectPositionType.LEADER },
             elderCount = allDisciples.count { it.position == SectPositionType.ELDER },
@@ -110,6 +118,8 @@ class DiscipleInfoService(override val world: World) : EntityRelationContext {
             } else 0,
             rebelliousCount = allDisciples.count { it.loyaltyLevel == LoyaltyLevel.REBELLIOUS }
         )
+        log.debug { "获取弟子统计信息完成，总人数: ${statistics.totalCount}" }
+        return statistics
     }
 
     /**

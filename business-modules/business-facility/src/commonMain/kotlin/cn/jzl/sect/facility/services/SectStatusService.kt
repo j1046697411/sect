@@ -19,11 +19,13 @@
  */
 package cn.jzl.sect.facility.services
 
+import cn.jzl.di.instance
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
+import cn.jzl.log.Logger
 import cn.jzl.sect.core.config.GameConfig
 import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.sect.SectPositionInfo
@@ -41,6 +43,7 @@ import cn.jzl.sect.facility.components.SectStatus
  */
 class SectStatusService(override val world: World) : EntityRelationContext {
 
+    private val log: Logger by world.di.instance(argProvider = { "SectStatusService" })
     private val config = GameConfig
 
     /**
@@ -48,7 +51,10 @@ class SectStatusService(override val world: World) : EntityRelationContext {
      * @return 宗门状态评估
      */
     fun checkSectStatus(): SectStatus {
-        val sect = getSect() ?: return SectStatus.NO_SECT
+        log.debug { "开始检查宗门状态" }
+        val sect = getSect() ?: return SectStatus.NO_SECT.also {
+            log.debug { "宗门状态检查完成: 无宗门" }
+        }
         val treasury = getSectTreasury(sect)
 
         // 检查资源状况
@@ -68,7 +74,7 @@ class SectStatusService(override val world: World) : EntityRelationContext {
             0f
         }
 
-        return when {
+        val status = when {
             // 宗门解散：资源耗尽且没有弟子
             treasury.spiritStones <= 0 && totalDisciples == 0 -> SectStatus.DISSOLVED
 
@@ -81,6 +87,8 @@ class SectStatusService(override val world: World) : EntityRelationContext {
             // 宗门正常
             else -> SectStatus.NORMAL
         }
+        log.debug { "宗门状态检查完成: $status" }
+        return status
     }
 
     /**
@@ -88,7 +96,10 @@ class SectStatusService(override val world: World) : EntityRelationContext {
      * @return 财务摘要信息
      */
     fun getFinancialSummary(): FinancialSummary {
-        val sect = getSect() ?: return FinancialSummary.EMPTY
+        log.debug { "开始获取宗门财务摘要" }
+        val sect = getSect() ?: return FinancialSummary.EMPTY.also {
+            log.debug { "宗门财务摘要获取完成: 无宗门" }
+        }
         val treasury = getSectTreasury(sect)
         val monthlyCost = estimateMonthlyCost()
         val canSurviveMonths = if (monthlyCost > 0) {
@@ -97,7 +108,7 @@ class SectStatusService(override val world: World) : EntityRelationContext {
             Long.MAX_VALUE
         }
 
-        return FinancialSummary(
+        val summary = FinancialSummary(
             spiritStones = treasury.spiritStones,
             contributionPoints = treasury.contributionPoints,
             monthlyCost = monthlyCost,
@@ -105,6 +116,8 @@ class SectStatusService(override val world: World) : EntityRelationContext {
             totalDisciples = countTotalDisciples(),
             rebelliousDisciples = countRebelliousDisciples()
         )
+        log.debug { "宗门财务摘要获取完成: 灵石=${summary.spiritStones}, 月支出=${summary.monthlyCost}" }
+        return summary
     }
 
     /**

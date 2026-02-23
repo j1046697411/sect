@@ -7,6 +7,9 @@ import cn.jzl.core.list.LongFastList
 import cn.jzl.ecs.World
 import cn.jzl.ecs.WorldOwner
 import cn.jzl.ecs.archetype.Archetype
+import cn.jzl.core.log.ConsoleLogger
+import cn.jzl.core.log.LogLevel
+import cn.jzl.core.log.Logger
 
 /**
  * 实体服务，管理实体的生命周期
@@ -27,6 +30,7 @@ import cn.jzl.ecs.archetype.Archetype
  */
 class EntityService(override val world: World) : WorldOwner {
 
+    private val log: Logger by lazy { ConsoleLogger(LogLevel.DEBUG, "EntityService") }
     private val entityRecords = BucketedLongArray()
     private val entityEditorPool = BatchEntityEditorPool(world)
 
@@ -80,7 +84,10 @@ class EntityService(override val world: World) : WorldOwner {
      * @return 创建的实体
      */
     fun create(event: Boolean = true, configuration: EntityCreateContext.(Entity) -> Unit = {}): Entity {
-        return postCreate(world.entityStore.create(), event, configuration)
+        log.debug { "开始创建实体" }
+        val entity = postCreate(world.entityStore.create(), event, configuration)
+        log.debug { "实体创建完成，ID: ${entity.id}" }
+        return entity
     }
 
     /**

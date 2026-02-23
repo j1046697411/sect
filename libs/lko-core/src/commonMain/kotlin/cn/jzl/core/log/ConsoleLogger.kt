@@ -1,5 +1,13 @@
-package cn.jzl.log
+package cn.jzl.core.log
 
+/**
+ * 控制台日志实现
+ *
+ * 将日志输出到控制台的标准输出
+ *
+ * @param logLevel 最低日志级别，低于此级别的日志将被忽略
+ * @param tag 日志标签，用于标识日志来源
+ */
 class ConsoleLogger(
     private val logLevel: LogLevel,
     private val tag: String
