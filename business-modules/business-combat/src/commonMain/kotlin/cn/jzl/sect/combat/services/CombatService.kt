@@ -14,12 +14,13 @@ import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.combat.components.CombatStats
 import cn.jzl.sect.combat.components.Combatant
-import cn.jzl.sect.combat.systems.CombatSystem
+import kotlin.math.max
+import kotlin.random.Random
 
 /**
  * 战斗服务
  *
- * 提供战斗核心逻辑功能的服务代理：
+ * 提供战斗核心逻辑功能：
  * - 伤害计算
  * - 暴击判定
  * - 闪避判定
@@ -36,9 +37,22 @@ import cn.jzl.sect.combat.systems.CombatSystem
  */
 class CombatService(override val world: World) : EntityRelationContext {
 
-    private val combatSystem by lazy {
-        CombatSystem()
+    companion object {
+        // 暴击伤害倍率
+        const val CRITICAL_DAMAGE_MULTIPLIER = 1.5
+
+        // 基础伤害随机波动范围
+        const val DAMAGE_VARIANCE = 0.2
     }
+
+    /**
+     * 攻击结果
+     */
+    data class AttackResult(
+        val damage: Int,
+        val isCritical: Boolean,
+        val isDodged: Boolean
+    )
 
     /**
      * 计算伤害
@@ -49,7 +63,17 @@ class CombatService(override val world: World) : EntityRelationContext {
      * @return 伤害值
      */
     fun calculateDamage(attackerStats: CombatStats, defenderStats: CombatStats): Int {
-        return combatSystem.calculateDamage(attackerStats, defenderStats)
+        val attack = attackerStats.calculateEffectiveAttack()
+        val damageReduction = defenderStats.calculateDamageReduction()
+
+        // 基础伤害 = 攻击力 * (1 - 伤害减免)
+        val baseDamage = attack * (1 - damageReduction)
+
+        // 添加随机波动 (±20%)
+        val variance = Random.nextDouble(-DAMAGE_VARIANCE, DAMAGE_VARIANCE)
+        val finalDamage = baseDamage * (1 + variance)
+
+        return max(1, finalDamage.toInt()) // 最小伤害为1
     }
 
     /**
@@ -59,7 +83,7 @@ class CombatService(override val world: World) : EntityRelationContext {
      * @return 暴击伤害
      */
     fun calculateCriticalDamage(baseDamage: Int): Int {
-        return combatSystem.calculateCriticalDamage(baseDamage)
+        return (baseDamage * CRITICAL_DAMAGE_MULTIPLIER).toInt()
     }
 
     /**
@@ -72,7 +96,7 @@ class CombatService(override val world: World) : EntityRelationContext {
     fun sortBySpeed(
         combatants: List<Pair<Combatant, CombatStats>>
     ): List<Pair<Combatant, CombatStats>> {
-        return combatSystem.sortBySpeed(combatants)
+        return combatants.sortedByDescending { it.second.speed }
     }
 
     /**
@@ -82,7 +106,7 @@ class CombatService(override val world: World) : EntityRelationContext {
      * @return 是否暴击
      */
     fun checkCritical(stats: CombatStats): Boolean {
-        return combatSystem.checkCritical(stats)
+        return Random.nextInt(100) < stats.critRate
     }
 
     /**
@@ -92,7 +116,7 @@ class CombatService(override val world: World) : EntityRelationContext {
      * @return 是否闪避成功
      */
     fun checkDodge(stats: CombatStats): Boolean {
-        return combatSystem.checkDodge(stats)
+        return Random.nextInt(100) < stats.dodgeRate
     }
 
     /**
@@ -102,14 +126,29 @@ class CombatService(override val world: World) : EntityRelationContext {
      * @param attackerStats 攻击者属性
      * @param defender 防守者
      * @param defenderStats 防守者属性
-     * @return 攻击结果
+     * @return 攻击结果(伤害值, 是否暴击, 是否闪避)
      */
     fun executeAttack(
         attacker: Combatant,
         attackerStats: CombatStats,
         defender: Combatant,
         defenderStats: CombatStats
-    ): CombatSystem.AttackResult {
-        return combatSystem.executeAttack(attacker, attackerStats, defender, defenderStats)
+    ): AttackResult {
+        // 检查闪避
+        if (checkDodge(defenderStats)) {
+            return AttackResult(0, false, true)
+        }
+
+        // 计算基础伤害
+        var damage = calculateDamage(attackerStats, defenderStats)
+        var isCritical = false
+
+        // 检查暴击
+        if (checkCritical(attackerStats)) {
+            damage = calculateCriticalDamage(damage)
+            isCritical = true
+        }
+
+        return AttackResult(damage, isCritical, false)
     }
 }

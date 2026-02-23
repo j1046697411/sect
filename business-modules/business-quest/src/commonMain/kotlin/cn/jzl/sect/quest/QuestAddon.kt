@@ -34,7 +34,13 @@ package cn.jzl.sect.quest
 import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.Phase
+import cn.jzl.ecs.addon.components
 import cn.jzl.ecs.addon.createAddon
+import cn.jzl.ecs.component.componentId
+import cn.jzl.sect.quest.components.EvaluationComponent
+import cn.jzl.sect.quest.components.PolicyComponent
+import cn.jzl.sect.quest.components.QuestComponent
+import cn.jzl.sect.quest.components.QuestExecutionComponent
 import cn.jzl.sect.quest.services.ElderEvaluationService
 import cn.jzl.sect.quest.services.PolicyService
 import cn.jzl.sect.quest.services.PromotionService
@@ -67,6 +73,14 @@ val questAddon = createAddon("questAddon") {
 
     // 依赖战斗系统
     install(cn.jzl.sect.combat.combatAddon)
+
+    // 注册组件
+    components {
+        world.componentId<QuestComponent>()
+        world.componentId<QuestExecutionComponent>()
+        world.componentId<PolicyComponent>()
+        world.componentId<EvaluationComponent>()
+    }
 
     // 注册服务
     injects {

@@ -10,7 +10,7 @@ package cn.jzl.sect.disciples.services
 
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
-import cn.jzl.sect.disciples.systems.MasterApprenticeSystem
+import cn.jzl.sect.disciples.components.RelationshipType
 
 /**
  * 师徒服务
@@ -46,10 +46,6 @@ class MasterApprenticeService : EntityRelationContext {
         RelationshipService()
     }
 
-    private val masterApprenticeSystem by lazy {
-        MasterApprenticeSystem(relationshipService.relationshipSystem)
-    }
-
     /**
      * 拜师
      * 建立师徒关系
@@ -59,7 +55,20 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 是否成功建立关系（如果徒弟已有师父则返回false）
      */
     fun apprenticeToMaster(apprenticeId: Long, masterId: Long): Boolean {
-        return masterApprenticeSystem.apprenticeToMaster(apprenticeId, masterId)
+        // 检查徒弟是否已有师父
+        if (getMaster(apprenticeId) != null) {
+            return false
+        }
+
+        // 建立师徒关系，初始等级为60
+        relationshipService.establishRelationship(
+            sourceId = apprenticeId,
+            targetId = masterId,
+            type = RelationshipType.MASTER_APPRENTICE,
+            level = 60
+        )
+
+        return true
     }
 
     /**
@@ -69,7 +78,11 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 师父ID，如果没有师父返回null
      */
     fun getMaster(apprenticeId: Long): Long? {
-        return masterApprenticeSystem.getMaster(apprenticeId)
+        val relationships = relationshipService.getRelationshipsByType(
+            apprenticeId,
+            RelationshipType.MASTER_APPRENTICE
+        )
+        return relationships.firstOrNull()?.targetId
     }
 
     /**
@@ -79,7 +92,11 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 徒弟ID列表
      */
     fun getApprentices(masterId: Long): List<Long> {
-        return masterApprenticeSystem.getApprentices(masterId)
+        // 遍历所有师徒关系，找到目标为masterId的关系
+        // 注意：师徒关系是徒弟->师父存储的
+        return relationshipService.getAllRelationshipsByType(RelationshipType.MASTER_APPRENTICE)
+            .filter { it.targetId == masterId }
+            .map { it.sourceId }
     }
 
     /**
@@ -89,7 +106,7 @@ class MasterApprenticeService : EntityRelationContext {
      * @param masterId 师父ID
      */
     fun dissolveMasterApprenticeRelationship(apprenticeId: Long, masterId: Long) {
-        masterApprenticeSystem.dissolveMasterApprenticeRelationship(apprenticeId, masterId)
+        relationshipService.dissolveRelationship(apprenticeId, masterId)
     }
 
     /**
@@ -100,7 +117,11 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 加成百分比
      */
     fun getCultivationEfficiencyBonus(apprenticeId: Long): Int {
-        return masterApprenticeSystem.getCultivationEfficiencyBonus(apprenticeId)
+        return if (getMaster(apprenticeId) != null) {
+            CULTIVATION_EFFICIENCY_BONUS
+        } else {
+            0
+        }
     }
 
     /**
@@ -111,7 +132,11 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 加成百分比
      */
     fun getSkillLearningBonus(apprenticeId: Long): Int {
-        return masterApprenticeSystem.getSkillLearningBonus(apprenticeId)
+        return if (getMaster(apprenticeId) != null) {
+            SKILL_LEARNING_BONUS
+        } else {
+            0
+        }
     }
 
     /**
@@ -122,14 +147,15 @@ class MasterApprenticeService : EntityRelationContext {
      * @return 是否为师徒关系
      */
     fun isMasterApprenticeRelationship(apprenticeId: Long, masterId: Long): Boolean {
-        return masterApprenticeSystem.isMasterApprenticeRelationship(apprenticeId, masterId)
+        val relationship = relationshipService.getRelationship(apprenticeId, masterId)
+        return relationship?.type == RelationshipType.MASTER_APPRENTICE
     }
 
     companion object {
         // 师徒关系提供的修炼效率加成 (%)
-        const val CULTIVATION_EFFICIENCY_BONUS = MasterApprenticeSystem.CULTIVATION_EFFICIENCY_BONUS
+        const val CULTIVATION_EFFICIENCY_BONUS = 20
 
         // 师徒关系提供的功法学习加成 (%)
-        const val SKILL_LEARNING_BONUS = MasterApprenticeSystem.SKILL_LEARNING_BONUS
+        const val SKILL_LEARNING_BONUS = 30
     }
 }

@@ -1,4 +1,4 @@
-package cn.jzl.sect.skill.systems
+package cn.jzl.sect.skill.services
 
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.cultivation.Talent
@@ -9,18 +9,17 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
-import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * 功法学习系统测试类
+ * 功法学习服务测试类
  */
-class SkillLearningSystemTest {
+class SkillLearningServiceTest {
 
     @Test
     fun `满足学习条件时应成功学习功法`() {
         // Given
-        val system = SkillLearningSystem()
+        val service = SkillLearningService()
         val skill = Skill(
             id = 1L,
             name = "基础吐纳术",
@@ -32,7 +31,7 @@ class SkillLearningSystemTest {
         val talent = Talent(comprehension = 50)
 
         // When
-        val result = system.canLearnSkill(skill, Realm.QI_REFINING, talent, emptyList())
+        val result = service.canLearnSkill(skill, Realm.QI_REFINING, talent, emptyList())
 
         // Then
         assertTrue(result)
@@ -41,7 +40,7 @@ class SkillLearningSystemTest {
     @Test
     fun `境界不足时应无法学习功法`() {
         // Given
-        val system = SkillLearningSystem()
+        val service = SkillLearningService()
         val skill = Skill(
             id = 1L,
             name = "基础吐纳术",
@@ -51,7 +50,7 @@ class SkillLearningSystemTest {
         val talent = Talent(comprehension = 50)
 
         // When
-        val result = system.canLearnSkill(skill, Realm.MORTAL, talent, emptyList())
+        val result = service.canLearnSkill(skill, Realm.MORTAL, talent, emptyList())
 
         // Then
         assertFalse(result)
@@ -60,7 +59,7 @@ class SkillLearningSystemTest {
     @Test
     fun `悟性不足时应无法学习功法`() {
         // Given
-        val system = SkillLearningSystem()
+        val service = SkillLearningService()
         val skill = Skill(
             id = 1L,
             name = "基础吐纳术",
@@ -70,7 +69,7 @@ class SkillLearningSystemTest {
         val talent = Talent(comprehension = 30)
 
         // When
-        val result = system.canLearnSkill(skill, Realm.QI_REFINING, talent, emptyList())
+        val result = service.canLearnSkill(skill, Realm.QI_REFINING, talent, emptyList())
 
         // Then
         assertFalse(result)
@@ -79,7 +78,7 @@ class SkillLearningSystemTest {
     @Test
     fun `缺少前置功法时应无法学习功法`() {
         // Given
-        val system = SkillLearningSystem()
+        val service = SkillLearningService()
         val skill = Skill(
             id = 2L,
             name = "高级功法",
@@ -90,7 +89,7 @@ class SkillLearningSystemTest {
         val talent = Talent(comprehension = 50)
 
         // When
-        val result = system.canLearnSkill(skill, Realm.QI_REFINING, talent, emptyList())
+        val result = service.canLearnSkill(skill, Realm.QI_REFINING, talent, emptyList())
 
         // Then
         assertFalse(result)
@@ -99,7 +98,7 @@ class SkillLearningSystemTest {
     @Test
     fun `拥有前置功法时应可以学习功法`() {
         // Given
-        val system = SkillLearningSystem()
+        val service = SkillLearningService()
         val skill = Skill(
             id = 2L,
             name = "高级功法",
@@ -111,7 +110,7 @@ class SkillLearningSystemTest {
         val learnedSkills = listOf(1L)
 
         // When
-        val result = system.canLearnSkill(skill, Realm.QI_REFINING, talent, learnedSkills)
+        val result = service.canLearnSkill(skill, Realm.QI_REFINING, talent, learnedSkills)
 
         // Then
         assertTrue(result)
@@ -120,7 +119,7 @@ class SkillLearningSystemTest {
     @Test
     fun `学习功法应返回已学习功法对象`() {
         // Given
-        val system = SkillLearningSystem()
+        val service = SkillLearningService()
         val skill = Skill(
             id = 1L,
             name = "基础吐纳术",
@@ -129,7 +128,7 @@ class SkillLearningSystemTest {
         )
 
         // When
-        val learned = system.learnSkill(skill)
+        val learned = service.learnSkill(skill)
 
         // Then
         assertNotNull(learned)
@@ -140,15 +139,15 @@ class SkillLearningSystemTest {
     @Test
     fun `计算学习成功率应根据悟性返回正确值`() {
         // Given
-        val system = SkillLearningSystem()
+        val service = SkillLearningService()
         val skill = Skill(rarity = SkillRarity.COMMON)
 
         // When & Then
         val lowComprehension = Talent(comprehension = 20)
         val highComprehension = Talent(comprehension = 80)
 
-        val lowSuccess = system.calculateLearningSuccessRate(skill, lowComprehension)
-        val highSuccess = system.calculateLearningSuccessRate(skill, highComprehension)
+        val lowSuccess = service.calculateLearningSuccessRate(skill, lowComprehension)
+        val highSuccess = service.calculateLearningSuccessRate(skill, highComprehension)
 
         assertTrue(lowSuccess < highSuccess)
     }

@@ -28,7 +28,11 @@ package cn.jzl.sect.combat
 import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.Phase
+import cn.jzl.ecs.addon.components
 import cn.jzl.ecs.addon.createAddon
+import cn.jzl.ecs.component.componentId
+import cn.jzl.sect.combat.components.CombatStats
+import cn.jzl.sect.combat.components.Combatant
 import cn.jzl.sect.combat.services.CombatPowerService
 import cn.jzl.sect.combat.services.CombatService
 import cn.jzl.sect.combat.services.CombatSettlementService
@@ -37,6 +41,8 @@ import cn.jzl.sect.combat.services.CombatSettlementService
  * 战斗系统 Addon
  *
  * 负责注册战斗系统相关组件和服务：
+ * - [Combatant] 组件：战斗参与者
+ * - [CombatStats] 组件：战斗属性
  * - [CombatService] 服务：处理战斗核心逻辑
  * - [CombatSettlementService] 服务：处理战斗结算
  * - [CombatPowerService] 服务：处理战斗实力计算
@@ -49,6 +55,12 @@ import cn.jzl.sect.combat.services.CombatSettlementService
 val combatAddon = createAddon("combatAddon") {
     // 依赖技能系统
     install(cn.jzl.sect.skill.skillAddon)
+
+    // 注册组件
+    components {
+        world.componentId<Combatant>()
+        world.componentId<CombatStats>()
+    }
 
     // 注册服务
     injects {

@@ -12,7 +12,6 @@ import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.skill.components.SkillEffect
 import cn.jzl.sect.skill.components.SkillEffectType
-import cn.jzl.sect.skill.systems.SkillEffectSystem
 
 /**
  * 功法效果服务
@@ -33,10 +32,6 @@ import cn.jzl.sect.skill.systems.SkillEffectSystem
  */
 class SkillEffectService(override val world: World) : EntityRelationContext {
 
-    private val skillEffectSystem by lazy {
-        SkillEffectSystem()
-    }
-
     /**
      * 应用效果
      * 根据熟练度计算实际效果值
@@ -46,7 +41,8 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
      * @return 实际效果值
      */
     fun applyEffect(effect: SkillEffect, proficiency: Int): Double {
-        return skillEffectSystem.applyEffect(effect, proficiency)
+        val multiplier = proficiency / 100.0 * 0.5 + 0.5 // 熟练度倍率：0.5 - 1.0
+        return effect.baseValue * multiplier
     }
 
     /**
@@ -63,7 +59,9 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
         attribute: String,
         proficiency: Int
     ): Double {
-        return skillEffectSystem.calculateTotalAttributeBonus(effects, attribute, proficiency)
+        return effects
+            .filter { it.type == SkillEffectType.ATTRIBUTE_BONUS && it.targetAttribute == attribute }
+            .sumOf { applyEffect(it, proficiency) }
     }
 
     /**
@@ -80,7 +78,9 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
         activity: String,
         proficiency: Int
     ): Double {
-        return skillEffectSystem.calculateTotalEfficiencyBonus(effects, activity, proficiency)
+        return effects
+            .filter { it.type == SkillEffectType.EFFICIENCY_BONUS && it.targetAttribute == activity }
+            .sumOf { applyEffect(it, proficiency) }
     }
 
     /**
@@ -90,7 +90,7 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
      * @return 被动技能效果列表
      */
     fun getPassiveSkillEffects(effects: List<SkillEffect>): List<SkillEffect> {
-        return skillEffectSystem.getPassiveSkillEffects(effects)
+        return effects.filter { it.type == SkillEffectType.PASSIVE_SKILL }
     }
 
     /**
@@ -100,7 +100,7 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
      * @return 主动技能效果列表
      */
     fun getActiveSkillEffects(effects: List<SkillEffect>): List<SkillEffect> {
-        return skillEffectSystem.getActiveSkillEffects(effects)
+        return effects.filter { it.type == SkillEffectType.ACTIVE_SKILL }
     }
 
     /**
@@ -111,7 +111,7 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
      * @return 指定类型的效果列表
      */
     fun getEffectsByType(effects: List<SkillEffect>, type: SkillEffectType): List<SkillEffect> {
-        return skillEffectSystem.getEffectsByType(effects, type)
+        return effects.filter { it.type == type }
     }
 
     /**
@@ -123,7 +123,7 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
      * @return 修炼效率加成百分比
      */
     fun calculateCultivationEfficiencyBonus(effects: List<SkillEffect>, proficiency: Int): Double {
-        return skillEffectSystem.calculateCultivationEfficiencyBonus(effects, proficiency)
+        return calculateTotalEfficiencyBonus(effects, "cultivation", proficiency)
     }
 
     /**
@@ -140,6 +140,6 @@ class SkillEffectService(override val world: World) : EntityRelationContext {
         attribute: String,
         proficiency: Int
     ): Double {
-        return skillEffectSystem.calculateCombatAttributeBonus(effects, attribute, proficiency)
+        return calculateTotalAttributeBonus(effects, attribute, proficiency)
     }
 }

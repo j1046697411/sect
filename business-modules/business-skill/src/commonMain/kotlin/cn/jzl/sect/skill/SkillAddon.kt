@@ -28,7 +28,12 @@ package cn.jzl.sect.skill
 import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.Phase
+import cn.jzl.ecs.addon.components
 import cn.jzl.ecs.addon.createAddon
+import cn.jzl.ecs.component.componentId
+import cn.jzl.sect.skill.components.Skill
+import cn.jzl.sect.skill.components.SkillEffect
+import cn.jzl.sect.skill.components.SkillLearned
 import cn.jzl.sect.skill.services.SkillEffectService
 import cn.jzl.sect.skill.services.SkillInheritanceService
 import cn.jzl.sect.skill.services.SkillLearningService
@@ -37,6 +42,9 @@ import cn.jzl.sect.skill.services.SkillLearningService
  * 功法系统 Addon
  *
  * 负责注册功法系统相关组件和服务：
+ * - [Skill] 组件：功法基础信息
+ * - [SkillLearned] 组件：已学习功法信息
+ * - [SkillEffect] 组件：功法效果信息
  * - [SkillLearningService] 服务：处理功法学习条件和成功率计算
  * - [SkillEffectService] 服务：处理功法效果计算和应用
  * - [SkillInheritanceService] 服务：处理功法传承机制
@@ -49,6 +57,13 @@ import cn.jzl.sect.skill.services.SkillLearningService
 val skillAddon = createAddon("skillAddon") {
     // 依赖弟子系统
     install(cn.jzl.sect.disciples.disciplesAddon)
+
+    // 注册组件
+    components {
+        world.componentId<Skill>()
+        world.componentId<SkillLearned>()
+        world.componentId<SkillEffect>()
+    }
 
     // 注册服务
     injects {

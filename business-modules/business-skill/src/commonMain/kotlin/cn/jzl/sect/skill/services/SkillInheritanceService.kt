@@ -14,7 +14,6 @@ import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.skill.components.Skill
 import cn.jzl.sect.skill.components.SkillLearned
 import cn.jzl.sect.skill.components.SkillRarity
-import cn.jzl.sect.skill.systems.SkillInheritanceSystem
 
 /**
  * 功法传承服务
@@ -35,8 +34,12 @@ import cn.jzl.sect.skill.systems.SkillInheritanceSystem
  */
 class SkillInheritanceService(override val world: World) : EntityRelationContext {
 
-    private val skillInheritanceSystem by lazy {
-        SkillInheritanceSystem()
+    companion object {
+        // 传承所需的最低熟练度
+        const val MIN_PROFICIENCY_FOR_INHERITANCE = 50
+
+        // 允许的最大境界差距
+        const val MAX_REALM_GAP = 2
     }
 
     /**
@@ -54,7 +57,23 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
         masterRealm: Realm,
         apprenticeRealm: Realm
     ): Boolean {
-        return skillInheritanceSystem.canInherit(skill, learned, masterRealm, apprenticeRealm)
+        // 检查熟练度要求
+        if (!learned.canInherit()) {
+            return false
+        }
+
+        // 检查师父境界是否足够
+        if (masterRealm.level < skill.requiredRealm.level) {
+            return false
+        }
+
+        // 检查境界差距
+        val realmGap = masterRealm.level - apprenticeRealm.level
+        if (realmGap > MAX_REALM_GAP) {
+            return false
+        }
+
+        return true
     }
 
     /**
@@ -65,7 +84,11 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
      * @return 徒弟的已学习功法对象
      */
     fun inheritSkill(skill: Skill): SkillLearned {
-        return skillInheritanceSystem.inheritSkill(skill)
+        return SkillLearned(
+            skillId = skill.id,
+            proficiency = 0, // 传承后熟练度从0开始
+            learnedTime = System.currentTimeMillis()
+        )
     }
 
     /**
@@ -76,7 +99,15 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
      * @return 获得的声望值
      */
     fun calculateMasterReputation(rarity: SkillRarity): Int {
-        return skillInheritanceSystem.calculateMasterReputation(rarity)
+        return when (rarity) {
+            SkillRarity.COMMON -> 10
+            SkillRarity.UNCOMMON -> 20
+            SkillRarity.RARE -> 35
+            SkillRarity.EPIC -> 55
+            SkillRarity.LEGENDARY -> 80
+            SkillRarity.MYTHIC -> 110
+            SkillRarity.DIVINE -> 150
+        }
     }
 
     /**
@@ -87,7 +118,10 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
      * @return 成功率(0.0 - 1.0)
      */
     fun calculateInheritanceSuccessRate(proficiency: Int): Double {
-        return skillInheritanceSystem.calculateInheritanceSuccessRate(proficiency)
+        // 基础成功率50% + 熟练度加成
+        val baseRate = 0.5
+        val proficiencyBonus = (proficiency - MIN_PROFICIENCY_FOR_INHERITANCE) / 100.0 * 0.5
+        return (baseRate + proficiencyBonus).coerceIn(0.3, 0.95)
     }
 
     /**
@@ -99,7 +133,10 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
      * @return 徒弟初始熟练度
      */
     fun calculateApprenticeInitialProficiency(masterProficiency: Int, successRate: Double): Int {
-        return skillInheritanceSystem.calculateApprenticeInitialProficiency(masterProficiency, successRate)
+        // 徒弟获得师父熟练度的10%-20%，受成功率影响
+        val baseTransfer = masterProficiency * 0.1
+        val bonusTransfer = masterProficiency * 0.1 * successRate
+        return (baseTransfer + bonusTransfer).toInt().coerceIn(0, 30)
     }
 
     /**
@@ -110,6 +147,14 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
      * @return 最低境界
      */
     fun getRequiredMasterRealm(rarity: SkillRarity): Realm {
-        return skillInheritanceSystem.getRequiredMasterRealm(rarity)
+        return when (rarity) {
+            SkillRarity.COMMON -> Realm.QI_REFINING
+            SkillRarity.UNCOMMON -> Realm.QI_REFINING
+            SkillRarity.RARE -> Realm.FOUNDATION
+            SkillRarity.EPIC -> Realm.GOLDEN_CORE
+            SkillRarity.LEGENDARY -> Realm.NASCENT_SOUL
+            SkillRarity.MYTHIC -> Realm.SOUL_TRANSFORMATION
+            SkillRarity.DIVINE -> Realm.TRIBULATION
+        }
     }
 }

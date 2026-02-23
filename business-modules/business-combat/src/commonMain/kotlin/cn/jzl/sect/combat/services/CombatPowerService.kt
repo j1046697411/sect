@@ -14,13 +14,12 @@ package cn.jzl.sect.combat.services
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.combat.components.CombatStats
-import cn.jzl.sect.combat.systems.CombatPowerCalculator
 import cn.jzl.sect.core.cultivation.Realm
 
 /**
  * 战斗实力服务
  *
- * 提供战斗实力计算功能的服务代理：
+ * 提供战斗实力计算功能：
  * - 综合战斗实力计算
  * - 境界实力计算
  * - 属性实力计算
@@ -39,8 +38,40 @@ import cn.jzl.sect.core.cultivation.Realm
  */
 class CombatPowerService(override val world: World) : EntityRelationContext {
 
-    private val powerCalculator by lazy {
-        CombatPowerCalculator()
+    companion object {
+        // 境界实力权重: 50%
+        const val REALM_WEIGHT = 0.5
+
+        // 属性实力权重: 30%
+        const val ATTRIBUTE_WEIGHT = 0.3
+
+        // 功法实力权重: 15%
+        const val SKILL_WEIGHT = 0.15
+
+        // 装备实力权重: 5%
+        const val EQUIPMENT_WEIGHT = 0.05
+
+        // 境界实力基数
+        const val REALM_BASE_POWER = 1000
+    }
+
+    /**
+     * 战斗等级枚举
+     */
+    enum class CombatLevel(val displayName: String, val minPower: Int) {
+        WEAK("弱小", 0),
+        AVERAGE("普通", 300),
+        COMPETENT("胜任", 800),
+        STRONG("强悍", 1500),
+        ELITE("精锐", 3000),
+        MASTER("大师", 6000),
+        LEGENDARY("传奇", 10000);
+
+        companion object {
+            fun fromPower(power: Int): CombatLevel {
+                return entries.reversed().find { power >= it.minPower } ?: WEAK
+            }
+        }
     }
 
     /**
@@ -58,7 +89,15 @@ class CombatPowerService(override val world: World) : EntityRelationContext {
         skillPower: Double = 0.0,
         equipmentPower: Double = 0.0
     ): Int {
-        return powerCalculator.calculateCombatPower(realm, stats, skillPower, equipmentPower)
+        val realmPower = calculateRealmPower(realm)
+        val attributePower = calculateAttributePower(stats)
+
+        return (
+            realmPower * REALM_WEIGHT +
+            attributePower * ATTRIBUTE_WEIGHT +
+            skillPower * SKILL_WEIGHT +
+            equipmentPower * EQUIPMENT_WEIGHT
+        ).toInt()
     }
 
     /**
@@ -69,7 +108,7 @@ class CombatPowerService(override val world: World) : EntityRelationContext {
      * @return 境界实力值
      */
     fun calculateRealmPower(realm: Realm): Int {
-        return powerCalculator.calculateRealmPower(realm)
+        return (realm.level * REALM_BASE_POWER * REALM_WEIGHT).toInt()
     }
 
     /**
@@ -80,7 +119,14 @@ class CombatPowerService(override val world: World) : EntityRelationContext {
      * @return 属性实力值
      */
     fun calculateAttributePower(stats: CombatStats): Int {
-        return powerCalculator.calculateAttributePower(stats)
+        // 攻击和防御权重1，速度和暴击闪避权重2
+        val totalAttribute = stats.attack +
+                stats.defense +
+                stats.speed * 2 +
+                stats.critRate * 2 +
+                stats.dodgeRate * 2
+
+        return (totalAttribute * ATTRIBUTE_WEIGHT).toInt()
     }
 
     /**
@@ -89,8 +135,8 @@ class CombatPowerService(override val world: World) : EntityRelationContext {
      * @param power 战斗实力值
      * @return 战斗等级
      */
-    fun assessCombatLevel(power: Int): CombatPowerCalculator.CombatLevel {
-        return powerCalculator.assessCombatLevel(power)
+    fun assessCombatLevel(power: Int): CombatLevel {
+        return CombatLevel.fromPower(power)
     }
 
     /**
@@ -102,7 +148,11 @@ class CombatPowerService(override val world: World) : EntityRelationContext {
      * @return 实力比率(>1表示攻击方强，<1表示防守方强)
      */
     fun calculatePowerRatio(attackerPower: Int, defenderPower: Int): Double {
-        return powerCalculator.calculatePowerRatio(attackerPower, defenderPower)
+        return if (defenderPower > 0) {
+            attackerPower.toDouble() / defenderPower
+        } else {
+            999.0 // 防守方无实力，攻击方极大优势
+        }
     }
 
     /**
@@ -113,6 +163,15 @@ class CombatPowerService(override val world: World) : EntityRelationContext {
      * @return 难度描述
      */
     fun assessDifficulty(playerPower: Int, enemyPower: Int): String {
-        return powerCalculator.assessDifficulty(playerPower, enemyPower)
+        val ratio = calculatePowerRatio(enemyPower, playerPower)
+
+        return when {
+            ratio < 0.5 -> "简单"
+            ratio < 0.8 -> "较易"
+            ratio < 1.2 -> "适中"
+            ratio < 1.5 -> "困难"
+            ratio < 2.0 -> "极难"
+            else -> "不可能"
+        }
     }
 }

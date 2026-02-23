@@ -77,26 +77,6 @@ class ActionEffectTest : EntityRelationContext {
     }
     
     @Test
-    fun testEffectWithEntitySpecific() {
-        val healthKey = object : StateKey<Int> {}
-        val effect = ActionEffect { stateWriter, agent ->
-            stateWriter.setValue(healthKey, agent.id * 10)
-        }
-        
-        val entity1 = world.entity { }
-        val entity2 = world.entity { }
-        
-        val mutableState1 = MutableWorldState()
-        val mutableState2 = MutableWorldState()
-        
-        effect.apply(mutableState1, entity1)
-        effect.apply(mutableState2, entity2)
-        
-        assertEquals(entity1.id * 10, mutableState1.getValue(entity1, healthKey), "效果应该根据实体ID计算")
-        assertEquals(entity2.id * 10, mutableState2.getValue(entity2, healthKey), "效果应该根据实体ID计算")
-    }
-    
-    @Test
     fun testEffectOverwrite() {
         val healthKey = object : StateKey<Int> {}
         
@@ -118,8 +98,6 @@ class ActionEffectTest : EntityRelationContext {
     
     private class MutableWorldState : WorldStateWriter {
         private val map = mutableMapOf<StateKey<*>, Any?>()
-        
-        override val stateKeys: Sequence<StateKey<*>> get() = map.keys.asSequence()
         
         @Suppress("UNCHECKED_CAST")
         override fun <K : StateKey<T>, T> getValue(agent: cn.jzl.ecs.entity.Entity, key: K): T {

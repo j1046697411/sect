@@ -10,14 +10,18 @@
 package cn.jzl.sect.quest.services
 
 import cn.jzl.ecs.World
+import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.ecs.entity.addComponent
+import cn.jzl.ecs.query
+import cn.jzl.ecs.query.EntityQueryContext
+import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.ai.Personality6
+import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.quest.CandidateScore
+import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
-import cn.jzl.sect.quest.systems.PersonalityType
-import cn.jzl.sect.quest.systems.PromotionResult
-import cn.jzl.sect.quest.systems.PromotionSystem
 
 /**
  * 晋升服务
@@ -38,10 +42,6 @@ import cn.jzl.sect.quest.systems.PromotionSystem
  */
 class PromotionService(override val world: World) : EntityRelationContext {
 
-    private val promotionSystem by lazy {
-        PromotionSystem(world)
-    }
-
     /**
      * 晋升弟子
      *
@@ -49,7 +49,70 @@ class PromotionService(override val world: World) : EntityRelationContext {
      * @return 晋升结果
      */
     fun promoteDisciple(discipleId: Entity): PromotionResult {
-        return promotionSystem.promoteDisciple(discipleId)
+        // 首先检查实体是否存在且有必要的组件
+        val query = world.query { DiscipleQueryContext(this) }
+        var foundDisciple = false
+        var oldPosition: SectPositionType? = null
+
+        query.forEach { ctx ->
+            if (ctx.entity == discipleId) {
+                foundDisciple = true
+                oldPosition = ctx.position.position
+            }
+        }
+
+        // 如果未找到弟子，返回失败
+        if (!foundDisciple || oldPosition == null) {
+            return PromotionResult(
+                success = false,
+                discipleId = discipleId,
+                oldPosition = SectPositionType.DISCIPLE_OUTER,
+                newPosition = SectPositionType.DISCIPLE_OUTER,
+                generatedPersonality = null,
+                message = "未找到指定弟子"
+            )
+        }
+
+        // 只有外门弟子可以晋升为内门弟子
+        if (oldPosition != SectPositionType.DISCIPLE_OUTER) {
+            return PromotionResult(
+                success = false,
+                discipleId = discipleId,
+                oldPosition = oldPosition!!,
+                newPosition = oldPosition!!,
+                generatedPersonality = null,
+                message = "只有外门弟子可以晋升为内门弟子"
+            )
+        }
+
+        // 生成6维性格属性
+        val personality = generatePersonality6()
+
+        // 更新职位为内门弟子
+        return try {
+            world.editor(discipleId) {
+                it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_INNER))
+                it.addComponent(personality)
+            }
+
+            PromotionResult(
+                success = true,
+                discipleId = discipleId,
+                oldPosition = SectPositionType.DISCIPLE_OUTER,
+                newPosition = SectPositionType.DISCIPLE_INNER,
+                generatedPersonality = personality,
+                message = "晋升成功"
+            )
+        } catch (e: Exception) {
+            PromotionResult(
+                success = false,
+                discipleId = discipleId,
+                oldPosition = SectPositionType.DISCIPLE_OUTER,
+                newPosition = SectPositionType.DISCIPLE_OUTER,
+                generatedPersonality = null,
+                message = "晋升失败: ${e.message}"
+            )
+        }
     }
 
     /**
@@ -60,7 +123,17 @@ class PromotionService(override val world: World) : EntityRelationContext {
      * @return 晋升结果列表
      */
     fun promoteCandidates(candidates: List<CandidateScore>, quota: Int): List<PromotionResult> {
-        return promotionSystem.promoteCandidates(candidates, quota)
+        val sortedCandidates = candidates.sortedByDescending { it.totalScore }
+        val actualQuota = minOf(quota, sortedCandidates.size)
+        val results = mutableListOf<PromotionResult>()
+
+        for (i in 0 until actualQuota) {
+            val candidate = sortedCandidates[i]
+            val result = promoteDisciple(candidate.discipleId)
+            results.add(result)
+        }
+
+        return results
     }
 
     /**
@@ -69,7 +142,7 @@ class PromotionService(override val world: World) : EntityRelationContext {
      * @return 随机生成的6维性格
      */
     fun generatePersonality6(): Personality6 {
-        return promotionSystem.generatePersonality6()
+        return Personality6.random()
     }
 
     /**
@@ -79,7 +152,12 @@ class PromotionService(override val world: World) : EntityRelationContext {
      * @return 特定类型的6维性格
      */
     fun generatePersonality6ByType(type: PersonalityType): Personality6 {
-        return promotionSystem.generatePersonality6ByType(type)
+        return when (type) {
+            PersonalityType.DILIGENT -> Personality6.diligent()
+            PersonalityType.AMBITIOUS -> Personality6.ambitious()
+            PersonalityType.LOYAL -> Personality6.loyal()
+            PersonalityType.RANDOM -> Personality6.random()
+        }
     }
 
     /**
@@ -89,7 +167,9 @@ class PromotionService(override val world: World) : EntityRelationContext {
      * @param newPosition 新职位
      */
     fun updatePosition(discipleId: Entity, newPosition: SectPositionType) {
-        promotionSystem.updatePosition(discipleId, newPosition)
+        world.editor(discipleId) {
+            it.addComponent(SectPositionInfo(position = newPosition))
+        }
     }
 
     /**
@@ -99,7 +179,16 @@ class PromotionService(override val world: World) : EntityRelationContext {
      * @return 职位类型，如果未找到返回null
      */
     fun getCurrentPosition(discipleId: Entity): SectPositionType? {
-        return promotionSystem.getCurrentPosition(discipleId)
+        val query = world.query { DiscipleQueryContext(this) }
+        var position: SectPositionType? = null
+
+        query.forEach { ctx ->
+            if (ctx.entity == discipleId) {
+                position = ctx.position.position
+            }
+        }
+
+        return position
     }
 
     /**
@@ -109,6 +198,15 @@ class PromotionService(override val world: World) : EntityRelationContext {
      * @return 是否可以晋升
      */
     fun canPromote(discipleId: Entity): Boolean {
-        return promotionSystem.canPromote(discipleId)
+        val position = getCurrentPosition(discipleId)
+        return position == SectPositionType.DISCIPLE_OUTER
+    }
+
+    /**
+     * 查询上下文 - 弟子
+     */
+    class DiscipleQueryContext(world: World) : EntityQueryContext(world) {
+        val position: SectPositionInfo by component()
+        val cultivation: CultivationProgress by component()
     }
 }

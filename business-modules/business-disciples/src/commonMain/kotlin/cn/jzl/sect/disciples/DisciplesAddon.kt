@@ -28,7 +28,10 @@ package cn.jzl.sect.disciples
 import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.Phase
+import cn.jzl.ecs.addon.components
 import cn.jzl.ecs.addon.createAddon
+import cn.jzl.ecs.component.componentId
+import cn.jzl.sect.disciples.components.Relationship
 import cn.jzl.sect.disciples.services.DiscipleInfoService
 import cn.jzl.sect.disciples.services.MasterApprenticeService
 import cn.jzl.sect.disciples.services.RelationshipService
@@ -37,6 +40,7 @@ import cn.jzl.sect.disciples.services.RelationshipService
  * 弟子系统 Addon
  *
  * 负责注册弟子系统相关组件和服务：
+ * - [Relationship] 组件：角色关系数据
  * - [DiscipleInfoService] 服务：弟子信息查询和管理
  * - [RelationshipService] 服务：角色关系管理
  * - [MasterApprenticeService] 服务：师徒关系管理
@@ -51,6 +55,11 @@ import cn.jzl.sect.disciples.services.RelationshipService
 val disciplesAddon = createAddon("disciplesAddon") {
     // 依赖修炼系统
     install(cn.jzl.sect.cultivation.cultivationAddon)
+
+    // 注册组件
+    components {
+        world.componentId<Relationship>()
+    }
 
     // 注册服务
     injects {

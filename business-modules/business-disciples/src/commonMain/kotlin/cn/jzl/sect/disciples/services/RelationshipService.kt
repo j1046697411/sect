@@ -10,9 +10,8 @@ package cn.jzl.sect.disciples.services
 
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
-import cn.jzl.sect.core.relation.Relationship
-import cn.jzl.sect.core.relation.RelationshipType
-import cn.jzl.sect.disciples.systems.RelationshipSystem
+import cn.jzl.sect.disciples.components.Relationship
+import cn.jzl.sect.disciples.components.RelationshipType
 
 /**
  * 关系服务
@@ -41,9 +40,8 @@ class RelationshipService : EntityRelationContext {
 
     override lateinit var world: World
 
-    internal val relationshipSystem by lazy {
-        RelationshipSystem()
-    }
+    // 存储所有关系，使用Pair(sourceId, targetId)作为键
+    private val relationships = mutableMapOf<Pair<Long, Long>, Relationship>()
 
     /**
      * 建立关系
@@ -62,7 +60,15 @@ class RelationshipService : EntityRelationContext {
         level: Int = 50,
         establishedTime: Long = System.currentTimeMillis()
     ): Relationship {
-        return relationshipSystem.establishRelationship(sourceId, targetId, type, level, establishedTime)
+        val relationship = Relationship(
+            sourceId = sourceId,
+            targetId = targetId,
+            type = type,
+            level = level,
+            establishedTime = establishedTime
+        )
+        relationships[Pair(sourceId, targetId)] = relationship
+        return relationship
     }
 
     /**
@@ -72,7 +78,7 @@ class RelationshipService : EntityRelationContext {
      * @param targetId 关系目标ID
      */
     fun dissolveRelationship(sourceId: Long, targetId: Long) {
-        relationshipSystem.dissolveRelationship(sourceId, targetId)
+        relationships.remove(Pair(sourceId, targetId))
     }
 
     /**
@@ -82,7 +88,7 @@ class RelationshipService : EntityRelationContext {
      * @return 关系列表
      */
     fun getRelationships(entityId: Long): List<Relationship> {
-        return relationshipSystem.getRelationships(entityId)
+        return relationships.values.filter { it.sourceId == entityId }
     }
 
     /**
@@ -93,7 +99,7 @@ class RelationshipService : EntityRelationContext {
      * @return 关系列表
      */
     fun getRelationshipsByType(entityId: Long, type: RelationshipType): List<Relationship> {
-        return relationshipSystem.getRelationshipsByType(entityId, type)
+        return relationships.values.filter { it.sourceId == entityId && it.type == type }
     }
 
     /**
@@ -103,7 +109,7 @@ class RelationshipService : EntityRelationContext {
      * @return 关系列表
      */
     fun getAllRelationshipsByType(type: RelationshipType): List<Relationship> {
-        return relationshipSystem.getAllRelationshipsByType(type)
+        return relationships.values.filter { it.type == type }
     }
 
     /**
@@ -114,7 +120,7 @@ class RelationshipService : EntityRelationContext {
      * @return 关系对象，如果不存在返回null
      */
     fun getRelationship(sourceId: Long, targetId: Long): Relationship? {
-        return relationshipSystem.getRelationship(sourceId, targetId)
+        return relationships[Pair(sourceId, targetId)]
     }
 
     /**
@@ -125,7 +131,7 @@ class RelationshipService : EntityRelationContext {
      * @return 关系等级，如果不存在返回0
      */
     fun getRelationshipLevel(sourceId: Long, targetId: Long): Int {
-        return relationshipSystem.getRelationshipLevel(sourceId, targetId)
+        return relationships[Pair(sourceId, targetId)]?.level ?: 0
     }
 
     /**
@@ -136,7 +142,10 @@ class RelationshipService : EntityRelationContext {
      * @param amount 增加的等级
      */
     fun improveRelationship(sourceId: Long, targetId: Long, amount: Int) {
-        relationshipSystem.improveRelationship(sourceId, targetId, amount)
+        val key = Pair(sourceId, targetId)
+        relationships[key]?.let { relationship ->
+            relationships[key] = relationship.improve(amount)
+        }
     }
 
     /**
@@ -147,7 +156,10 @@ class RelationshipService : EntityRelationContext {
      * @param amount 降低的等级
      */
     fun worsenRelationship(sourceId: Long, targetId: Long, amount: Int) {
-        relationshipSystem.worsenRelationship(sourceId, targetId, amount)
+        val key = Pair(sourceId, targetId)
+        relationships[key]?.let { relationship ->
+            relationships[key] = relationship.worsen(amount)
+        }
     }
 
     /**
@@ -158,7 +170,7 @@ class RelationshipService : EntityRelationContext {
      * @return 加成值，如果不存在返回0
      */
     fun getRelationshipEffectBonus(sourceId: Long, targetId: Long): Int {
-        return relationshipSystem.getRelationshipEffectBonus(sourceId, targetId)
+        return relationships[Pair(sourceId, targetId)]?.getEffectBonus() ?: 0
     }
 
     /**
@@ -169,13 +181,13 @@ class RelationshipService : EntityRelationContext {
      * @return 是否存在关系
      */
     fun hasRelationship(sourceId: Long, targetId: Long): Boolean {
-        return relationshipSystem.hasRelationship(sourceId, targetId)
+        return relationships.containsKey(Pair(sourceId, targetId))
     }
 
     /**
      * 清除所有关系
      */
     fun clearAll() {
-        relationshipSystem.clearAll()
+        relationships.clear()
     }
 }

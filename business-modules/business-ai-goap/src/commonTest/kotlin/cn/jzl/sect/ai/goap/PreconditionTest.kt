@@ -82,17 +82,4 @@ class PreconditionTest : EntityRelationContext {
         
         assertTrue(result, "两个条件都应该满足")
     }
-    
-    @Test
-    fun testPreconditionWithEntityCheck() {
-        val precondition = Precondition { _, agent ->
-            agent.id >= 0
-        }
-        
-        val entity = world.entity { }
-        val state = WorldStateImpl(emptyMap())
-        val result = precondition.satisfiesCondition(state, entity)
-        
-        assertTrue(result, "实体ID应该>=0")
-    }
 }

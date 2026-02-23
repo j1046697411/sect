@@ -1,34 +1,34 @@
-package cn.jzl.sect.disciples.systems
+package cn.jzl.sect.disciples.services
 
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
-import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
+import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.cultivation.Talent
-import cn.jzl.sect.core.vitality.Vitality
-import cn.jzl.sect.core.vitality.Spirit
 import cn.jzl.sect.core.disciple.Age
 import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.core.vitality.Spirit
+import cn.jzl.sect.core.vitality.Vitality
 import cn.jzl.sect.engine.SectWorld
 import kotlin.test.*
 
 /**
- * 弟子信息系统测试
+ * 弟子信息服务测试
  */
-class DiscipleInfoSystemTest : EntityRelationContext {
+class DiscipleInfoServiceTest : EntityRelationContext {
     override lateinit var world: World
-    private lateinit var discipleInfoSystem: DiscipleInfoSystem
+    private lateinit var discipleInfoService: DiscipleInfoService
 
     @BeforeTest
     fun setup() {
         world = SectWorld.create("测试宗门")
-        discipleInfoSystem = DiscipleInfoSystem(world)
+        discipleInfoService = DiscipleInfoService(world)
     }
 
     @Test
@@ -36,7 +36,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界包含弟子
 
         // When: 获取所有弟子
-        val disciples = discipleInfoSystem.getAllDisciples()
+        val disciples = discipleInfoService.getAllDisciples()
 
         // Then: 应该返回所有弟子（1掌门 + 2长老 + 5外门 = 8人）
         assertEquals(8, disciples.size, "应该返回8个弟子")
@@ -47,7 +47,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界
 
         // When: 获取所有弟子
-        val disciples = discipleInfoSystem.getAllDisciples()
+        val disciples = discipleInfoService.getAllDisciples()
 
         // Then: 弟子应该按职位排序（掌门在前，外门在后）
         assertEquals(SectPositionType.LEADER, disciples[0].position, "第一个应该是掌门")
@@ -67,7 +67,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界
 
         // When: 获取所有弟子
-        val disciples = discipleInfoSystem.getAllDisciples()
+        val disciples = discipleInfoService.getAllDisciples()
         val leader = disciples.first { it.position == SectPositionType.LEADER }
 
         // Then: 掌门信息应该正确
@@ -88,7 +88,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界
 
         // When: 获取所有弟子
-        val disciples = discipleInfoSystem.getAllDisciples()
+        val disciples = discipleInfoService.getAllDisciples()
         val leader = disciples.first { it.position == SectPositionType.LEADER }
 
         // Then: 修炼进度应该正确计算（5000/10000 = 0.5）
@@ -100,9 +100,9 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界
 
         // When: 按职位筛选弟子
-        val leaders = discipleInfoSystem.getDisciplesByPosition(SectPositionType.LEADER)
-        val elders = discipleInfoSystem.getDisciplesByPosition(SectPositionType.ELDER)
-        val outerDisciples = discipleInfoSystem.getDisciplesByPosition(SectPositionType.DISCIPLE_OUTER)
+        val leaders = discipleInfoService.getDisciplesByPosition(SectPositionType.LEADER)
+        val elders = discipleInfoService.getDisciplesByPosition(SectPositionType.ELDER)
+        val outerDisciples = discipleInfoService.getDisciplesByPosition(SectPositionType.DISCIPLE_OUTER)
 
         // Then: 各职位人数应该正确
         assertEquals(1, leaders.size, "应该有1个掌门")
@@ -115,7 +115,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界（没有内门弟子）
 
         // When: 查询不存在的职位
-        val innerDisciples = discipleInfoSystem.getDisciplesByPosition(SectPositionType.DISCIPLE_INNER)
+        val innerDisciples = discipleInfoService.getDisciplesByPosition(SectPositionType.DISCIPLE_INNER)
 
         // Then: 应该返回空列表
         assertTrue(innerDisciples.isEmpty(), "应该返回空列表")
@@ -126,7 +126,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界
 
         // When: 获取弟子统计
-        val stats = discipleInfoSystem.getDiscipleStatistics()
+        val stats = discipleInfoService.getDiscipleStatistics()
 
         // Then: 统计数据应该正确
         assertEquals(8, stats.totalCount, "总人数应该是8")
@@ -141,7 +141,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界
 
         // When: 获取弟子统计
-        val stats = discipleInfoSystem.getDiscipleStatistics()
+        val stats = discipleInfoService.getDiscipleStatistics()
 
         // Then: 境界统计应该正确（掌门+2长老=3筑基，5外门=5炼气）
         assertEquals(0, stats.mortalCount, "凡人数量应该是0")
@@ -156,7 +156,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // 总和: 680, 平均: 680/8 = 85
 
         // When: 获取弟子统计
-        val stats = discipleInfoSystem.getDiscipleStatistics()
+        val stats = discipleInfoService.getDiscipleStatistics()
 
         // Then: 平均忠诚度应该正确
         assertEquals(85, stats.averageLoyalty, "平均忠诚度应该是85")
@@ -167,7 +167,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界（所有弟子忠诚度都>=80，没有叛逆的）
 
         // When: 获取弟子统计
-        val stats = discipleInfoSystem.getDiscipleStatistics()
+        val stats = discipleInfoService.getDiscipleStatistics()
 
         // Then: 叛逆弟子数量应该是0
         assertEquals(0, stats.rebelliousCount, "叛逆弟子数量应该是0")
@@ -177,18 +177,22 @@ class DiscipleInfoSystemTest : EntityRelationContext {
     fun testStatisticsWithRebelliousDisciples() {
         // Given: 创建一个包含叛逆弟子的世界
         world.entity {
-            it.addComponent(CultivationProgress(
-                realm = Realm.MORTAL,
-                layer = 1,
-                cultivation = 0L,
-                maxCultivation = 100L
-            ))
-            it.addComponent(Talent(
-                physique = 30,
-                comprehension = 30,
-                fortune = 40,
-                charm = 45
-            ))
+            it.addComponent(
+                CultivationProgress(
+                    realm = Realm.MORTAL,
+                    layer = 1,
+                    cultivation = 0L,
+                    maxCultivation = 100L
+                )
+            )
+            it.addComponent(
+                Talent(
+                    physique = 30,
+                    comprehension = 30,
+                    fortune = 40,
+                    charm = 45
+                )
+            )
             it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
             it.addComponent(Spirit(currentSpirit = 50, maxSpirit = 50))
             it.addComponent(Age(age = 20))
@@ -198,7 +202,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         }
 
         // When: 获取弟子统计
-        val stats = discipleInfoSystem.getDiscipleStatistics()
+        val stats = discipleInfoService.getDiscipleStatistics()
 
         // Then: 叛逆弟子数量应该更新
         assertEquals(9, stats.totalCount, "总人数应该是9")
@@ -210,7 +214,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界
 
         // When: 获取弟子并转换为显示字符串
-        val disciples = discipleInfoSystem.getAllDisciples()
+        val disciples = discipleInfoService.getAllDisciples()
         val leader = disciples.first { it.position == SectPositionType.LEADER }
         val displayString = leader.toDisplayString()
 
@@ -230,7 +234,7 @@ class DiscipleInfoSystemTest : EntityRelationContext {
         // Given: 已初始化的世界
 
         // When: 获取统计并转换为显示字符串
-        val stats = discipleInfoSystem.getDiscipleStatistics()
+        val stats = discipleInfoService.getDiscipleStatistics()
         val displayString = stats.toDisplayString()
 
         // Then: 显示字符串应该包含关键统计信息
@@ -248,10 +252,10 @@ class DiscipleInfoSystemTest : EntityRelationContext {
     fun testNewWorldHasInitialDisciples() {
         // Given: 创建一个新世界
         val newWorld = SectWorld.create("新宗门")
-        val newSystem = DiscipleInfoSystem(newWorld)
+        val newService = DiscipleInfoService(newWorld)
 
         // When: 获取新世界的弟子统计
-        val stats = newSystem.getDiscipleStatistics()
+        val stats = newService.getDiscipleStatistics()
 
         // Then: 新世界应该包含初始弟子（1掌门 + 2长老 + 5外门 = 8人）
         assertEquals(8, stats.totalCount, "总人数应该是8")
