@@ -20,11 +20,14 @@
 
 ## 目录结构
 ```
-business-cultivation/src/commonMain/kotlin/cn/jzl/sect/cultivation/
+business-modules/business-cultivation/src/commonMain/kotlin/cn/jzl/sect/cultivation/
 ├── CultivationAddon.kt    # 模块入口
 ├── components/            # 组件定义
 │   ├── CultivationProgress.kt  # 修炼进度
 │   └── Talent.kt          # 弟子天赋
+├── events/                # 事件定义
+│   ├── BreakthroughSuccessEvent.kt  # 突破成功事件
+│   └── BreakthroughFailedEvent.kt   # 突破失败事件
 └── services/              # 服务实现
     ├── CultivationService.kt    # 修炼逻辑服务
     └── SimpleBehaviorService.kt # 简单行为决策
@@ -35,13 +38,19 @@ business-cultivation/src/commonMain/kotlin/cn/jzl/sect/cultivation/
 ### 组件
 | 组件 | 用途 | 属性 |
 |------|------|------|
-| `CultivationProgress` | 修炼进度 | 当前修为、突破次数等 |
-| `Talent` | 弟子天赋 | 天赋值、修炼加成 |
+| `CultivationProgress` | 修炼进度 | 当前修为、境界、层数 |
+| `Talent` | 弟子天赋 | 悟性、根骨、福缘 |
+
+### 事件
+| 事件 | 触发时机 | 数据 |
+|------|----------|------|
+| `BreakthroughSuccessEvent` | 突破成功 | oldRealm, oldLayer, newRealm, newLayer |
+| `BreakthroughFailedEvent` | 突破失败 | currentRealm, currentLayer, attemptedRealm, attemptedLayer |
 
 ### 服务
 | 服务 | 用途 | 核心方法 |
 |------|------|----------|
-| `CultivationService` | 修炼逻辑 | `update(hours)`, `tryBreakthrough()` |
+| `CultivationService` | 修炼逻辑 | `update(hours)` |
 | `SimpleBehaviorService` | 行为决策 | `update(dt)` |
 
 ## 使用方式
@@ -54,13 +63,22 @@ world.install(cultivationAddon)
 val cultivationService by world.di.instance<CultivationService>()
 val behaviorService by world.di.instance<SimpleBehaviorService>()
 
-// 3. 更新修炼状态（每帧调用）
-val breakthroughs = cultivationService.update(hours)
+// 3. 订阅突破事件
+world.observeWithData<BreakthroughSuccessEvent>().exec {
+    println("${this.entity} 突破成功: ${this.event.oldRealm} → ${this.event.newRealm}")
+}
 
-// 4. 更新行为状态（每帧调用）
+world.observeWithData<BreakthroughFailedEvent>().exec {
+    println("${this.entity} 突破失败: ${this.event.currentRealm} → ${this.event.attemptedRealm}")
+}
+
+// 4. 更新修炼状态（每帧调用）
+cultivationService.update(hours)
+
+// 5. 更新行为状态（每帧调用）
 behaviorService.update(dt)
 
-// 5. 创建修炼实体
+// 6. 创建修炼实体
 world.entity {
     it.addComponent(CultivationProgress(...))
     it.addComponent(Talent(85))
