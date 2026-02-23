@@ -35,11 +35,16 @@
     "conventions:外门弟子晋升选拔机制-任务制.md": 1,
     "conventions:选拔任务执行机制-带ai角色.md": 1,
     "conventions:选拔任务奖励机制.md": 2,
-    "conventions:mvp功能范围定义.md": 1
+    "conventions:mvp功能范围定义.md": 1,
+    "preferences:用户偏好回复风格.md": 0,
+    "preferences:用户偏好代码风格.md": 0
   },
   "relations": {
     "conventions:游戏可玩性设计混合型政策体系.md": [
       "solutions:ecs-query-性能优化.md"
+    ],
+    "preferences:用户偏好代码风格.md": [
+      "preferences:用户偏好回复风格.md"
     ]
   },
   "updated": "2026-02-23T00:00:00.000000"
