@@ -13,6 +13,7 @@ import cn.jzl.ecs.World
 import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
+import cn.jzl.ecs.observer.emit
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
@@ -23,6 +24,8 @@ import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.cultivation.components.CultivationProgress
 import cn.jzl.sect.cultivation.components.Talent
+import cn.jzl.sect.cultivation.events.BreakthroughFailedEvent
+import cn.jzl.sect.cultivation.events.BreakthroughSuccessEvent
 import kotlin.random.Random
 
 /**
@@ -31,12 +34,17 @@ import kotlin.random.Random
  * 提供弟子修炼管理功能的核心服务：
  * - 修为增长计算
  * - 境界突破处理
- * - 突破事件通知
+ * - 突破事件通知（通过 ECS 观察者系统）
  *
  * 使用方式：
  * ```kotlin
  * val cultivationService by world.di.instance<CultivationService>()
- * val breakthroughs = cultivationService.update(hours)
+ * cultivationService.update(hours)
+ *
+ * // 订阅突破事件
+ * world.observeWithData<BreakthroughSuccessEvent>().exec {
+ *     println("${this.entity} 突破成功")
+ * }
  * ```
  *
  * @property world ECS 世界实例
@@ -49,11 +57,9 @@ class CultivationService(override val world: World) : EntityRelationContext {
     /**
      * 更新修炼状态
      * @param hours 经过的游戏小时数
-     * @return 突破事件列表
      */
-    fun update(hours: Int): List<BreakthroughEvent> {
+    fun update(hours: Int) {
         log.debug { "开始更新修炼状态，时间: ${hours}小时" }
-        val breakthroughs = mutableListOf<BreakthroughEvent>()
         val query = world.query { CultivatorQueryContext(this) }
 
         // 收集所有需要更新的数据
@@ -71,6 +77,7 @@ class CultivationService(override val world: World) : EntityRelationContext {
             var newLayer = cult.layer
             var newMaxCultivation = cult.maxCultivation
             var breakthrough = false
+            var breakthroughFailed = false
 
             // 检查是否达到突破条件
             while (newCultivation >= cult.maxCultivation) {
@@ -82,7 +89,17 @@ class CultivationService(override val world: World) : EntityRelationContext {
                     newMaxCultivation = result.newMaxCultivation
                     breakthrough = true
                 } else {
-                    // 突破失败，修为保留在瓶颈
+                    // 突破失败，发送失败事件
+                    val (attemptedRealm, attemptedLayer) = getNextRealmLayer(cult.realm, cult.layer)
+                    world.emit(ctx.entity, BreakthroughFailedEvent(
+                        currentRealm = cult.realm,
+                        currentLayer = cult.layer,
+                        attemptedRealm = attemptedRealm,
+                        attemptedLayer = attemptedLayer
+                    ))
+                    log.info { "弟子突破失败！${cult.realm.displayName}${cult.layer}层 → ${attemptedRealm.displayName}${attemptedLayer}层" }
+                    breakthroughFailed = true
+                    // 修为保留在瓶颈
                     newCultivation = cult.maxCultivation - 1
                     break
                 }
@@ -90,16 +107,12 @@ class CultivationService(override val world: World) : EntityRelationContext {
 
             if (breakthrough) {
                 log.info { "弟子突破成功！${cult.realm.displayName}${cult.layer}层 → ${newRealm.displayName}${newLayer}层" }
-                breakthroughs.add(
-                    BreakthroughEvent(
-                        entity = ctx.entity,
-                        oldRealm = cult.realm,
-                        oldLayer = cult.layer,
-                        newRealm = newRealm,
-                        newLayer = newLayer,
-                        position = pos.position
-                    )
-                )
+                world.emit(ctx.entity, BreakthroughSuccessEvent(
+                    oldRealm = cult.realm,
+                    oldLayer = cult.layer,
+                    newRealm = newRealm,
+                    newLayer = newLayer
+                ))
             }
 
             updates.add(
@@ -128,8 +141,7 @@ class CultivationService(override val world: World) : EntityRelationContext {
             }
         }
 
-        log.debug { "修炼状态更新完成，突破事件数: ${breakthroughs.size}" }
-        return breakthroughs
+        log.debug { "修炼状态更新完成" }
     }
 
     /**
@@ -238,22 +250,6 @@ class CultivationService(override val world: World) : EntityRelationContext {
         val newLayer: Int,
         val newMaxCultivation: Long
     )
-
-    /**
-     * 突破事件
-     */
-    data class BreakthroughEvent(
-        val entity: cn.jzl.ecs.entity.Entity,
-        val oldRealm: Realm,
-        val oldLayer: Int,
-        val newRealm: Realm,
-        val newLayer: Int,
-        val position: SectPositionType
-    ) {
-        fun toDisplayString(): String {
-            return "${position.displayName} 突破成功！${oldRealm.displayName}${oldLayer}层 → ${newRealm.displayName}${newLayer}层"
-        }
-    }
 }
 
 /**

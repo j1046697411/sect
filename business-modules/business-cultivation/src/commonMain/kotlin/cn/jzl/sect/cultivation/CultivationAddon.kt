@@ -30,6 +30,8 @@ import cn.jzl.ecs.addon.createAddon
 import cn.jzl.ecs.component.componentId
 import cn.jzl.sect.cultivation.components.CultivationProgress
 import cn.jzl.sect.cultivation.components.Talent
+import cn.jzl.sect.cultivation.events.BreakthroughFailedEvent
+import cn.jzl.sect.cultivation.events.BreakthroughSuccessEvent
 import cn.jzl.sect.cultivation.services.CultivationService
 import cn.jzl.sect.cultivation.services.SimpleBehaviorService
 
@@ -55,6 +57,8 @@ val cultivationAddon = createAddon("cultivationAddon") {
     components {
         world.componentId<CultivationProgress>()
         world.componentId<Talent>()
+        world.componentId<BreakthroughSuccessEvent>()
+        world.componentId<BreakthroughFailedEvent>()
     }
 
     // 注册服务
