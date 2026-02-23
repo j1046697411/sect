@@ -26,4 +26,59 @@ class FacilityUsageServiceTest : EntityRelationContext {
         val service = FacilityUsageService(world)
 
         // When
-        val effect = service.get
+        val effect = service.getFacilityEffect(FacilityType.CULTIVATION_ROOM)
+
+        // Then
+        assertTrue(effect.efficiencyBonus > 0)
+        assertEquals("cultivation", effect.targetActivity)
+    }
+
+    @Test
+    fun `使用炼丹房应增加炼丹成功率`() {
+        // Given
+        val service = FacilityUsageService(world)
+
+        // When
+        val effect = service.getFacilityEffect(FacilityType.ALCHEMY_ROOM)
+
+        // Then
+        assertTrue(effect.successRateBonus > 0)
+        assertEquals("alchemy", effect.targetActivity)
+    }
+
+    @Test
+    fun `计算使用成本应根据设施类型返回正确值`() {
+        // Given
+        val service = FacilityUsageService(world)
+
+        // When
+        val cost1 = service.calculateUsageCost(FacilityType.CULTIVATION_ROOM, 1)
+        val cost2 = service.calculateUsageCost(FacilityType.CULTIVATION_ROOM, 3)
+
+        // Then
+        assertTrue(cost2 > cost1) // 使用时间越长成本越高
+    }
+
+    @Test
+    fun `检查是否可使用应根据贡献点判断`() {
+        // Given
+        val service = FacilityUsageService(world)
+
+        // When & Then
+        assertTrue(service.canUseFacility(FacilityType.CULTIVATION_ROOM, contributionPoints = 100))
+        assertFalse(service.canUseFacility(FacilityType.CULTIVATION_ROOM, contributionPoints = 0))
+    }
+
+    @Test
+    fun `获取设施功能描述应返回正确描述`() {
+        // Given
+        val service = FacilityUsageService(world)
+
+        // When
+        val description = service.getFacilityFunctionDescription(FacilityType.CULTIVATION_ROOM)
+
+        // Then
+        assertTrue(description.isNotEmpty())
+        assertTrue(description.contains("修炼"))
+    }
+}

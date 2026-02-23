@@ -25,8 +25,9 @@ import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.Updatable
 import cn.jzl.ecs.addon.Phase
+import cn.jzl.ecs.addon.components
 import cn.jzl.ecs.addon.createAddon
-import cn.jzl.ecs.componentId
+import cn.jzl.ecs.component.componentId
 import cn.jzl.sect.cultivation.components.CultivationProgress
 import cn.jzl.sect.cultivation.components.Talent
 import cn.jzl.sect.cultivation.services.CultivationService
@@ -52,8 +53,8 @@ val cultivationAddon = createAddon("cultivationAddon") {
 
     // 注册组件
     components {
-        componentId<CultivationProgress>()
-        componentId<Talent>()
+        world.componentId<CultivationProgress>()
+        world.componentId<Talent>()
     }
 
     // 注册服务
