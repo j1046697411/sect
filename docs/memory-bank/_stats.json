@@ -46,12 +46,16 @@
     "lessons:ecs反模式清单.md": 0,
     "conventions:tdd测试策略.md": 0,
     "conventions:kotlin多平台开发规范.md": 0,
-    "solutions:记忆库检索优化方案.md": 1
+    "solutions:记忆库检索优化方案.md": 1,
+    "conventions:记忆库命名规范.md": 1
   },
   "relations": {
     "solutions:记忆库检索优化方案.md": [
       "conventions:宗门修真录术语规范.md"
-    ]
+    ],
+    "conventions:记忆库命名规范.md": [
+      "solutions:记忆库检索优化方案.md"
+    ],
     "conventions:游戏可玩性设计混合型政策体系.md": [
       "solutions:ecs-query-性能优化.md"
     ],
@@ -68,5 +72,5 @@
       "lessons:kotlin多平台java库不兼容.md"
     ]
   },
-  "updated": "2026-02-23T13:30:00.000000"
+  "updated": "2026-02-23T14:00:00.000000"
 }
