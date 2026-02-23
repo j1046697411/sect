@@ -22,11 +22,13 @@ docs/memory-bank/
 
 ## 索引维护
 
-**索引文件**：`docs/memory-bank/index.md`
+**索引文件**：`docs/memory-bank/index.md`（相对于项目根目录）
 
 **自动生成**：
 ```bash
-python3 .opencode/skills/memory-bank/scripts/generate-memory-index.py
+# 在 skill 目录下运行
+cd .opencode/skills/memory-bank
+python3 scripts/generate-memory-index.py
 ```
 
 **触发时机**：

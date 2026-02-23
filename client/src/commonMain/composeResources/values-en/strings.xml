@@ -1,0 +1,102 @@
+<resources>
+    <!-- App Title -->
+    <string name="app_title">Sect Cultivation</string>
+
+    <!-- Navigation -->
+    <string name="nav_overview">Overview</string>
+    <string name="nav_disciples">Disciples</string>
+    <string name="nav_buildings">Buildings</string>
+    <string name="nav_quests">Quests</string>
+    <string name="nav_policy">Policy</string>
+    <string name="nav_skills">Skills</string>
+
+    <!-- Game Control -->
+    <string name="game_pause">Pause</string>
+    <string name="game_resume">Resume</string>
+
+    <!-- Right Panel -->
+    <string name="panel_game_time">⏰ Game Time</string>
+    <string name="panel_resource_production">💰 Resource Production</string>
+    <string name="panel_sect_info">🏯 Sect Info</string>
+    <string name="panel_disciple_stats">👥 Disciple Stats</string>
+    <string name="panel_quick_actions">⚡ Quick Actions</string>
+    <string name="panel_button_recruitment">Post Recruitment (WIP)</string>
+    <string name="panel_loading">Loading...</string>
+    <string name="panel_calculating">Calculating...</string>
+
+    <!-- Resource Units -->
+    <string name="unit_spirit_stones">Spirit Stones</string>
+    <string name="unit_contribution_points">Contribution</string>
+    <string name="unit_per_hour">/hour</string>
+
+    <!-- Disciple Stats Labels -->
+    <string name="label_total">Total</string>
+    <string name="label_inner">Inner</string>
+    <string name="label_outer">Outer</string>
+    <string name="label_elder">Elder</string>
+
+    <!-- Sect Info Labels -->
+    <string name="label_name">Name</string>
+
+    <!-- Disciple Detail Panel -->
+    <string name="disciple_detail_title">👤 Disciple Details</string>
+    <string name="disciple_realm">Realm</string>
+    <string name="disciple_status">Status</string>
+    <string name="disciple_cultivation_detail">📈 Cultivation</string>
+    <string name="disciple_current_cultivation">Current</string>
+    <string name="disciple_breakthrough_progress">Breakthrough</string>
+    <string name="disciple_health">❤ Health</string>
+    <string name="disciple_current">Current</string>
+    <string name="disciple_spirit">⚡ Spirit</string>
+
+    <!-- Page Titles -->
+    <string name="page_overview_title">Sect Overview</string>
+    <string name="page_disciples_title">Disciple Management</string>
+    <string name="page_facilities_title">Facility Management</string>
+    <string name="page_quests_title">Quest Hall</string>
+    <string name="page_policy_title">Policy Configuration</string>
+
+    <!-- Sect Overview Page -->
+    <string name="sect_name_label">Sect Name:</string>
+    <string name="sect_spirit_stones_label">Spirit Stones:</string>
+    <string name="sect_contribution_points_label">Contribution:</string>
+    <string name="sect_current_time_label">Current Time:</string>
+    <string name="sect_disciple_stats_title">Disciple Statistics</string>
+    <string name="sect_position_distribution">Position Distribution:</string>
+    <string name="sect_realm_distribution">Realm Distribution:</string>
+    <string name="label_qi_refining">Qi Refining</string>
+    <string name="label_foundation">Foundation</string>
+
+    <!-- Disciples Page -->
+    <string name="filter_all">All</string>
+    <string name="no_disciples">No disciples</string>
+    <string name="error_prefix">Error:</string>
+
+    <!-- Facilities Page -->
+    <string name="facilities_in_development">🏗️ In Development</string>
+    <string name="facilities_coming_soon">Facility system is under development, stay tuned...</string>
+
+    <!-- Quests Page -->
+    <string name="quests_in_development">📜 In Development</string>
+    <string name="quests_coming_soon">Quest system is under development, stay tuned...</string>
+
+    <!-- Policy Page -->
+    <string name="policy_in_development">⚙️ In Development</string>
+    <string name="policy_coming_soon">Policy system is under development, stay tuned...</string>
+
+    <!-- Disciple Card -->
+    <string name="cultivation_label">📈 Cultivation</string>
+    <string name="health_label">❤</string>
+    <string name="spirit_label">⚡</string>
+
+    <!-- Behavior States -->
+    <string name="behavior_cultivating">Cultivating</string>
+    <string name="behavior_working">Working</string>
+    <string name="behavior_resting">Resting</string>
+    <string name="behavior_socializing">Socializing</string>
+
+    <!-- Language Switch -->
+    <string name="language_switch">Switch Language</string>
+    <string name="language_chinese">中文</string>
+    <string name="language_english">English</string>
+</resources>

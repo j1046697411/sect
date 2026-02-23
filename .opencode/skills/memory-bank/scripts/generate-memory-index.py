@@ -12,8 +12,8 @@ from collections import defaultdict
 from datetime import datetime
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent.parent
-BASE_DIR = PROJECT_ROOT / "docs" / "memory-bank"
+SKILL_DIR = SCRIPT_DIR.parent  # .opencode/skills/memory-bank/
+BASE_DIR = SKILL_DIR / ".." / ".." / ".." / "docs" / "memory-bank"
 OUTPUT_FILE = BASE_DIR / "index.md"
 
 def parse_memory_file(file_path: Path) -> dict:
