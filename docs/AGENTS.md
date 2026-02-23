@@ -15,8 +15,21 @@
 - **同步更新**: 代码变更必须同步更新相关文档和代码地图。
 
 ## 目录结构
-- `requirements/`: 核心需求与规格说明
-- `design/`: 游戏玩法与 UI/UX 设计
-- `technology/`: 技术架构与核心实现规范
-- `operations/`: 贡献指南与运维手册
-- `codemaps/`: 代码模块与 API 映射地图
+
+| 目录 | 职责 | 说明 |
+|------|------|------|
+| `requirements/` | 核心需求与规格说明 | 游戏需求、功能规格 |
+| `design/` | 游戏玩法与 UI/UX 设计 | 设计文档、界面设计 |
+| `technology/` | 技术架构与核心实现规范 | ECS 架构、技术规范 |
+| `operations/` | 贡献指南与运维手册 | 部署、运维文档 |
+| `codemaps/` | 代码模块与 API 映射地图 | 代码结构说明 |
+| `memory-bank/` | 项目记忆库 | AI 记忆和上下文 |
+| `plans/` | 实现计划 | 功能实现计划 |
+
+## 子模块索引
+
+- [requirements](./requirements/AGENTS.md): 核心需求与规格说明
+- [design](./design/AGENTS.md): 游戏玩法与 UI/UX 设计
+- [technology](./technology/AGENTS.md): 技术架构与核心实现规范
+- [operations](./operations/AGENTS.md): 贡献指南与运维手册
+- [codemaps](./codemaps/AGENTS.md): 代码模块与 API 映射地图
