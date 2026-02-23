@@ -14,6 +14,7 @@ import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
+import cn.jzl.ecs.observer.emit
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
@@ -23,6 +24,8 @@ import cn.jzl.sect.resource.components.ResourceProduction
 import cn.jzl.sect.resource.components.ResourceType
 import cn.jzl.sect.resource.components.calculateOutput
 import cn.jzl.sect.resource.components.displayName
+import cn.jzl.sect.resource.events.ResourceChangedEvent
+import cn.jzl.sect.resource.events.ResourceChangeReason
 
 /**
  * 资源生产服务
@@ -58,6 +61,7 @@ class ResourceProductionService(override val world: World) : EntityRelationConte
             if (production.isActive) {
                 val output = production.calculateOutput()
                 val treasury = ctx.sectTreasury
+                val previousAmount = treasury.spiritStones
 
                 // 更新宗门资源
                 val newSpiritStones = when (production.type) {
@@ -72,6 +76,17 @@ class ResourceProductionService(override val world: World) : EntityRelationConte
                             contributionPoints = treasury.contributionPoints
                         )
                     )
+                }
+
+                // 发送资源变化事件
+                if (production.type == ResourceType.SPIRIT_STONE && output > 0) {
+                    world.emit(ctx.entity, ResourceChangedEvent(
+                        type = production.type,
+                        previousAmount = previousAmount,
+                        currentAmount = newSpiritStones,
+                        change = output,
+                        reason = ResourceChangeReason.PRODUCTION
+                    ))
                 }
 
                 log.info { "产出 ${production.type.displayName} +${output} (效率: ${(production.efficiency * 100).toInt()}%)" }
