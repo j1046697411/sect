@@ -64,7 +64,7 @@ feat: 添加弟子修炼系统
 ```bash
 # 构建
 ./gradlew build                              # 全量构建
-./gradlew :composeApp:run                    # 运行桌面版 Demo
+./gradlew :client:run                        # 运行桌面版 Demo
 
 # 测试 - 全部
 ./gradlew test                               # 运行所有测试
@@ -72,6 +72,8 @@ feat: 添加弟子修炼系统
 # 测试 - 指定模块
 ./gradlew :libs:lko-ecs:test                 # ECS 核心测试
 ./gradlew :libs:lko-core:test                # 基础库测试
+./gradlew :libs:lko-di:test                  # DI 模块测试
+./gradlew :libs:lko-log:test                 # 日志模块测试
 ./gradlew :business-modules:business-engine:test
 
 # 测试 - 单个测试类
@@ -194,13 +196,15 @@ dependencies {
 ### 依赖层级
 ```
 ┌─────────────────────────────────────────────────────┐
-│  应用层 (composeApp, business-engine)               │
+│  应用层 (client, androidApp, business-engine)       │
 ├─────────────────────────────────────────────────────┤
-│  业务层 (business-cultivation, business-disciples)  │
+│  业务层 (business-cultivation, business-disciples,  │
+│         business-combat, business-skill 等)         │
 ├─────────────────────────────────────────────────────┤
 │  共享内核 (business-core)                           │
 ├─────────────────────────────────────────────────────┤
-│  基础设施 (lko-ecs, lko-di, lko-core)               │
+│  基础设施 (lko-ecs, lko-di, lko-core,               │
+│           lko-log, lko-ecs-serialization)           │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -264,13 +268,24 @@ fun shouldIncreaseCultivationWhenCultivating() { ... }
 | 实现业务逻辑 | `business-modules/business-{模块}/services/` |
 | 世界初始化 | `business-modules/business-engine/SectWorld.kt` |
 | ECS 核心优化 | `libs/lko-ecs/` (谨慎修改) |
-| 性能优化 | `libs/lko-core/` |
+| DI 容器配置 | `libs/lko-di/` |
+| 日志工具 | `libs/lko-log/` |
+| 序列化支持 | `libs/lko-ecs-serialization/` |
+| 通用工具类 | `libs/lko-core/` |
 | 依赖版本 | `gradle/libs.versions.toml` |
 
 ---
 
 ## 文档参考
 
-- ECS 架构: `docs/technology/ecs/AGENT.md`
-- 模块规范: `business-modules/AGENTS.md`
-- 基础库: `libs/AGENTS.md`
+| 文档 | 位置 |
+|------|------|
+| ECS 架构详解 | `docs/technology/ecs/AGENT.md` |
+| ECS 架构规范 | `docs/technology/ecs-architecture.md` |
+| 模块规范 | `business-modules/AGENTS.md` |
+| 基础库规范 | `libs/AGENTS.md` |
+| 客户端规范 | `client/AGENTS.md` |
+| 设计文档 | `docs/design/AGENTS.md` |
+| 需求文档 | `docs/requirements/AGENTS.md` |
+| 游戏实现规范 | `docs/technology/宗门修真录游戏实现规范.md` |
+| 游戏设计总结 | `docs/游戏设计总结.md` |
