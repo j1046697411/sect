@@ -73,12 +73,23 @@
 
 ## 子模块索引
 
-- [business-core](./business-core/AGENTS.md): 领域核心抽象
-- [business-ai-goap](./business-ai-goap/AGENTS.md): AI 决策系统
-- [business-cultivation](./business-cultivation/AGENTS.md): 修炼系统
-- [business-disciples](./business-disciples/AGENTS.md): 弟子系统
-- [business-engine](./business-engine/AGENTS.md): 游戏引擎
-- [business-quest](./business-quest/AGENTS.md): 任务系统
+### 共享内核层
+- [business-core](./business-core/AGENTS.md): 领域核心抽象，通用组件和标签定义
+
+### 垂直业务域层
+- [business-ai-goap](./business-ai-goap/AGENTS.md): AI 决策系统，GOAP 规划器
+- [business-common](./business-common/AGENTS.md): 公共模块，时间和倒计时服务
+- [business-cultivation](./business-cultivation/AGENTS.md): 修炼系统，境界和修为管理
+- [business-disciples](./business-disciples/AGENTS.md): 弟子系统，关系和师徒管理
+- [business-resource](./business-resource/AGENTS.md): 资源系统，生产和消耗管理
+- [business-facility](./business-facility/AGENTS.md): 设施系统，宗门状态和价值评估
+- [business-building](./business-building/AGENTS.md): 建筑系统，建造和升级管理
+- [business-skill](./business-skill/AGENTS.md): 功法系统，学习和传承管理
+- [business-combat](./business-combat/AGENTS.md): 战斗系统，战斗逻辑和结算
+- [business-quest](./business-quest/AGENTS.md): 任务系统，任务执行和团队组建
+
+### 应用层
+- [business-engine](./business-engine/AGENTS.md): 游戏引擎，世界初始化和系统协调
 
 ## 分模块强制规则
 
