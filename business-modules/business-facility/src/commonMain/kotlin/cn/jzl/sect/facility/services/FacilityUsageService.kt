@@ -27,20 +27,30 @@ package cn.jzl.sect.facility.services
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.core.facility.FacilityType
-import cn.jzl.sect.facility.systems.FacilityUsageSystem
 
 /**
  * 设施使用服务
  *
- * 代理 [FacilityUsageSystem] 的功能，提供设施使用管理服务
+ * 直接实现设施使用管理功能
  *
  * @property world ECS 世界实例
  */
 class FacilityUsageService(override val world: World) : EntityRelationContext {
 
-    private val facilityUsageSystem by lazy {
-        FacilityUsageSystem()
+    companion object {
+        // 基础使用成本
+        const val BASE_USAGE_COST = 10
     }
+
+    /**
+     * 设施使用效果
+     */
+    data class FacilityEffect(
+        val efficiencyBonus: Double = 0.0,      // 效率加成
+        val successRateBonus: Double = 0.0,     // 成功率加成
+        val qualityBonus: Double = 0.0,         // 品质加成
+        val targetActivity: String = ""         // 目标活动
+    )
 
     /**
      * 获取设施使用效果
@@ -48,8 +58,43 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
      * @param facilityType 设施类型
      * @return 设施效果
      */
-    fun getFacilityEffect(facilityType: FacilityType): FacilityUsageSystem.FacilityEffect {
-        return facilityUsageSystem.getFacilityEffect(facilityType)
+    fun getFacilityEffect(facilityType: FacilityType): FacilityEffect {
+        return when (facilityType) {
+            FacilityType.CULTIVATION_ROOM -> FacilityEffect(
+                efficiencyBonus = 0.2,  // +20%修炼效率
+                targetActivity = "cultivation"
+            )
+            FacilityType.ALCHEMY_ROOM -> FacilityEffect(
+                successRateBonus = 0.15,  // +15%炼丹成功率
+                qualityBonus = 0.1,       // +10%品质
+                targetActivity = "alchemy"
+            )
+            FacilityType.FORGE_ROOM -> FacilityEffect(
+                successRateBonus = 0.15,  // +15%炼器成功率
+                qualityBonus = 0.1,       // +10%品质
+                targetActivity = "forging"
+            )
+            FacilityType.LIBRARY -> FacilityEffect(
+                efficiencyBonus = 0.25,   // +25%功法学习速度
+                targetActivity = "skill_learning"
+            )
+            FacilityType.WAREHOUSE -> FacilityEffect(
+                efficiencyBonus = 0.1,    // +10%存储效率
+                targetActivity = "storage"
+            )
+            FacilityType.DORMITORY -> FacilityEffect(
+                efficiencyBonus = 0.05,   // +5%恢复效率
+                targetActivity = "rest"
+            )
+            FacilityType.SPIRIT_STONE_MINE -> FacilityEffect(
+                efficiencyBonus = 0.2,    // +20%灵石产出
+                targetActivity = "mining"
+            )
+            FacilityType.CONTRIBUTION_HALL -> FacilityEffect(
+                efficiencyBonus = 0.2,    // +20%贡献点产出
+                targetActivity = "contribution"
+            )
+        }
     }
 
     /**
@@ -60,7 +105,17 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
      * @return 使用成本(贡献点)
      */
     fun calculateUsageCost(facilityType: FacilityType, duration: Int): Int {
-        return facilityUsageSystem.calculateUsageCost(facilityType, duration)
+        val baseCost = when (facilityType) {
+            FacilityType.CULTIVATION_ROOM -> BASE_USAGE_COST
+            FacilityType.ALCHEMY_ROOM -> BASE_USAGE_COST * 2
+            FacilityType.FORGE_ROOM -> BASE_USAGE_COST * 2
+            FacilityType.LIBRARY -> BASE_USAGE_COST
+            FacilityType.WAREHOUSE -> 0  // 免费
+            FacilityType.DORMITORY -> 0  // 免费
+            FacilityType.SPIRIT_STONE_MINE -> BASE_USAGE_COST
+            FacilityType.CONTRIBUTION_HALL -> BASE_USAGE_COST / 2
+        }
+        return baseCost * duration
     }
 
     /**
@@ -76,7 +131,8 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
         contributionPoints: Int,
         duration: Int = 1
     ): Boolean {
-        return facilityUsageSystem.canUseFacility(facilityType, contributionPoints, duration)
+        val cost = calculateUsageCost(facilityType, duration)
+        return contributionPoints >= cost
     }
 
     /**
@@ -86,7 +142,16 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
      * @return 功能描述
      */
     fun getFacilityFunctionDescription(facilityType: FacilityType): String {
-        return facilityUsageSystem.getFacilityFunctionDescription(facilityType)
+        return when (facilityType) {
+            FacilityType.CULTIVATION_ROOM -> "提供安静的修炼环境，增加20%修炼效率"
+            FacilityType.ALCHEMY_ROOM -> "配备炼丹炉和药材，增加15%炼丹成功率和10%品质"
+            FacilityType.FORGE_ROOM -> "配备炼器设备和材料，增加15%炼器成功率和10%品质"
+            FacilityType.LIBRARY -> "收藏各类功法典籍，增加25%功法学习速度"
+            FacilityType.WAREHOUSE -> "存储资源的仓库，增加10%存储效率"
+            FacilityType.DORMITORY -> "弟子居住的地方，增加5%恢复效率"
+            FacilityType.SPIRIT_STONE_MINE -> "产出灵石的矿脉，增加20%灵石产出"
+            FacilityType.CONTRIBUTION_HALL -> "管理贡献点的地方，增加20%贡献点产出"
+        }
     }
 
     /**
@@ -96,7 +161,16 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
      * @return 使用提示
      */
     fun getUsageTip(facilityType: FacilityType): String {
-        return facilityUsageSystem.getUsageTip(facilityType)
+        return when (facilityType) {
+            FacilityType.CULTIVATION_ROOM -> "建议长时间修炼以获得最大收益"
+            FacilityType.ALCHEMY_ROOM -> "准备好足够的药材再开始炼丹"
+            FacilityType.FORGE_ROOM -> "准备好足够的材料再开始炼器"
+            FacilityType.LIBRARY -> "悟性越高，学习效果越好"
+            FacilityType.WAREHOUSE -> "定期整理仓库以优化存储空间"
+            FacilityType.DORMITORY -> "良好的休息有助于恢复状态"
+            FacilityType.SPIRIT_STONE_MINE -> "定期收获灵石以获得持续收益"
+            FacilityType.CONTRIBUTION_HALL -> "完成任务可以获得更多贡献点"
+        }
     }
 
     /**
@@ -112,6 +186,16 @@ class FacilityUsageService(override val world: World) : EntityRelationContext {
         userLevel: Int,
         duration: Int
     ): Int {
-        return facilityUsageSystem.calculateExpectedBenefit(facilityType, userLevel, duration)
+        val baseBenefit = when (facilityType) {
+            FacilityType.CULTIVATION_ROOM -> userLevel * 10
+            FacilityType.ALCHEMY_ROOM -> userLevel * 15
+            FacilityType.FORGE_ROOM -> userLevel * 15
+            FacilityType.LIBRARY -> userLevel * 8
+            FacilityType.WAREHOUSE -> userLevel * 5
+            FacilityType.DORMITORY -> userLevel * 3
+            FacilityType.SPIRIT_STONE_MINE -> userLevel * 12
+            FacilityType.CONTRIBUTION_HALL -> userLevel * 10
+        }
+        return baseBenefit * duration
     }
 }

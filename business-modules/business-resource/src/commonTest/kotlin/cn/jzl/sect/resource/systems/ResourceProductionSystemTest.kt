@@ -8,14 +8,17 @@ import cn.jzl.ecs.family.component
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.resource.ResourceProduction
-import cn.jzl.sect.core.resource.ResourceType
 import cn.jzl.sect.core.sect.SectTreasury
 import cn.jzl.sect.engine.SectWorld
+import cn.jzl.sect.resource.components.ResourceProduction
+import cn.jzl.sect.resource.components.ResourceType
+import cn.jzl.sect.resource.services.MonthlyProductionSummary
+import cn.jzl.sect.resource.services.ProductionRecord
+import cn.jzl.sect.resource.services.ResourceProductionService
 import kotlin.test.*
 
 /**
- * 资源生产系统测试
+ * 资源生产服务测试
  */
 class ResourceProductionSystemTest : EntityRelationContext {
     override lateinit var world: World
@@ -27,9 +30,9 @@ class ResourceProductionSystemTest : EntityRelationContext {
     }
 
     @Test
-    fun testSystemInitialization() {
-        val system = ResourceProductionSystem(world)
-        assertNotNull(system)
+    fun testServiceInitialization() {
+        val service = ResourceProductionService(world)
+        assertNotNull(service)
     }
 
     @Test

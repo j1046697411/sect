@@ -32,6 +32,8 @@ import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.Phase
 import cn.jzl.ecs.addon.createAddon
+import cn.jzl.sect.facility.components.Facility
+import cn.jzl.sect.facility.components.FacilityStatus
 import cn.jzl.sect.facility.services.SectStatusService
 import cn.jzl.sect.facility.services.FacilityValueService
 import cn.jzl.sect.facility.services.FacilityUsageService
@@ -40,6 +42,8 @@ import cn.jzl.sect.facility.services.FacilityUsageService
  * 设施系统 Addon
  *
  * 负责注册设施系统相关组件和服务：
+ * - [Facility] 组件：设施基础信息
+ * - [FacilityStatus] 组件：设施状态
  * - [SectStatusService] 服务：宗门状态检测和财务摘要
  * - [FacilityValueService] 服务：设施价值评估和ROI计算
  * - [FacilityUsageService] 服务：设施使用效果和成本管理
@@ -52,6 +56,12 @@ import cn.jzl.sect.facility.services.FacilityUsageService
 val facilityAddon = createAddon("facilityAddon") {
     // 依赖资源系统
     install(cn.jzl.sect.resource.resourceAddon)
+
+    // 注册组件
+    components {
+        world.componentId<Facility>()
+        world.componentId<FacilityStatus>()
+    }
 
     // 注册服务
     injects {

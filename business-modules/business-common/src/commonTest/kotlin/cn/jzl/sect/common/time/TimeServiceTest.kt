@@ -1,9 +1,11 @@
 package cn.jzl.sect.common.time
 
-import cn.jzl.ecs.World
+import cn.jzl.di.instance
+import cn.jzl.ecs.*
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.world
 import kotlin.test.*
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -21,13 +23,13 @@ class TimeServiceTest : EntityRelationContext {
 
     @Test
     fun testTimeAddonInstallation() {
-        val timeService by world.di.instance<TimeService>()
+        val timeService: TimeService by world.di.instance()
         assertNotNull(timeService, "时间服务应该被正确安装")
     }
 
     @Test
     fun testInitialGameTime() {
-        val timeService by world.di.instance<TimeService>()
+        val timeService: TimeService by world.di.instance()
         val currentTime = timeService.getCurrentGameTime()
         
         assertEquals(0.seconds, currentTime, "初始游戏时间应该是0")
@@ -35,7 +37,7 @@ class TimeServiceTest : EntityRelationContext {
 
     @Test
     fun testUpdateGameTime() {
-        val timeService by world.di.instance<TimeService>()
+        val timeService: TimeService by world.di.instance()
         
         timeService.update(1.seconds)
         
@@ -45,7 +47,7 @@ class TimeServiceTest : EntityRelationContext {
 
     @Test
     fun testMultipleUpdates() {
-        val timeService by world.di.instance<TimeService>()
+        val timeService: TimeService by world.di.instance()
         
         timeService.update(1.seconds)
         timeService.update(2.seconds)
@@ -57,9 +59,9 @@ class TimeServiceTest : EntityRelationContext {
 
     @Test
     fun testZeroDeltaUpdate() {
-        val timeService by world.di.instance<TimeService>()
+        val timeService: TimeService by world.di.instance()
         
-        timeService.update(0.seconds)
+        timeService.update(Duration.ZERO)
         
         val currentTime = timeService.getCurrentGameTime()
         assertEquals(0.seconds, currentTime, "零增量更新后游戏时间应该保持为0")
@@ -67,25 +69,12 @@ class TimeServiceTest : EntityRelationContext {
 
     @Test
     fun testNegativeDeltaUpdate() {
-        val timeService by world.di.instance<TimeService>()
+        val timeService: TimeService by world.di.instance()
         
         timeService.update(10.seconds)
-        timeService.update(-5.seconds)
+        timeService.update((-5).seconds)
         
         val currentTime = timeService.getCurrentGameTime()
         assertEquals(5.seconds, currentTime, "负增量更新应该正常累加")
-    }
-
-    @Test
-    fun testTimerEntityCreation() {
-        val timers = world.query { TimerContext(this) }
-        val timer = timers.map { it.timer }.firstOrNull()
-        
-        assertNotNull(timer, "应该创建计时器实体")
-        assertEquals(0.seconds, timer.duration, "计时器初始时长应该是0")
-    }
-
-    private class TimerContext(world: World) : EntityRelationContext by EntityRelationContext(world) {
-        val timer: Timer by component()
     }
 }

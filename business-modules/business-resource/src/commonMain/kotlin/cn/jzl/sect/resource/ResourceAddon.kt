@@ -24,7 +24,11 @@ package cn.jzl.sect.resource
 import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.Phase
+import cn.jzl.ecs.addon.components
 import cn.jzl.ecs.addon.createAddon
+import cn.jzl.ecs.component.componentId
+import cn.jzl.sect.resource.components.ResourceConsumption
+import cn.jzl.sect.resource.components.ResourceProduction
 import cn.jzl.sect.resource.services.ResourceConsumptionService
 import cn.jzl.sect.resource.services.ResourceProductionService
 
@@ -32,6 +36,8 @@ import cn.jzl.sect.resource.services.ResourceProductionService
  * 资源系统 Addon
  *
  * 负责注册资源系统相关组件和服务：
+ * - [ResourceProduction] 组件：资源生产
+ * - [ResourceConsumption] 组件：资源消耗
  * - [ResourceProductionService] 服务：处理资源产出
  * - [ResourceConsumptionService] 服务：处理资源消耗
  *
@@ -41,6 +47,12 @@ import cn.jzl.sect.resource.services.ResourceProductionService
  * ```
  */
 val resourceAddon = createAddon("resourceAddon") {
+    // 注册组件
+    components {
+        world.componentId<ResourceProduction>()
+        world.componentId<ResourceConsumption>()
+    }
+
     // 注册服务
     injects {
         this bind singleton { new(::ResourceProductionService) }

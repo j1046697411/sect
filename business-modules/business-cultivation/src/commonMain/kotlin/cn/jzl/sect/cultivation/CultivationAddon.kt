@@ -26,6 +26,9 @@ import cn.jzl.di.singleton
 import cn.jzl.ecs.Updatable
 import cn.jzl.ecs.addon.Phase
 import cn.jzl.ecs.addon.createAddon
+import cn.jzl.ecs.componentId
+import cn.jzl.sect.cultivation.components.CultivationProgress
+import cn.jzl.sect.cultivation.components.Talent
 import cn.jzl.sect.cultivation.services.CultivationService
 import cn.jzl.sect.cultivation.services.SimpleBehaviorService
 
@@ -33,6 +36,8 @@ import cn.jzl.sect.cultivation.services.SimpleBehaviorService
  * 修炼系统 Addon
  *
  * 负责注册修炼系统相关组件和服务：
+ * - [CultivationProgress] 组件：修炼进度
+ * - [Talent] 组件：弟子天赋
  * - [CultivationService] 服务：处理修为增长和境界突破
  * - [SimpleBehaviorService] 服务：处理弟子行为决策
  *
@@ -44,6 +49,12 @@ import cn.jzl.sect.cultivation.services.SimpleBehaviorService
 val cultivationAddon = createAddon("cultivationAddon") {
     // 依赖资源系统
     install(cn.jzl.sect.resource.resourceAddon)
+
+    // 注册组件
+    components {
+        componentId<CultivationProgress>()
+        componentId<Talent>()
+    }
 
     // 注册服务
     injects {

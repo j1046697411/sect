@@ -32,20 +32,59 @@ package cn.jzl.sect.facility.services
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.core.facility.FacilityType
-import cn.jzl.sect.facility.systems.FacilityValueCalculator
+import kotlin.math.max
 
 /**
  * 设施价值服务
  *
- * 代理 [FacilityValueCalculator] 的功能，提供设施价值评估和投资分析服务
+ * 直接实现设施价值评估和投资分析功能
  *
  * @property world ECS 世界实例
  */
 class FacilityValueService(override val world: World) : EntityRelationContext {
 
-    private val facilityValueCalculator by lazy {
-        FacilityValueCalculator()
+    companion object {
+        // 建设成本权重
+        const val CONSTRUCTION_COST_WEIGHT = 0.3
+
+        // 维护成本权重
+        const val MAINTENANCE_COST_WEIGHT = 0.2
+
+        // 产出效率权重
+        const val EFFICIENCY_WEIGHT = 0.3
+
+        // 战略价值权重
+        const val STRATEGIC_WEIGHT = 0.2
     }
+
+    /**
+     * 设施价值等级枚举
+     */
+    enum class FacilityValueLevel(val displayName: String, val minValue: Int) {
+        BASIC("基础", 0),
+        STANDARD("标准", 100),
+        ADVANCED("高级", 250),
+        PREMIUM("顶级", 500),
+        LEGENDARY("传奇", 1000);
+
+        companion object {
+            fun fromValue(value: Int): FacilityValueLevel {
+                return entries.reversed().find { value >= it.minValue } ?: BASIC
+            }
+        }
+    }
+
+    /**
+     * 价值报告
+     */
+    data class ValueReport(
+        val facilityName: String,
+        val valueScore: Int,
+        val valueLevel: FacilityValueLevel,
+        val roi: Double,
+        val paybackPeriod: Int,
+        val recommendation: String
+    )
 
     /**
      * 计算设施综合价值
@@ -62,12 +101,25 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
         productionEfficiency: Double,
         facilityType: FacilityType = FacilityType.CULTIVATION_ROOM
     ): Int {
-        return facilityValueCalculator.calculateFacilityValue(
-            constructionCost,
-            maintenanceCost,
-            productionEfficiency,
-            facilityType
-        )
+        // 建设成本评分(成本越高评分越低，但有一个上限)
+        val constructionScore = max(0, 100 - constructionCost / 100)
+
+        // 维护成本评分(维护成本越低越好)
+        val maintenanceScore = max(0, 100 - maintenanceCost / 10)
+
+        // 产出效率评分
+        val efficiencyScore = (productionEfficiency * 100).toInt()
+
+        // 战略价值评分
+        val strategicScore = calculateStrategicValue(facilityType)
+
+        // 加权计算综合价值
+        return (
+            constructionScore * CONSTRUCTION_COST_WEIGHT +
+            maintenanceScore * MAINTENANCE_COST_WEIGHT +
+            efficiencyScore * EFFICIENCY_WEIGHT +
+            strategicScore * STRATEGIC_WEIGHT
+        ).toInt()
     }
 
     /**
@@ -83,7 +135,10 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
         dailyRevenue: Int,
         dailyMaintenance: Int
     ): Double {
-        return facilityValueCalculator.calculateROI(constructionCost, dailyRevenue, dailyMaintenance)
+        if (constructionCost <= 0) return 0.0
+
+        val netDailyProfit = dailyRevenue - dailyMaintenance
+        return netDailyProfit.toDouble() / constructionCost
     }
 
     /**
@@ -99,7 +154,12 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
         dailyRevenue: Int,
         dailyMaintenance: Int
     ): Int {
-        return facilityValueCalculator.calculatePaybackPeriod(constructionCost, dailyRevenue, dailyMaintenance)
+        val netDailyProfit = dailyRevenue - dailyMaintenance
+        return if (netDailyProfit > 0) {
+            (constructionCost / netDailyProfit).coerceAtLeast(1)
+        } else {
+            Int.MAX_VALUE // 无法回收
+        }
     }
 
     /**
@@ -109,7 +169,16 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
      * @return 战略价值评分(0-100)
      */
     fun calculateStrategicValue(facilityType: FacilityType): Int {
-        return facilityValueCalculator.calculateStrategicValue(facilityType)
+        return when (facilityType) {
+            FacilityType.CULTIVATION_ROOM -> 70    // 修炼室 - 高战略价值
+            FacilityType.ALCHEMY_ROOM -> 75        // 炼丹房 - 高战略价值
+            FacilityType.FORGE_ROOM -> 70          // 炼器室 - 高战略价值
+            FacilityType.LIBRARY -> 65             // 藏书阁 - 中高战略价值
+            FacilityType.WAREHOUSE -> 50           // 仓库 - 中等战略价值
+            FacilityType.DORMITORY -> 45           // 宿舍 - 中等战略价值
+            FacilityType.SPIRIT_STONE_MINE -> 80   // 灵石矿 - 最高战略价值
+            FacilityType.CONTRIBUTION_HALL -> 75   // 贡献堂 - 高战略价值
+        }
     }
 
     /**
@@ -118,8 +187,8 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
      * @param value 价值评分
      * @return 价值等级
      */
-    fun assessValueLevel(value: Int): FacilityValueCalculator.FacilityValueLevel {
-        return facilityValueCalculator.assessValueLevel(value)
+    fun assessValueLevel(value: Int): FacilityValueLevel {
+        return FacilityValueLevel.fromValue(value)
     }
 
     /**
@@ -130,7 +199,7 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
      * @return 正数表示设施1更好，负数表示设施2更好
      */
     fun compareFacilities(value1: Int, value2: Int): Int {
-        return facilityValueCalculator.compareFacilities(value1, value2)
+        return value1 - value2
     }
 
     /**
@@ -147,7 +216,26 @@ class FacilityValueService(override val world: World) : EntityRelationContext {
         value: Int,
         roi: Double,
         paybackPeriod: Int
-    ): FacilityValueCalculator.ValueReport {
-        return facilityValueCalculator.generateValueReport(facilityName, value, roi, paybackPeriod)
+    ): ValueReport {
+        return ValueReport(
+            facilityName = facilityName,
+            valueScore = value,
+            valueLevel = assessValueLevel(value),
+            roi = roi,
+            paybackPeriod = paybackPeriod,
+            recommendation = generateRecommendation(roi, paybackPeriod)
+        )
+    }
+
+    /**
+     * 生成投资建议
+     */
+    private fun generateRecommendation(roi: Double, paybackPeriod: Int): String {
+        return when {
+            roi > 0.1 && paybackPeriod < 30 -> "强烈推荐"
+            roi > 0.05 && paybackPeriod < 60 -> "推荐"
+            roi > 0.02 && paybackPeriod < 100 -> "一般"
+            else -> "不推荐"
+        }
     }
 }

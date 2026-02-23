@@ -17,19 +17,20 @@ import cn.jzl.ecs.world
 import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
 import cn.jzl.sect.core.config.GameConfig
-import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.cultivation.Talent
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.cultivation.components.CultivationProgress
+import cn.jzl.sect.cultivation.components.Talent
+import cn.jzl.sect.cultivation.services.CultivationService
 import kotlin.test.*
 
 /**
- * 修炼系统测试
+ * 修炼服务测试
  */
-class CultivationSystemTest : EntityRelationContext {
+class CultivationServiceTest : EntityRelationContext {
     override lateinit var world: World
-    private lateinit var system: CultivationSystem
+    private lateinit var service: CultivationService
 
     @OptIn(ECSDsl::class)
     private fun createTestWorld(): World {
@@ -50,12 +51,12 @@ class CultivationSystemTest : EntityRelationContext {
     fun setup() {
         GameConfig.resetInstance()
         world = createTestWorld()
-        system = CultivationSystem(world)
+        service = CultivationService(world)
     }
 
     @Test
-    fun testSystemInitialization() {
-        assertNotNull(system, "修炼系统应该能正确初始化")
+    fun testServiceInitialization() {
+        assertNotNull(service, "修炼服务应该能正确初始化")
     }
 
     @Test
@@ -78,7 +79,7 @@ class CultivationSystemTest : EntityRelationContext {
         }
 
         // When: 推进修炼时间
-        val breakthroughs = system.update(1)
+        val breakthroughs = service.update(1)
 
         // Then: 修为应该增加
         val query = world.query { CultivatorQueryContext(world) }
@@ -113,7 +114,7 @@ class CultivationSystemTest : EntityRelationContext {
         }
 
         // When: 推进1小时
-        system.update(1)
+        service.update(1)
 
         // Then: 高资质应该获得更多修为
         val query = world.query { CultivatorQueryContext(world) }
@@ -145,7 +146,7 @@ class CultivationSystemTest : EntityRelationContext {
         }
 
         // When: 推进1小时
-        system.update(1)
+        service.update(1)
 
         // Then: 低资质应该获得较少修为，但至少为1
         val query = world.query { CultivatorQueryContext(world) }
@@ -177,7 +178,7 @@ class CultivationSystemTest : EntityRelationContext {
         }
 
         // When: 推进10小时
-        system.update(10)
+        service.update(10)
 
         // Then: 修为应该按比例增加
         val query = world.query { CultivatorQueryContext(world) }
@@ -209,7 +210,7 @@ class CultivationSystemTest : EntityRelationContext {
         }
 
         // When: 推进足够时间触发突破
-        val breakthroughs = system.update(1)
+        val breakthroughs = service.update(1)
 
         // Then: 应该突破到第2层
         val query = world.query { CultivatorQueryContext(world) }
@@ -244,7 +245,7 @@ class CultivationSystemTest : EntityRelationContext {
         }
 
         // When: 推进足够时间触发突破
-        val breakthroughs = system.update(1)
+        val breakthroughs = service.update(1)
 
         // Then: 应该突破到炼气期第1层
         val query = world.query { CultivatorQueryContext(world) }
@@ -276,7 +277,7 @@ class CultivationSystemTest : EntityRelationContext {
         }
 
         // When: 推进修炼
-        val breakthroughs = system.update(1)
+        val breakthroughs = service.update(1)
 
         // Then: 应该生成突破事件
         assertTrue(breakthroughs.isNotEmpty(), "应该生成突破事件")
@@ -297,7 +298,7 @@ class CultivationSystemTest : EntityRelationContext {
             it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
         }
 
-        val event = CultivationSystem.BreakthroughEvent(
+        val event = CultivationService.BreakthroughEvent(
             entity = entity,
             oldRealm = Realm.MORTAL,
             oldLayer = 9,
@@ -338,7 +339,7 @@ class CultivationSystemTest : EntityRelationContext {
         }
 
         // When: 推进修炼
-        system.update(1)
+        service.update(1)
 
         // Then: 所有修炼者都应该获得修为
         val query = world.query { CultivatorQueryContext(world) }
@@ -353,13 +354,13 @@ class CultivationSystemTest : EntityRelationContext {
     }
 
     @Test
-    fun testCultivationSystemWithNoCultivators() {
+    fun testCultivationServiceWithNoCultivators() {
         // Given: 创建一个没有修炼者的世界（只有空世界）
         val emptyWorld = createTestWorld()
-        val emptySystem = CultivationSystem(emptyWorld)
+        val emptyService = CultivationService(emptyWorld)
 
-        // When: 更新系统
-        val breakthroughs = emptySystem.update(1)
+        // When: 更新服务
+        val breakthroughs = emptyService.update(1)
 
         // Then: 应该正常处理，没有异常
         assertTrue(breakthroughs.isEmpty(), "没有修炼者时不应该有突破事件")

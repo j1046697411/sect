@@ -1,11 +1,10 @@
-package cn.jzl.sect.facility.systems
+package cn.jzl.sect.facility.services
 
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.engine.SectWorld
 import cn.jzl.sect.facility.components.FinancialSummary
 import cn.jzl.sect.facility.components.SectStatus
-import cn.jzl.sect.facility.services.SectStatusService
 import kotlin.test.*
 
 /**

@@ -1,10 +1,9 @@
-package cn.jzl.sect.facility.systems
+package cn.jzl.sect.facility.services
 
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.core.facility.FacilityType
 import cn.jzl.sect.engine.SectWorld
-import cn.jzl.sect.facility.services.FacilityValueService
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

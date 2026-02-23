@@ -16,10 +16,13 @@ import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.core.sect.SectTreasury
 import cn.jzl.sect.engine.SectWorld
+import cn.jzl.sect.resource.services.ConsumptionResult
+import cn.jzl.sect.resource.services.PaymentRecord
+import cn.jzl.sect.resource.services.ResourceConsumptionService
 import kotlin.test.*
 
 /**
- * 资源消耗系统测试
+ * 资源消耗服务测试
  */
 class ResourceConsumptionSystemTest : EntityRelationContext {
     override lateinit var world: World
@@ -32,9 +35,9 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     }
 
     @Test
-    fun testSystemInitialization() {
-        val system = ResourceConsumptionSystem(world)
-        assertNotNull(system)
+    fun testServiceInitialization() {
+        val service = ResourceConsumptionService(world)
+        assertNotNull(service)
     }
 
     @Test

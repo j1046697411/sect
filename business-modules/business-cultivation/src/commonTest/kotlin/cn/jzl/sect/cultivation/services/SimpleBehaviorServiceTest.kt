@@ -1,4 +1,4 @@
-package cn.jzl.sect.cultivation.systems
+package cn.jzl.sect.cultivation.services
 
 import cn.jzl.ecs.ECSDsl
 import cn.jzl.ecs.World
@@ -17,17 +17,18 @@ import cn.jzl.ecs.world
 import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
 import cn.jzl.sect.core.config.GameConfig
-import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.vitality.Vitality
 import cn.jzl.sect.core.vitality.Spirit
+import cn.jzl.sect.cultivation.components.CultivationProgress
 import kotlin.test.*
+import kotlin.time.Duration.Companion.seconds
 
 /**
- * 简单行为系统测试
+ * 简单行为服务测试
  */
-class SimpleBehaviorSystemTest : EntityRelationContext {
+class SimpleBehaviorServiceTest : EntityRelationContext {
     override lateinit var world: World
-    private lateinit var system: SimpleBehaviorSystem
+    private lateinit var service: SimpleBehaviorService
 
     @OptIn(ECSDsl::class)
     private fun createTestWorld(): World {
@@ -48,12 +49,12 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
     fun setup() {
         GameConfig.resetInstance()
         world = createTestWorld()
-        system = SimpleBehaviorSystem(world)
+        service = SimpleBehaviorService(world)
     }
 
     @Test
-    fun testSystemInitialization() {
-        assertNotNull(system, "行为系统应该能正确初始化")
+    fun testServiceInitialization() {
+        assertNotNull(service, "行为服务应该能正确初始化")
     }
 
     @Test
@@ -66,8 +67,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 应该选择修炼行为
         val query = world.query { BehaviorQueryContext(world) }
@@ -88,8 +89,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 应该选择休息行为
         val query = world.query { BehaviorQueryContext(world) }
@@ -110,8 +111,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 应该选择工作行为
         val query = world.query { BehaviorQueryContext(world) }
@@ -132,8 +133,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 应该仍然选择修炼（>= 30%）
         val query = world.query { BehaviorQueryContext(world) }
@@ -154,8 +155,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 应该选择休息
         val query = world.query { BehaviorQueryContext(world) }
@@ -176,8 +177,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 精神力应该减少
         val query = world.query { BehaviorQueryContext(world) }
@@ -198,8 +199,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 生命值和精神力应该恢复（休息行为效果）
         val query = world.query { BehaviorQueryContext(world) }
@@ -221,8 +222,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 生命值恢复，精神力消耗（工作行为效果）
         val query = world.query { BehaviorQueryContext(world) }
@@ -244,8 +245,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 精神力不应该低于0
         val query = world.query { BehaviorQueryContext(world) }
@@ -266,8 +267,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 生命值不应该超过上限（休息恢复10点，但95+10=105>100，应该被限制为100）
         val query = world.query { BehaviorQueryContext(world) }
@@ -288,8 +289,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 精神力不应该超过上限
         val query = world.query { BehaviorQueryContext(world) }
@@ -314,8 +315,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 行为状态应该更新
         val query = world.query { BehaviorQueryContext(world) }
@@ -342,8 +343,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 行为状态不应该改变
         val query = world.query { BehaviorQueryContext(world) }
@@ -379,8 +380,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统
-        system.update(1.0f)
+        // When: 更新行为服务
+        service.update(1.seconds)
 
         // Then: 每个实体都应该有正确的行为
         val query = world.query { BehaviorQueryContext(world) }
@@ -403,14 +404,14 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
     }
 
     @Test
-    fun testBehaviorSystemWithNoEntities() {
+    fun testBehaviorServiceWithNoEntities() {
         // Given: 创建一个没有行为实体的世界
         val emptyWorld = createTestWorld()
-        val emptySystem = SimpleBehaviorSystem(emptyWorld)
+        val emptyService = SimpleBehaviorService(emptyWorld)
 
-        // When: 更新系统
+        // When: 更新服务
         // Then: 应该正常处理，没有异常
-        emptySystem.update(1.0f)
+        emptyService.update(1.seconds)
     }
 
     @Test
@@ -423,8 +424,8 @@ class SimpleBehaviorSystemTest : EntityRelationContext {
             it.addComponent(CultivationProgress())
         }
 
-        // When: 更新行为系统（社交行为会被保留，因为健康状态允许修炼）
-        system.update(1.0f)
+        // When: 更新行为服务（社交行为会被保留，因为健康状态允许修炼）
+        service.update(1.seconds)
 
         // Then: 如果行为改变为社交，应该消耗精神力
         // 注意：根据当前逻辑，健康实体应该转为修炼，所以这里测试社交行为的效果
