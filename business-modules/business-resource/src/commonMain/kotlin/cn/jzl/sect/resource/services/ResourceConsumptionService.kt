@@ -14,6 +14,7 @@ import cn.jzl.ecs.editor
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
+import cn.jzl.ecs.observer.emit
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
@@ -23,6 +24,9 @@ import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.core.sect.SectTreasury
+import cn.jzl.sect.resource.components.ResourceType
+import cn.jzl.sect.resource.events.ResourceChangedEvent
+import cn.jzl.sect.resource.events.ResourceChangeReason
 
 /**
  * 资源消耗服务
@@ -115,6 +119,15 @@ class ResourceConsumptionService(override val world: World) : EntityRelationCont
                 )
             )
         }
+
+        // 发送资源变化事件
+        world.emit(sect, ResourceChangedEvent(
+            type = ResourceType.SPIRIT_STONE,
+            previousAmount = sectTreasury.spiritStones,
+            currentAmount = remainingSpiritStones,
+            change = sectTreasury.spiritStones - remainingSpiritStones,
+            reason = ResourceChangeReason.CONSUMPTION
+        ))
 
         val totalPaid = paymentRecords.sumOf { it.actualAmount }
         val allPaid = paymentRecords.all { it.paid }
