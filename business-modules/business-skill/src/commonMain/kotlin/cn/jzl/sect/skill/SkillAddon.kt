@@ -34,6 +34,8 @@ import cn.jzl.ecs.component.componentId
 import cn.jzl.sect.skill.components.Skill
 import cn.jzl.sect.skill.components.SkillEffect
 import cn.jzl.sect.skill.components.SkillLearned
+import cn.jzl.sect.skill.events.SkillInheritedEvent
+import cn.jzl.sect.skill.events.SkillLearnedEvent
 import cn.jzl.sect.skill.services.SkillEffectService
 import cn.jzl.sect.skill.services.SkillInheritanceService
 import cn.jzl.sect.skill.services.SkillLearningService
@@ -63,6 +65,8 @@ val skillAddon = createAddon("skillAddon") {
         world.componentId<Skill>()
         world.componentId<SkillLearned>()
         world.componentId<SkillEffect>()
+        world.componentId<SkillLearnedEvent>()
+        world.componentId<SkillInheritedEvent>()
     }
 
     // 注册服务
