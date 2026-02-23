@@ -1,9 +1,9 @@
-## Kotlin多平台开发规范
+## Kotlin开发规范
 
 > 创建时间: 2026-02-23
 > 分类: conventions
 > 状态: active
-> 标签: #kotlin #多平台 #规范
+> 标签: #kotlin #规范
 
 **问题/背景**:
 项目使用 Kotlin 多平台，需要遵守跨平台规范。
