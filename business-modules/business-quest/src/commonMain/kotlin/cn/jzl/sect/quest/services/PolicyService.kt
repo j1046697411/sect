@@ -131,8 +131,21 @@ class PolicyService(override val world: World) : EntityRelationContext {
  * @return 更新结果
  */
 fun PolicyService.updatePolicyWithResult(newPolicy: PolicyComponent): PolicyUpdateResult {
-    val policySystem = PolicySystem(world)
-    return policySystem.updatePolicyWithResult(world, newPolicy)
+    val validationResult = validatePolicy(newPolicy)
+
+    return when (validationResult) {
+        is PolicyValidationResult.Valid -> {
+            val success = updatePolicy(newPolicy)
+            if (success) {
+                PolicyUpdateResult.Success(newPolicy)
+            } else {
+                PolicyUpdateResult.Failure(listOf("更新政策配置失败"))
+            }
+        }
+        is PolicyValidationResult.Invalid -> {
+            PolicyUpdateResult.Failure(validationResult.reasons)
+        }
+    }
 }
 
 /**
@@ -141,8 +154,7 @@ fun PolicyService.updatePolicyWithResult(newPolicy: PolicyComponent): PolicyUpda
  * @return 是否已配置政策
  */
 fun PolicyService.isPolicyConfigured(): Boolean {
-    val policySystem = PolicySystem(world)
-    return policySystem.isPolicyConfigured(world)
+    return getPolicyEntity() != null
 }
 
 /**
@@ -151,6 +163,5 @@ fun PolicyService.isPolicyConfigured(): Boolean {
  * @return 资源分配配置
  */
 fun PolicyService.getResourceAllocation(): ResourceAllocation {
-    val policySystem = PolicySystem(world)
-    return policySystem.getResourceAllocation(world)
+    return getCurrentPolicy().resourceAllocation
 }

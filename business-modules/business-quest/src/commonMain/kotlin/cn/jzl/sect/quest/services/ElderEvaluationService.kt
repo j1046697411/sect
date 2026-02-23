@@ -11,6 +11,7 @@ package cn.jzl.sect.quest.services
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
+import cn.jzl.ecs.entity.id
 import cn.jzl.sect.core.cultivation.Talent
 import cn.jzl.sect.core.quest.CandidateScore
 import cn.jzl.sect.core.quest.ElderPersonality
@@ -100,6 +101,13 @@ fun ElderEvaluationService.nominateCandidatesBatch(
     elderDisciplePairs: List<Pair<Entity, List<Entity>>>,
     quotaPerElder: Int
 ): List<NominationResult> {
-    val elderEvaluationSystem = ElderEvaluationSystem(world)
-    return elderEvaluationSystem.nominateCandidatesBatch(elderDisciplePairs, quotaPerElder)
+    return elderDisciplePairs.map { (elder, disciples) ->
+        val candidates = nominateCandidates(disciples, quotaPerElder, elder)
+        NominationResult(
+            elderId = elder.id.toLong(),
+            candidates = candidates,
+            quota = quotaPerElder,
+            actualCount = candidates.size
+        )
+    }
 }
