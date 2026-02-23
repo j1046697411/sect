@@ -1,6 +1,7 @@
 package cn.jzl.sect.engine.service
 
 import cn.jzl.ecs.World
+import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.id
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
@@ -24,7 +25,7 @@ import cn.jzl.sect.resource.components.ResourceType
  * ECS世界查询服务
  * 为UI层提供查询ECS世界数据的接口
  */
-class WorldQueryService(private val world: World) {
+class WorldQueryService(override val world: World) : EntityRelationContext {
 
     /**
      * 宗门信息DTO

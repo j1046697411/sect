@@ -40,14 +40,11 @@ import cn.jzl.sect.disciples.components.RelationshipType
  * val bonus = masterApprenticeService.getCultivationEfficiencyBonus(apprenticeId)
  * ```
  */
-class MasterApprenticeService : EntityRelationContext {
-
-    override lateinit var world: World
+class MasterApprenticeService(override val world: World) : EntityRelationContext {
 
     private val log: Logger = cn.jzl.core.log.ConsoleLogger(cn.jzl.core.log.LogLevel.DEBUG, "MasterApprenticeService")
 
-    @PublishedApi
-    internal var relationshipService: RelationshipService = RelationshipService()
+    private val relationshipService: RelationshipService by world.di.instance()
 
     /**
      * 拜师

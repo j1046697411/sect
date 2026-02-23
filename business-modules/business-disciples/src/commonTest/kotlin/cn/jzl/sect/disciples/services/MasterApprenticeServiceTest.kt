@@ -1,28 +1,29 @@
 package cn.jzl.sect.disciples.services
 
+import cn.jzl.di.instance
+import cn.jzl.ecs.world
+import cn.jzl.sect.disciples.disciplesAddon
 import cn.jzl.sect.disciples.components.RelationshipType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.assertFalse
+import kotlin.test.BeforeTest
 
 /**
  * 师徒服务测试类
  */
 class MasterApprenticeServiceTest {
 
+    private val world = world {
+        install(disciplesAddon)
+    }
+    private val masterApprenticeService: MasterApprenticeService by world.di.instance()
+    private val relationshipService: RelationshipService by world.di.instance()
+
     @Test
     fun `拜师应建立师徒关系`() {
         // Given
-        val relationshipService = RelationshipService()
-        val masterApprenticeService = MasterApprenticeService()
-        masterApprenticeService.apply {
-            // 通过反射设置私有字段
-            javaClass.getDeclaredField("relationshipService").apply {
-                isAccessible = true
-                set(masterApprenticeService, relationshipService)
-            }
-        }
         val masterId = 1L
         val apprenticeId = 2L
 
@@ -39,14 +40,6 @@ class MasterApprenticeServiceTest {
     @Test
     fun `获取师父应返回正确的师父ID`() {
         // Given
-        val relationshipService = RelationshipService()
-        val masterApprenticeService = MasterApprenticeService()
-        masterApprenticeService.apply {
-            javaClass.getDeclaredField("relationshipService").apply {
-                isAccessible = true
-                set(masterApprenticeService, relationshipService)
-            }
-        }
         val masterId = 1L
         val apprenticeId = 2L
         masterApprenticeService.apprenticeToMaster(apprenticeId, masterId)
@@ -61,14 +54,6 @@ class MasterApprenticeServiceTest {
     @Test
     fun `获取徒弟列表应返回所有徒弟`() {
         // Given
-        val relationshipService = RelationshipService()
-        val masterApprenticeService = MasterApprenticeService()
-        masterApprenticeService.apply {
-            javaClass.getDeclaredField("relationshipService").apply {
-                isAccessible = true
-                set(masterApprenticeService, relationshipService)
-            }
-        }
         val masterId = 1L
         val apprenticeId1 = 2L
         val apprenticeId2 = 3L
@@ -87,14 +72,6 @@ class MasterApprenticeServiceTest {
     @Test
     fun `解除师徒关系应移除关系`() {
         // Given
-        val relationshipService = RelationshipService()
-        val masterApprenticeService = MasterApprenticeService()
-        masterApprenticeService.apply {
-            javaClass.getDeclaredField("relationshipService").apply {
-                isAccessible = true
-                set(masterApprenticeService, relationshipService)
-            }
-        }
         val masterId = 1L
         val apprenticeId = 2L
         masterApprenticeService.apprenticeToMaster(apprenticeId, masterId)
@@ -110,14 +87,6 @@ class MasterApprenticeServiceTest {
     @Test
     fun `获取修炼效率加成应返回20_对于师徒关系`() {
         // Given
-        val relationshipService = RelationshipService()
-        val masterApprenticeService = MasterApprenticeService()
-        masterApprenticeService.apply {
-            javaClass.getDeclaredField("relationshipService").apply {
-                isAccessible = true
-                set(masterApprenticeService, relationshipService)
-            }
-        }
         val masterId = 1L
         val apprenticeId = 2L
         masterApprenticeService.apprenticeToMaster(apprenticeId, masterId)
@@ -132,14 +101,6 @@ class MasterApprenticeServiceTest {
     @Test
     fun `获取功法学习加成应返回30_对于师徒关系`() {
         // Given
-        val relationshipService = RelationshipService()
-        val masterApprenticeService = MasterApprenticeService()
-        masterApprenticeService.apply {
-            javaClass.getDeclaredField("relationshipService").apply {
-                isAccessible = true
-                set(masterApprenticeService, relationshipService)
-            }
-        }
         val masterId = 1L
         val apprenticeId = 2L
         masterApprenticeService.apprenticeToMaster(apprenticeId, masterId)
@@ -154,14 +115,6 @@ class MasterApprenticeServiceTest {
     @Test
     fun `没有师父时获取修炼效率加成应返回0`() {
         // Given
-        val relationshipService = RelationshipService()
-        val masterApprenticeService = MasterApprenticeService()
-        masterApprenticeService.apply {
-            javaClass.getDeclaredField("relationshipService").apply {
-                isAccessible = true
-                set(masterApprenticeService, relationshipService)
-            }
-        }
         val apprenticeId = 2L
 
         // When
@@ -174,14 +127,6 @@ class MasterApprenticeServiceTest {
     @Test
     fun `没有师父时获取功法学习加成应返回0`() {
         // Given
-        val relationshipService = RelationshipService()
-        val masterApprenticeService = MasterApprenticeService()
-        masterApprenticeService.apply {
-            javaClass.getDeclaredField("relationshipService").apply {
-                isAccessible = true
-                set(masterApprenticeService, relationshipService)
-            }
-        }
         val apprenticeId = 2L
 
         // When
@@ -194,14 +139,6 @@ class MasterApprenticeServiceTest {
     @Test
     fun `重复拜师应返回false`() {
         // Given
-        val relationshipService = RelationshipService()
-        val masterApprenticeService = MasterApprenticeService()
-        masterApprenticeService.apply {
-            javaClass.getDeclaredField("relationshipService").apply {
-                isAccessible = true
-                set(masterApprenticeService, relationshipService)
-            }
-        }
         val masterId1 = 1L
         val masterId2 = 3L
         val apprenticeId = 2L

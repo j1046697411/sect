@@ -1,5 +1,7 @@
 package cn.jzl.sect.engine
 
+import cn.jzl.di.DIContext
+import cn.jzl.di.instance
 import cn.jzl.ecs.ECSDsl
 import cn.jzl.ecs.World
 import cn.jzl.ecs.addon.Addon
@@ -237,14 +239,15 @@ object SectWorld {
      * @return 系统容器
      */
     fun getSystems(world: World): SectSystems {
+        val directDI = world.di.on(DIContext)
         return SectSystems(
-            timeSystem = TimeSystem(world),
-            cultivationSystem = CultivationService(world),
-            behaviorSystem = SimpleBehaviorService(world),
-            discipleInfoSystem = DiscipleInfoService(world),
-            resourceProductionSystem = ResourceProductionService(world),
-            resourceConsumptionSystem = ResourceConsumptionService(world),
-            sectStatusSystem = SectStatusService(world)
+            timeSystem = directDI.instance<TimeSystem>(),
+            cultivationSystem = directDI.instance<CultivationService>(),
+            behaviorSystem = directDI.instance<SimpleBehaviorService>(),
+            discipleInfoSystem = directDI.instance<DiscipleInfoService>(),
+            resourceProductionSystem = directDI.instance<ResourceProductionService>(),
+            resourceConsumptionSystem = directDI.instance<ResourceConsumptionService>(),
+            sectStatusSystem = directDI.instance<SectStatusService>()
         )
     }
 

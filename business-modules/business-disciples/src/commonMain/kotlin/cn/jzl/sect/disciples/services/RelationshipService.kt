@@ -39,9 +39,7 @@ import kotlin.time.Clock
  * relationshipService.improveRelationship(sourceId, targetId, 10)
  * ```
  */
-class RelationshipService : EntityRelationContext {
-
-    override lateinit var world: World
+class RelationshipService(override val world: World) : EntityRelationContext {
 
     private val log: Logger = cn.jzl.core.log.ConsoleLogger(cn.jzl.core.log.LogLevel.DEBUG, "RelationshipService")
 
