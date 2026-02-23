@@ -13,6 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.jzl.sect.engine.GameSpeed
 import cn.jzl.sect.engine.GameState
+import org.jetbrains.compose.resources.stringResource
+import sect.client.generated.resources.Res
+import sect.client.generated.resources.game_pause
+import sect.client.generated.resources.game_resume
 
 /**
  * 游戏速度控制组件
@@ -40,7 +44,12 @@ fun GameSpeedControl(
                     MaterialTheme.colorScheme.primary
             )
         ) {
-            Text(if (gameState == GameState.Running) "暂停" else "继续")
+            Text(
+                if (gameState == GameState.Running)
+                    stringResource(Res.string.game_pause)
+                else
+                    stringResource(Res.string.game_resume)
+            )
         }
 
         // 速度选择

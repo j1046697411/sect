@@ -22,6 +22,24 @@ import cn.jzl.sect.components.InfoRow
 import cn.jzl.sect.viewmodel.DiscipleViewModel
 import cn.jzl.sect.viewmodel.GameViewModel
 import cn.jzl.sect.viewmodel.SectViewModel
+import org.jetbrains.compose.resources.stringResource
+import sect.client.generated.resources.Res
+import sect.client.generated.resources.unit_contribution_points
+import sect.client.generated.resources.label_elder
+import sect.client.generated.resources.label_inner
+import sect.client.generated.resources.label_name
+import sect.client.generated.resources.label_outer
+import sect.client.generated.resources.label_total
+import sect.client.generated.resources.panel_button_recruitment
+import sect.client.generated.resources.panel_calculating
+import sect.client.generated.resources.panel_disciple_stats
+import sect.client.generated.resources.panel_game_time
+import sect.client.generated.resources.panel_loading
+import sect.client.generated.resources.panel_quick_actions
+import sect.client.generated.resources.panel_resource_production
+import sect.client.generated.resources.panel_sect_info
+import sect.client.generated.resources.unit_per_hour
+import sect.client.generated.resources.unit_spirit_stones
 
 /**
  * 右侧面板组件
@@ -61,7 +79,7 @@ fun RightPanel(
             } else {
                 // 实时游戏时间
                 Text(
-                    text = "⏰ 游戏时间",
+                    text = stringResource(Res.string.panel_game_time),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -75,37 +93,49 @@ fun RightPanel(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                } ?: Text("加载中...", style = MaterialTheme.typography.bodySmall)
+                } ?: Text(stringResource(Res.string.panel_loading), style = MaterialTheme.typography.bodySmall)
 
                 Divider()
 
                 // 资源产量
                 Text(
-                    text = "💰 资源产量",
+                    text = stringResource(Res.string.panel_resource_production),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
                 resourceProduction?.let { production ->
-                    InfoRow("灵石", "+${production.spiritStonesPerHour}/小时")
-                    InfoRow("贡献点", "+${production.contributionPointsPerHour}/小时")
-                } ?: Text("计算中...", style = MaterialTheme.typography.bodySmall)
+                    InfoRow(
+                        stringResource(Res.string.unit_spirit_stones),
+                        "+${production.spiritStonesPerHour}" + stringResource(Res.string.unit_per_hour)
+                    )
+                    InfoRow(
+                        stringResource(Res.string.unit_contribution_points),
+                        "+${production.contributionPointsPerHour}" + stringResource(Res.string.unit_per_hour)
+                    )
+                } ?: Text(stringResource(Res.string.panel_calculating), style = MaterialTheme.typography.bodySmall)
 
                 Divider()
 
                 // 宗门信息
                 Text(
-                    text = "🏯 宗门信息",
+                    text = stringResource(Res.string.panel_sect_info),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
                 when (val state = sectInfo) {
                     is SectViewModel.SectInfoUiState.Success -> {
-                        InfoRow("名称", state.data.name)
-                        InfoRow("灵石", "${state.data.spiritStones}")
-                        InfoRow("贡献点", "${state.data.contributionPoints}")
+                        InfoRow(stringResource(Res.string.label_name), state.data.name)
+                        InfoRow(
+                            stringResource(Res.string.unit_spirit_stones),
+                            "${state.data.spiritStones}"
+                        )
+                        InfoRow(
+                            stringResource(Res.string.unit_contribution_points),
+                            "${state.data.contributionPoints}"
+                        )
                     }
                     else -> {
-                        Text("加载中...", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(Res.string.panel_loading), style = MaterialTheme.typography.bodySmall)
                     }
                 }
 
@@ -113,19 +143,19 @@ fun RightPanel(
 
                 // 弟子统计
                 Text(
-                    text = "👥 弟子统计",
+                    text = stringResource(Res.string.panel_disciple_stats),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
                 when (val state = discipleStats) {
                     is SectViewModel.DiscipleStatsUiState.Success -> {
-                        InfoRow("总数", "${state.data.totalCount}")
-                        InfoRow("内门", "${state.data.innerCount}")
-                        InfoRow("外门", "${state.data.outerCount}")
-                        InfoRow("长老", "${state.data.elderCount}")
+                        InfoRow(stringResource(Res.string.label_total), "${state.data.totalCount}")
+                        InfoRow(stringResource(Res.string.label_inner), "${state.data.innerCount}")
+                        InfoRow(stringResource(Res.string.label_outer), "${state.data.outerCount}")
+                        InfoRow(stringResource(Res.string.label_elder), "${state.data.elderCount}")
                     }
                     else -> {
-                        Text("加载中...", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(Res.string.panel_loading), style = MaterialTheme.typography.bodySmall)
                     }
                 }
 
@@ -133,7 +163,7 @@ fun RightPanel(
 
                 // 快速操作
                 Text(
-                    text = "⚡ 快速操作",
+                    text = stringResource(Res.string.panel_quick_actions),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -142,7 +172,7 @@ fun RightPanel(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = false
                 ) {
-                    Text("发布选拔任务(开发中)")
+                    Text(stringResource(Res.string.panel_button_recruitment))
                 }
             }
         }

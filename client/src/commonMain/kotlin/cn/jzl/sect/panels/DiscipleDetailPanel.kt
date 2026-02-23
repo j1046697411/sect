@@ -23,6 +23,17 @@ import cn.jzl.sect.components.bars.GameEnergyBar
 import cn.jzl.sect.components.bars.GameHealthBar
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.viewmodel.DiscipleUiModel
+import org.jetbrains.compose.resources.stringResource
+import sect.client.generated.resources.Res
+import sect.client.generated.resources.disciple_breakthrough_progress
+import sect.client.generated.resources.disciple_current
+import sect.client.generated.resources.disciple_current_cultivation
+import sect.client.generated.resources.disciple_cultivation_detail
+import sect.client.generated.resources.disciple_detail_title
+import sect.client.generated.resources.disciple_health
+import sect.client.generated.resources.disciple_realm
+import sect.client.generated.resources.disciple_spirit
+import sect.client.generated.resources.disciple_status
 
 /**
  * 弟子详情面板组件
@@ -47,7 +58,7 @@ fun DiscipleDetailPanel(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "👤 弟子详情",
+                text = stringResource(Res.string.disciple_detail_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -91,19 +102,25 @@ fun DiscipleDetailPanel(
         Spacer(modifier = Modifier.height(8.dp))
 
         // 境界和状态
-        InfoRow("境界", disciple.realmDisplay)
-        InfoRow("状态", disciple.currentBehavior)
+        InfoRow(stringResource(Res.string.disciple_realm), disciple.realmDisplay)
+        InfoRow(stringResource(Res.string.disciple_status), disciple.currentBehavior)
 
         Divider()
 
         // 修为详情
         Text(
-            text = "📈 修为详情",
+            text = stringResource(Res.string.disciple_cultivation_detail),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary
         )
-        InfoRow("当前修为", "${disciple.cultivation}/${disciple.maxCultivation}")
-        InfoRow("突破进度", "${(disciple.cultivationProgress * 100).toInt()}%")
+        InfoRow(
+            stringResource(Res.string.disciple_current_cultivation),
+            "${disciple.cultivation}/${disciple.maxCultivation}"
+        )
+        InfoRow(
+            stringResource(Res.string.disciple_breakthrough_progress),
+            "${(disciple.cultivationProgress * 100).toInt()}%"
+        )
         GameCultivationBar(
             progress = disciple.cultivationProgress,
             modifier = Modifier.fillMaxWidth()
@@ -113,11 +130,11 @@ fun DiscipleDetailPanel(
 
         // 生命和精力
         Text(
-            text = "❤ 生命值",
+            text = stringResource(Res.string.disciple_health),
             style = MaterialTheme.typography.titleSmall,
             color = Color(0xFFE53935)
         )
-        InfoRow("当前", "${disciple.health}/${disciple.maxHealth}")
+        InfoRow(stringResource(Res.string.disciple_current), "${disciple.health}/${disciple.maxHealth}")
         GameHealthBar(
             progress = disciple.health.toFloat() / disciple.maxHealth.toFloat(),
             modifier = Modifier.fillMaxWidth(),
@@ -127,11 +144,11 @@ fun DiscipleDetailPanel(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "⚡ 精力值",
+            text = stringResource(Res.string.disciple_spirit),
             style = MaterialTheme.typography.titleSmall,
             color = Color(0xFF0288D1)
         )
-        InfoRow("当前", "${disciple.spirit}/${disciple.maxSpirit}")
+        InfoRow(stringResource(Res.string.disciple_current), "${disciple.spirit}/${disciple.maxSpirit}")
         GameEnergyBar(
             progress = disciple.spirit.toFloat() / disciple.maxSpirit.toFloat(),
             modifier = Modifier.fillMaxWidth()

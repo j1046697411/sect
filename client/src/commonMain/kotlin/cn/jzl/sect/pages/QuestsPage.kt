@@ -6,6 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.jzl.sect.viewmodel.GameViewModel
+import org.jetbrains.compose.resources.stringResource
+import sect.client.generated.resources.Res
+import sect.client.generated.resources.page_quests_title
+import sect.client.generated.resources.quests_coming_soon
+import sect.client.generated.resources.quests_in_development
 
 /**
  * 任务大厅页面（简化版）
@@ -16,7 +21,7 @@ fun QuestsPage(gameViewModel: GameViewModel) {
         modifier = Modifier.fillMaxSize()
     ) {
         Text(
-            text = "任务大厅",
+            text = stringResource(Res.string.page_quests_title),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -29,13 +34,13 @@ fun QuestsPage(gameViewModel: GameViewModel) {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "📜 功能开发中",
+                    text = stringResource(Res.string.quests_in_development),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "任务系统正在开发中，敬请期待...",
+                    text = stringResource(Res.string.quests_coming_soon),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

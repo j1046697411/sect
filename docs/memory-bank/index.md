@@ -1,7 +1,7 @@
 # 记忆库索引
 
 > 更新时间: 2026-02-23
-> 总计: 48 条记忆
+> 总计: 49 条记忆
 
 ---
 
@@ -73,11 +73,12 @@
 | [术语规范](conventions/术语规范.md) | conventions | ... |
 | [需求检查](solutions/需求检查.md) | solutions | ... |
 
-### #角色系统 (10)
+### #角色系统 (11)
 | 标题 | 分类 | 内容摘要 |
 |------|------|----------|
 | [AI控制范围](conventions/AI控制范围.md) | conventions | ... |
 | [AI行为](solutions/AI行为.md) | solutions | ... |
+| [弟子招募机制](conventions/弟子招募机制.md) | conventions | ... |
 | [属性体系](solutions/属性体系.md) | solutions | ... |
 | [晋升机制](conventions/晋升机制.md) | conventions | ... |
 | [晋升机制-任务制](conventions/晋升机制-任务制.md) | conventions | ... |
@@ -104,7 +105,7 @@
 
 ## 按分类检索
 
-### conventions (14)
+### conventions (15)
 技术规范与约定
 
 | 标题 | 标签 |
@@ -114,6 +115,7 @@
 | [Kotlin开发规范](conventions/Kotlin开发规范.md) | #kotlin #规范 |
 | [MVP范围](conventions/MVP范围.md) | #规范 |
 | [TDD策略](conventions/TDD策略.md) | #测试 #规范 |
+| [弟子招募机制](conventions/弟子招募机制.md) | #角色系统 #招募 #长老 |
 | [战斗机制](conventions/战斗机制.md) | #战斗系统 #规范 |
 | [政策体系](conventions/政策体系.md) | #可玩性 #规范 |
 | [晋升机制](conventions/晋升机制.md) | #角色系统 #规范 |

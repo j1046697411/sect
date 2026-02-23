@@ -5,6 +5,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.jetbrains.compose.resources.stringResource
+import sect.client.generated.resources.Res
+import sect.client.generated.resources.facilities_coming_soon
+import sect.client.generated.resources.facilities_in_development
+import sect.client.generated.resources.page_facilities_title
 
 /**
  * 设施管理页面（简化版）
@@ -15,7 +20,7 @@ fun FacilitiesPage() {
         modifier = Modifier.fillMaxSize()
     ) {
         Text(
-            text = "设施管理",
+            text = stringResource(Res.string.page_facilities_title),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -28,13 +33,13 @@ fun FacilitiesPage() {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "🏗️ 功能开发中",
+                    text = stringResource(Res.string.facilities_in_development),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "设施建设系统正在开发中，敬请期待...",
+                    text = stringResource(Res.string.facilities_coming_soon),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

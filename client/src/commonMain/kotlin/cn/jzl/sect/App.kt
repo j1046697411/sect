@@ -47,6 +47,10 @@ import cn.jzl.sect.viewmodel.DiscipleViewModel
 import cn.jzl.sect.viewmodel.GameViewModel
 import cn.jzl.sect.viewmodel.SectViewModel
 import cn.jzl.sect.viewmodel.SkillViewModel
+import cn.jzl.sect.i18n.LanguageSwitcher
+import org.jetbrains.compose.resources.stringResource
+import sect.client.generated.resources.Res
+import sect.client.generated.resources.app_title
 
 /**
  * 主应用组件
@@ -108,7 +112,7 @@ fun App() {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("宗门修真录 - $currentTime") },
+                    title = { Text(stringResource(Res.string.app_title) + " - $currentTime") },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -119,6 +123,8 @@ fun App() {
                                 Text(if (isRightPanelVisible) "◀" else "▶")
                             }
                         }
+
+                        LanguageSwitcher()
 
                         GameSpeedControl(
                             gameState = gameState,

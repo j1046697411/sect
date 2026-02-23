@@ -19,6 +19,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cn.jzl.sect.components.NavItem
+import org.jetbrains.compose.resources.stringResource
+import sect.client.generated.resources.Res
+import sect.client.generated.resources.nav_buildings
+import sect.client.generated.resources.nav_disciples
+import sect.client.generated.resources.nav_overview
+import sect.client.generated.resources.nav_policy
+import sect.client.generated.resources.nav_quests
+import sect.client.generated.resources.nav_skills
 
 /**
  * 可折叠导航栏组件
@@ -64,7 +72,7 @@ fun CollapsibleNavigationRail(
             // 导航项
             NavItem(
                 icon = "🏠",
-                label = "总览",
+                label = stringResource(Res.string.nav_overview),
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.OVERVIEW,
                 onClick = { onPageSelected(PageType.OVERVIEW) }
@@ -72,7 +80,7 @@ fun CollapsibleNavigationRail(
 
             NavItem(
                 icon = "👥",
-                label = "弟子",
+                label = stringResource(Res.string.nav_disciples),
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.DISCIPLES,
                 onClick = { onPageSelected(PageType.DISCIPLES) }
@@ -80,7 +88,7 @@ fun CollapsibleNavigationRail(
 
             NavItem(
                 icon = "🏯",
-                label = "建筑",
+                label = stringResource(Res.string.nav_buildings),
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.BUILDINGS,
                 onClick = { onPageSelected(PageType.BUILDINGS) }
@@ -88,7 +96,7 @@ fun CollapsibleNavigationRail(
 
             NavItem(
                 icon = "📜",
-                label = "任务",
+                label = stringResource(Res.string.nav_quests),
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.QUESTS,
                 onClick = { onPageSelected(PageType.QUESTS) }
@@ -96,7 +104,7 @@ fun CollapsibleNavigationRail(
 
             NavItem(
                 icon = "⚙️",
-                label = "政策",
+                label = stringResource(Res.string.nav_policy),
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.POLICY,
                 onClick = { onPageSelected(PageType.POLICY) }
@@ -104,7 +112,7 @@ fun CollapsibleNavigationRail(
 
             NavItem(
                 icon = "📚",
-                label = "功法",
+                label = stringResource(Res.string.nav_skills),
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.SKILLS,
                 onClick = { onPageSelected(PageType.SKILLS) }

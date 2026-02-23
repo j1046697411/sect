@@ -21,6 +21,15 @@ import cn.jzl.sect.components.FilterChip
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.viewmodel.DiscipleUiModel
 import cn.jzl.sect.viewmodel.DiscipleViewModel
+import org.jetbrains.compose.resources.stringResource
+import sect.client.generated.resources.Res
+import sect.client.generated.resources.error_prefix
+import sect.client.generated.resources.filter_all
+import sect.client.generated.resources.label_elder
+import sect.client.generated.resources.label_inner
+import sect.client.generated.resources.label_outer
+import sect.client.generated.resources.no_disciples
+import sect.client.generated.resources.page_disciples_title
 
 /**
  * 弟子管理页面
@@ -34,7 +43,7 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
         modifier = Modifier.fillMaxSize()
     ) {
         Text(
-            text = "弟子管理",
+            text = stringResource(Res.string.page_disciples_title),
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -45,24 +54,24 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             FilterChip(
-                label = "全部",
+                label = stringResource(Res.string.filter_all),
                 selected = currentFilter is DiscipleViewModel.DiscipleFilter.All,
                 onClick = { viewModel.filterByPosition(null) }
             )
             FilterChip(
-                label = "内门",
+                label = stringResource(Res.string.label_inner),
                 selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition
                     && (currentFilter as? DiscipleViewModel.DiscipleFilter.ByPosition)?.position == SectPositionType.DISCIPLE_INNER,
                 onClick = { viewModel.filterByPosition(SectPositionType.DISCIPLE_INNER) }
             )
             FilterChip(
-                label = "外门",
+                label = stringResource(Res.string.label_outer),
                 selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition
                     && (currentFilter as? DiscipleViewModel.DiscipleFilter.ByPosition)?.position == SectPositionType.DISCIPLE_OUTER,
                 onClick = { viewModel.filterByPosition(SectPositionType.DISCIPLE_OUTER) }
             )
             FilterChip(
-                label = "长老",
+                label = stringResource(Res.string.label_elder),
                 selected = currentFilter is DiscipleViewModel.DiscipleFilter.ByPosition
                     && (currentFilter as? DiscipleViewModel.DiscipleFilter.ByPosition)?.position == SectPositionType.ELDER,
                 onClick = { viewModel.filterByPosition(SectPositionType.ELDER) }
@@ -79,7 +88,7 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
             is DiscipleViewModel.DiscipleListUiState.Success -> {
                 val disciples = state.data
                 if (disciples.isEmpty()) {
-                    Text("暂无弟子", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(Res.string.no_disciples), style = MaterialTheme.typography.bodyLarge)
                 } else {
                     // 使用LazyVerticalGrid展示卡片
                     val selectedDiscipleFromVM by viewModel.selectedDisciple.collectAsState()
@@ -106,7 +115,10 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
                 }
             }
             is DiscipleViewModel.DiscipleListUiState.Error -> {
-                Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
+                Text(
+                    stringResource(Res.string.error_prefix) + " ${state.message}",
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     }
