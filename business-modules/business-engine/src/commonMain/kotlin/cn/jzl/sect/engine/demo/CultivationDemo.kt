@@ -140,31 +140,22 @@ class CultivationDemo {
         println(timeInfo.toDisplayString())
 
         // 触发修炼更新
-        val breakthroughs = systems.cultivationSystem.update(24)
+        systems.cultivationSystem.update(24)
 
-        // 显示突破信息
-        if (breakthroughs.isNotEmpty()) {
-            println()
-            println("🎉 突破喜讯：")
-            breakthroughs.forEach { event ->
-                println("   ${event.toDisplayString()}")
-            }
-        }
+        // 显示突破信息（通过事件订阅获取）
+        // 提示：突破事件现在通过观察者系统发送
 
         println()
     }
 
     private fun advanceTimeLarge() {
-        val allBreakthroughs = mutableListOf<CultivationService.BreakthroughEvent>()
-
         // 先进行资源产出（30天）
         val productionSummary = systems.resourceProductionSystem.monthlyProduction()
 
         // 分30次推进，每次24小时
         repeat(30) {
             timeSystem.advance(24)
-            val breakthroughs = systems.cultivationSystem.update(24)
-            allBreakthroughs.addAll(breakthroughs)
+            systems.cultivationSystem.update(24)
         }
 
         // 进行资源消耗结算
@@ -182,23 +173,8 @@ class CultivationDemo {
         println()
         println(consumptionResult.toDisplayString())
 
-        // 显示突破统计
-        if (allBreakthroughs.isNotEmpty()) {
-            println()
-            println("🎉 本月突破统计：")
-
-            // 按职务分组统计
-            val byPosition = allBreakthroughs.groupBy { it.position }
-            byPosition.forEach { (position, events) ->
-                println("   ${position.displayName}：${events.size} 人次")
-            }
-
-            println()
-            println("详细突破记录：")
-            allBreakthroughs.forEach { event ->
-                println("   ${event.toDisplayString()}")
-            }
-        }
+        // 显示突破统计（通过事件订阅获取）
+        // 提示：突破统计现在通过观察者系统收集
     }
 }
 
