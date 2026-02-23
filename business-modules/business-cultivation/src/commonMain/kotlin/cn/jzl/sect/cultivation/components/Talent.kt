@@ -1,7 +1,5 @@
 package cn.jzl.sect.cultivation.components
 
-import cn.jzl.sect.core.cultivation.AptitudeLevel
-
 /**
  * 资质评级枚举 - 根据资质属性平均值划分等级
  */

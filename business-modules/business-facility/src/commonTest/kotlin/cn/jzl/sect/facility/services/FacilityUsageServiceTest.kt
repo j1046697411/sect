@@ -4,6 +4,7 @@ import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.core.facility.FacilityType
 import cn.jzl.sect.engine.SectWorld
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

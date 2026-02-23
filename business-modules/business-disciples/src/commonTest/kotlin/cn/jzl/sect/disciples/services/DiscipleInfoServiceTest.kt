@@ -6,15 +6,14 @@ import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.sect.core.ai.BehaviorType
 import cn.jzl.sect.core.ai.CurrentBehavior
-import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.cultivation.Talent
-import cn.jzl.sect.core.disciple.Age
 import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.core.vitality.Spirit
 import cn.jzl.sect.core.vitality.Vitality
+import cn.jzl.sect.cultivation.components.CultivationProgress
+import cn.jzl.sect.cultivation.components.Talent
 import cn.jzl.sect.engine.SectWorld
 import kotlin.test.*
 
@@ -78,7 +77,6 @@ class DiscipleInfoServiceTest : EntityRelationContext {
         assertEquals(10000L, leader.maxCultivation)
         assertEquals(70, leader.physique)
         assertEquals(65, leader.comprehension)
-        assertEquals(80, leader.age)
         assertEquals(100, leader.loyalty)
         assertEquals(LoyaltyLevel.DEVOTED, leader.loyaltyLevel)
     }
@@ -195,7 +193,6 @@ class DiscipleInfoServiceTest : EntityRelationContext {
             )
             it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
             it.addComponent(Spirit(currentSpirit = 50, maxSpirit = 50))
-            it.addComponent(Age(age = 20))
             it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
             it.addComponent(CurrentBehavior(type = BehaviorType.REST))
             it.addComponent(SectLoyalty(value = 10)) // 叛逆的忠诚度
@@ -225,7 +222,6 @@ class DiscipleInfoServiceTest : EntityRelationContext {
         assertTrue(displayString.contains("修为:"), "应该包含修为信息")
         assertTrue(displayString.contains("气血:"), "应该包含气血信息")
         assertTrue(displayString.contains("灵力:"), "应该包含灵力信息")
-        assertTrue(displayString.contains("年龄:"), "应该包含年龄信息")
         assertTrue(displayString.contains("忠诚:"), "应该包含忠诚度信息")
     }
 

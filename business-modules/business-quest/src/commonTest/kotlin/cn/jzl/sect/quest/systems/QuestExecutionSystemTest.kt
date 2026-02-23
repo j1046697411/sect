@@ -15,9 +15,9 @@ import cn.jzl.ecs.world
 import cn.jzl.sect.core.quest.*
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
-import cn.jzl.sect.core.cultivation.CultivationProgress
-import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.cultivation.components.CultivationProgress
+import cn.jzl.sect.cultivation.components.Realm
+import cn.jzl.sect.cultivation.components.Talent
 import kotlin.test.*
 
 /**

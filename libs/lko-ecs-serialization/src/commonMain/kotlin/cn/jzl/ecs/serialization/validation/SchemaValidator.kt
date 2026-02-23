@@ -5,7 +5,6 @@ import cn.jzl.ecs.serialization.core.SerializationContext
 import cn.jzl.ecs.serialization.error.ErrorSeverity
 import cn.jzl.ecs.serialization.error.ValidationError
 import kotlin.reflect.KClass
-import kotlin.reflect.full.memberProperties
 
 /**
  * 模式定义
@@ -72,12 +71,10 @@ class SchemaValidator(
 
     @Suppress("UNCHECKED_CAST")
     private fun getFieldValue(data: Any, fieldName: String): Any? {
-        return try {
-            val property = data::class.memberProperties.find { it.name == fieldName }
-            (property as? kotlin.reflect.KProperty1<Any, *>)?.get(data)
-        } catch (e: Exception) {
-            null
-        }
+        // 注意：在Common代码中无法使用反射获取字段值
+        // 这里返回null，表示无法验证字段存在性
+        // 实际验证应在具体平台实现或使用序列化后的数据验证
+        return null
     }
 
     fun addSchema(schema: Schema) {

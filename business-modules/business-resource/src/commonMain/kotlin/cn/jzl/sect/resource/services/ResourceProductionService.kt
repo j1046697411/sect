@@ -149,7 +149,8 @@ data class ProductionRecord(
     val efficiency: Float
 ) {
     fun toDisplayString(): String {
-        return "${resourceType.displayName} +${amount} (效率: ${String.format("%.0f", efficiency * 100)}%)"
+        val efficiencyPercent = (efficiency * 100).toInt()
+        return "${resourceType.displayName} +${amount} (效率: ${efficiencyPercent}%)"
     }
 }
 

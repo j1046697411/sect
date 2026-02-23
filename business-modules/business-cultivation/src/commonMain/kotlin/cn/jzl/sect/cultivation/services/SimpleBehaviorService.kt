@@ -22,6 +22,7 @@ import cn.jzl.sect.core.vitality.Vitality
 import cn.jzl.sect.core.vitality.Spirit
 import cn.jzl.sect.cultivation.components.CultivationProgress
 import kotlin.time.Duration
+import kotlin.time.Clock
 
 /**
  * 简单行为服务
@@ -112,7 +113,7 @@ class SimpleBehaviorService(override val world: World) : EntityRelationContext, 
                     it.addComponent(
                         CurrentBehavior(
                             type = newBehavior,
-                            startTime = System.currentTimeMillis(),
+                            startTime = Clock.System.now().toEpochMilliseconds(),
                             lastBehaviorTime = behavior.startTime
                         )
                     )

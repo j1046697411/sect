@@ -21,6 +21,7 @@ import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.cultivation.components.CultivationProgress
 import cn.jzl.sect.cultivation.components.Talent
+import kotlin.random.Random
 
 /**
  * 修炼服务
@@ -40,7 +41,7 @@ import cn.jzl.sect.cultivation.components.Talent
  */
 class CultivationService(override val world: World) : EntityRelationContext {
 
-    private val config = GameConfig.getInstance()
+    private val config = GameConfig
 
     /**
      * 更新修炼状态
@@ -160,7 +161,7 @@ class CultivationService(override val world: World) : EntityRelationContext {
         val fortuneBonus = talent.fortune * config.cultivation.fortuneEffectOnBreakthrough
         val finalSuccessRate = (baseSuccessRate + fortuneBonus).coerceIn(0.1, 0.95)
 
-        val success = Math.random() < finalSuccessRate
+        val success = Random.nextDouble() < finalSuccessRate
 
         return if (success) {
             val (newRealm, newLayer) = getNextRealmLayer(currentRealm, currentLayer)

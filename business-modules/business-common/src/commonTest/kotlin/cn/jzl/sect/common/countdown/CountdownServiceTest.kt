@@ -98,7 +98,7 @@ class CountdownServiceTest : EntityRelationContext {
         assertTrue(triggered, "倒计时超过时间应该触发")
     }
 
-    @Ignore("存在并发修改问题，需要修复")
+    @Ignore
     @Test
     fun testMultipleEntitiesWithDifferentCountdowns() {
         val countdownService: CountdownService by world.di.instance()

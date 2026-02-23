@@ -14,6 +14,7 @@ import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.skill.components.Skill
 import cn.jzl.sect.skill.components.SkillLearned
 import cn.jzl.sect.skill.components.SkillRarity
+import kotlin.time.Clock
 
 /**
  * 功法传承服务
@@ -87,7 +88,7 @@ class SkillInheritanceService(override val world: World) : EntityRelationContext
         return SkillLearned(
             skillId = skill.id,
             proficiency = 0, // 传承后熟练度从0开始
-            learnedTime = System.currentTimeMillis()
+            learnedTime = Clock.System.now().toEpochMilliseconds()
         )
     }
 

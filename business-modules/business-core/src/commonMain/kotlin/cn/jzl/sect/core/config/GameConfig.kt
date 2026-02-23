@@ -7,7 +7,7 @@ import cn.jzl.sect.core.sect.SectPositionType
  * 游戏配置管理器
  * 管理所有游戏数值配置
  */
-class GameConfig {
+object GameConfig {
 
     // 俸禄配置
     val salary: SalaryConfig = SalaryConfig()
@@ -23,27 +23,6 @@ class GameConfig {
 
     // 忠诚度配置
     val loyalty: LoyaltyConfig = LoyaltyConfig()
-
-    companion object {
-        @Volatile
-        private var instance: GameConfig? = null
-
-        /**
-         * 获取单例实例
-         */
-        fun getInstance(): GameConfig {
-            return instance ?: synchronized(this) {
-                instance ?: GameConfig().also { instance = it }
-            }
-        }
-
-        /**
-         * 重置单例（用于测试）
-         */
-        fun resetInstance() {
-            instance = null
-        }
-    }
 }
 
 /**

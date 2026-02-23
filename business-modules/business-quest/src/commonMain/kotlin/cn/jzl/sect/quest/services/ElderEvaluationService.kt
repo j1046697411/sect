@@ -15,14 +15,13 @@ import cn.jzl.ecs.entity.id
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.cultivation.Talent
-import cn.jzl.sect.core.quest.CandidateScore
-import cn.jzl.sect.core.quest.ElderPersonality
-import cn.jzl.sect.core.quest.ElderPersonalityType
-import cn.jzl.sect.core.quest.ElderPreference
-import cn.jzl.sect.core.quest.EvaluationDimension
-import cn.jzl.sect.core.quest.ExecutionResult
-import cn.jzl.sect.quest.components.ElderPersonality as QuestElderPersonality
+import cn.jzl.sect.cultivation.components.Talent
+import cn.jzl.sect.quest.components.CandidateScore
+import cn.jzl.sect.quest.components.ElderPersonality
+import cn.jzl.sect.quest.components.ElderPersonalityType
+import cn.jzl.sect.quest.components.ElderPreference
+import cn.jzl.sect.quest.components.EvaluationDimension
+import cn.jzl.sect.quest.components.ExecutionResult
 import cn.jzl.sect.quest.components.QuestExecutionComponent
 
 /**

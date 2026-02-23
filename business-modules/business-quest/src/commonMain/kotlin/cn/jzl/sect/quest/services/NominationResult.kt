@@ -1,6 +1,6 @@
 package cn.jzl.sect.quest.services
 
-import cn.jzl.sect.core.quest.CandidateScore
+import cn.jzl.sect.quest.components.CandidateScore
 
 /**
  * 候选人提名结果

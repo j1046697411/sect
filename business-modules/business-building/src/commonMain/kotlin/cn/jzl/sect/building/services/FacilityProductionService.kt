@@ -14,7 +14,11 @@ import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.facility.*
+import cn.jzl.sect.core.facility.FacilityType
+import cn.jzl.sect.facility.components.Facility
+import cn.jzl.sect.facility.components.FacilityProduction
+import cn.jzl.sect.facility.components.FacilityStatus
+import cn.jzl.sect.facility.components.ResourceType
 
 /**
  * 设施产出服务
@@ -70,7 +74,7 @@ class FacilityProductionService(override val world: World) : EntityRelationConte
         val productions = calculateTotalProduction()
 
         productions.forEach { detail ->
-            val current = summary.getOrDefault(detail.resourceType, 0)
+            val current = summary[detail.resourceType] ?: 0
             summary[detail.resourceType] = current + detail.amount
         }
 

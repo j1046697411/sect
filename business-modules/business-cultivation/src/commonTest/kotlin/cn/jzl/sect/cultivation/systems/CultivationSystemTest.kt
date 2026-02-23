@@ -49,7 +49,6 @@ class CultivationServiceTest : EntityRelationContext {
 
     @BeforeTest
     fun setup() {
-        GameConfig.resetInstance()
         world = createTestWorld()
         service = CultivationService(world)
     }
@@ -225,7 +224,7 @@ class CultivationServiceTest : EntityRelationContext {
     @Test
     fun testBreakthroughRealm() {
         // Given: 创建一个即将突破境界的修炼者（凡人第9层）
-        val config = GameConfig.getInstance()
+        val config = GameConfig
         val maxLayer = config.cultivation.maxLayerPerRealm
 
         world.entity {

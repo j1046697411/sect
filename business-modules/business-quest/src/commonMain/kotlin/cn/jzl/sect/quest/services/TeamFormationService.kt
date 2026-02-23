@@ -19,12 +19,13 @@ import cn.jzl.ecs.family.FamilyBuilder
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.cultivation.components.CultivationProgress
 import cn.jzl.sect.quest.components.QuestComponent
 import cn.jzl.sect.quest.components.QuestExecutionComponent
+import kotlin.time.Clock
 
 /**
  * 团队组建服务
@@ -159,8 +160,8 @@ class TeamFormationService(override val world: World) : EntityRelationContext {
                             innerDiscipleIds = innerDisciples.map { d -> d.id.toLong() },
                             outerDiscipleIds = outerDisciples.map { d -> d.id.toLong() },
                             progress = 0.0f,
-                            startTime = System.currentTimeMillis(),
-                            estimatedEndTime = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000 // 预计7天后完成
+                            startTime = Clock.System.now().toEpochMilliseconds(),
+                            estimatedEndTime = Clock.System.now().toEpochMilliseconds() + 7 * 24 * 60 * 60 * 1000 // 预计7天后完成
                         )
                     )
                 }

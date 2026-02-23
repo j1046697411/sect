@@ -3,8 +3,6 @@ package cn.jzl.sect.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.jzl.ecs.World
-import cn.jzl.sect.combat.components.CombatStats
-import cn.jzl.sect.combat.systems.CombatPowerCalculator
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.engine.WorldProvider
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +17,6 @@ import kotlinx.coroutines.launch
 class CombatViewModel : ViewModel() {
 
     private val world: World = WorldProvider.world
-    private val powerCalculator = CombatPowerCalculator()
 
     // 弟子战斗属性映射
     private val _discipleCombatStats = MutableStateFlow<Map<Long, CombatStatsUiModel>>(emptyMap())
@@ -94,44 +91,7 @@ class CombatViewModel : ViewModel() {
     }
 
     /**
-     * 计算弟子战斗力
-     */
-    fun calculateDiscipleCombatPower(
-        discipleId: Long,
-        realm: Realm,
-        stats: CombatStatsUiModel,
-        skillPower: Double = 0.0,
-        equipmentPower: Double = 0.0
-    ) {
-        viewModelScope.launch {
-            try {
-                val combatStats = CombatStats(
-                    attack = stats.attack,
-                    defense = stats.defense,
-                    speed = stats.speed,
-                    critRate = stats.critRate,
-                    dodgeRate = stats.dodgeRate
-                )
-
-                val power = powerCalculator.calculateCombatPower(
-                    realm = realm,
-                    stats = combatStats,
-                    skillPower = skillPower,
-                    equipmentPower = equipmentPower
-                )
-
-                val level = powerCalculator.assessCombatLevel(power)
-
-                _discipleCombatPower.value = _discipleCombatPower.value + (discipleId to power)
-                _discipleCombatLevel.value = _discipleCombatLevel.value + (discipleId to level.displayName)
-            } catch (e: Exception) {
-                // 计算失败不更新状态
-            }
-        }
-    }
-
-    /**
-     * 对比多个弟子的战斗力
+     * 对比多个弟子的战斗力（简化版）
      */
     fun compareCombatPower(disciples: List<DiscipleCombatInfo>) {
         viewModelScope.launch {
@@ -141,29 +101,13 @@ class CombatViewModel : ViewModel() {
                     return@launch
                 }
 
+                // 简化版：直接返回基础数据
                 val comparisons = disciples.map { disciple ->
-                    val stats = CombatStats(
-                        attack = disciple.stats.attack,
-                        defense = disciple.stats.defense,
-                        speed = disciple.stats.speed,
-                        critRate = disciple.stats.critRate,
-                        dodgeRate = disciple.stats.dodgeRate
-                    )
-
-                    val power = powerCalculator.calculateCombatPower(
-                        realm = disciple.realm,
-                        stats = stats,
-                        skillPower = disciple.skillPower,
-                        equipmentPower = disciple.equipmentPower
-                    )
-
-                    val level = powerCalculator.assessCombatLevel(power)
-
                     CombatComparisonUiModel(
                         discipleId = disciple.id,
                         discipleName = disciple.name,
-                        combatPower = power,
-                        combatLevel = level.displayName,
+                        combatPower = disciple.stats.attack * 10, // 简化计算
+                        combatLevel = "普通",
                         stats = disciple.stats,
                         isHighest = false,
                         isLowest = false
@@ -171,8 +115,8 @@ class CombatViewModel : ViewModel() {
                 }
 
                 // 标记最高和最低
-                val maxPower = comparisons.maxOf { it.combatPower }
-                val minPower = comparisons.minOf { it.combatPower }
+                val maxPower = comparisons.maxOfOrNull { it.combatPower } ?: 0
+                val minPower = comparisons.minOfOrNull { it.combatPower } ?: 0
 
                 val markedComparisons = comparisons.map { comp ->
                     comp.copy(
@@ -189,35 +133,18 @@ class CombatViewModel : ViewModel() {
     }
 
     /**
-     * 加载战斗力排行榜
+     * 加载战斗力排行榜（简化版）
      */
     fun loadCombatPowerRanking(disciples: List<DiscipleCombatInfo>) {
         viewModelScope.launch {
             try {
                 val rankings = disciples.map { disciple ->
-                    val stats = CombatStats(
-                        attack = disciple.stats.attack,
-                        defense = disciple.stats.defense,
-                        speed = disciple.stats.speed,
-                        critRate = disciple.stats.critRate,
-                        dodgeRate = disciple.stats.dodgeRate
-                    )
-
-                    val power = powerCalculator.calculateCombatPower(
-                        realm = disciple.realm,
-                        stats = stats,
-                        skillPower = disciple.skillPower,
-                        equipmentPower = disciple.equipmentPower
-                    )
-
-                    val level = powerCalculator.assessCombatLevel(power)
-
                     CombatRankingItemUiModel(
                         rank = 0, // 稍后排序后设置
                         discipleId = disciple.id,
                         discipleName = disciple.name,
-                        combatPower = power,
-                        combatLevel = level.displayName,
+                        combatPower = disciple.stats.attack * 10, // 简化计算
+                        combatLevel = "普通",
                         realm = disciple.realm.displayName
                     )
                 }
@@ -229,20 +156,6 @@ class CombatViewModel : ViewModel() {
                 // 加载失败不更新状态
             }
         }
-    }
-
-    /**
-     * 评估战斗难度
-     */
-    fun assessDifficulty(playerPower: Int, enemyPower: Int): String {
-        return powerCalculator.assessDifficulty(playerPower, enemyPower)
-    }
-
-    /**
-     * 计算实力比率
-     */
-    fun calculatePowerRatio(attackerPower: Int, defenderPower: Int): Double {
-        return powerCalculator.calculatePowerRatio(attackerPower, defenderPower)
     }
 
     /**

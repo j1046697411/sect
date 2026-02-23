@@ -13,7 +13,12 @@ import cn.jzl.ecs.entity
 import cn.jzl.ecs.entity.Entity
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
-import cn.jzl.sect.core.facility.*
+import cn.jzl.sect.core.facility.FacilityType
+import cn.jzl.sect.facility.components.Facility
+import cn.jzl.sect.facility.components.FacilityCost
+import cn.jzl.sect.facility.components.FacilityProduction
+import cn.jzl.sect.facility.components.FacilityProductionConfig
+import cn.jzl.sect.facility.components.FacilityStatus
 
 /**
  * 设施建造服务

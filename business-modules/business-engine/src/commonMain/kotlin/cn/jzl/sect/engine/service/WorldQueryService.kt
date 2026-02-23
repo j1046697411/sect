@@ -6,13 +6,8 @@ import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.ai.CurrentBehavior
-import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.demo.Name
-import cn.jzl.sect.core.disciple.Age
-import cn.jzl.sect.core.facility.Facility
-import cn.jzl.sect.core.resource.ResourceProduction
-import cn.jzl.sect.core.resource.ResourceType
+import cn.jzl.sect.core.common.Name
 import cn.jzl.sect.core.sect.Sect
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
@@ -20,6 +15,10 @@ import cn.jzl.sect.core.sect.SectTreasury
 import cn.jzl.sect.core.time.GameTime
 import cn.jzl.sect.core.vitality.Spirit
 import cn.jzl.sect.core.vitality.Vitality
+import cn.jzl.sect.cultivation.components.CultivationProgress
+import cn.jzl.sect.facility.components.Facility
+import cn.jzl.sect.resource.components.ResourceProduction
+import cn.jzl.sect.resource.components.ResourceType
 
 /**
  * ECS世界查询服务
@@ -52,7 +51,6 @@ class WorldQueryService(private val world: World) {
         val layer: Int,
         val cultivation: Long,
         val maxCultivation: Long,
-        val age: Int,
         val health: Int,
         val maxHealth: Int,
         val spirit: Int,
@@ -121,13 +119,12 @@ class WorldQueryService(private val world: World) {
             disciples.add(
                 DiscipleInfo(
                     id = ctx.entity.id.toLong(),
-                    name = ctx.name.name,
+                    name = ctx.name.value,
                     position = ctx.position.position,
                     realm = ctx.cultivation.realm,
                     layer = ctx.cultivation.layer,
                     cultivation = ctx.cultivation.cultivation,
                     maxCultivation = ctx.cultivation.maxCultivation,
-                    age = ctx.age.age,
                     health = ctx.vitality.currentHealth,
                     maxHealth = ctx.vitality.maxHealth,
                     spirit = ctx.spirit.currentSpirit,
@@ -243,7 +240,6 @@ class WorldQueryService(private val world: World) {
         val name: Name by component()
         val position: SectPositionInfo by component()
         val cultivation: CultivationProgress by component()
-        val age: Age by component()
         val vitality: Vitality by component()
         val spirit: Spirit by component()
         val behavior: CurrentBehavior by component()

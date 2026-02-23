@@ -41,7 +41,7 @@ import cn.jzl.sect.facility.components.SectStatus
  */
 class SectStatusService(override val world: World) : EntityRelationContext {
 
-    private val config = GameConfig.getInstance()
+    private val config = GameConfig
 
     /**
      * 检查宗门状态

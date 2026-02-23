@@ -47,7 +47,6 @@ class SimpleBehaviorServiceTest : EntityRelationContext {
 
     @BeforeTest
     fun setup() {
-        GameConfig.resetInstance()
         world = createTestWorld()
         service = SimpleBehaviorService(world)
     }

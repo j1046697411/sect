@@ -11,9 +11,10 @@ package cn.jzl.sect.skill.services
 import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.cultivation.components.Talent
 import cn.jzl.sect.skill.components.Skill
 import cn.jzl.sect.skill.components.SkillLearned
+import kotlin.time.Clock
 
 /**
  * 功法学习服务
@@ -83,7 +84,7 @@ class SkillLearningService(override val world: World) : EntityRelationContext {
         return SkillLearned(
             skillId = skill.id,
             proficiency = 0,
-            learnedTime = System.currentTimeMillis()
+            learnedTime = Clock.System.now().toEpochMilliseconds()
         )
     }
 

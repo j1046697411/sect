@@ -11,35 +11,28 @@ import cn.jzl.sect.core.ai.CurrentBehavior
 import cn.jzl.sect.core.ai.BehaviorType
 import cn.jzl.sect.core.ai.Personality6
 import cn.jzl.sect.core.ai.Personality8
-import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.cultivation.Talent
-import cn.jzl.sect.core.demo.Name
+import cn.jzl.sect.core.common.Name
 import cn.jzl.sect.core.vitality.Vitality
 import cn.jzl.sect.core.vitality.Spirit
-import cn.jzl.sect.core.disciple.Age
 import cn.jzl.sect.core.disciple.SectLoyalty
-import cn.jzl.sect.core.facility.Facility
-import cn.jzl.sect.core.facility.FacilityType
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.Sect
 import cn.jzl.sect.core.sect.SectTreasury
 import cn.jzl.sect.core.time.GameTime
-import cn.jzl.sect.core.resource.ResourceProduction
-import cn.jzl.sect.core.resource.ResourceType
-import cn.jzl.sect.cultivation.systems.CultivationSystem
-import cn.jzl.sect.cultivation.systems.SimpleBehaviorSystem
-import cn.jzl.sect.disciples.systems.DiscipleInfoSystem
-import cn.jzl.sect.resource.systems.ResourceProductionSystem
-import cn.jzl.sect.resource.systems.ResourceConsumptionSystem
-import cn.jzl.sect.facility.systems.SectStatusSystem
-import cn.jzl.sect.quest.systems.SelectionTaskSystem
-import cn.jzl.sect.quest.systems.TeamFormationSystem
-import cn.jzl.sect.quest.systems.QuestExecutionSystem
-import cn.jzl.sect.quest.systems.ElderEvaluationSystem
-import cn.jzl.sect.quest.systems.PromotionSystem
-import cn.jzl.sect.quest.systems.PolicySystem
+import cn.jzl.sect.core.facility.FacilityType
+import cn.jzl.sect.cultivation.components.CultivationProgress
+import cn.jzl.sect.cultivation.components.Talent
+import cn.jzl.sect.facility.components.Facility
+import cn.jzl.sect.resource.components.ResourceProduction
+import cn.jzl.sect.resource.components.ResourceType
+import cn.jzl.sect.cultivation.services.CultivationService
+import cn.jzl.sect.cultivation.services.SimpleBehaviorService
+import cn.jzl.sect.disciples.services.DiscipleInfoService
+import cn.jzl.sect.resource.services.ResourceProductionService
+import cn.jzl.sect.resource.services.ResourceConsumptionService
+import cn.jzl.sect.facility.services.SectStatusService
 import cn.jzl.sect.engine.systems.TimeSystem
 
 import cn.jzl.ecs.entity
@@ -98,7 +91,7 @@ object SectWorld {
 
         // 掌门
         world.entity {
-            it.addComponent(Name(name = "青云子"))
+            it.addComponent(Name(value = "青云子"))
             it.addComponent(CultivationProgress(
                 realm = Realm.FOUNDATION,
                 layer = 5,
@@ -113,7 +106,6 @@ object SectWorld {
             ))
             it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
             it.addComponent(Spirit(currentSpirit = 50, maxSpirit = 50))
-            it.addComponent(Age(age = 80))
             it.addComponent(SectPositionInfo(position = SectPositionType.LEADER))
             it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
             it.addComponent(SectLoyalty(value = 100))
@@ -125,7 +117,7 @@ object SectWorld {
         // 长老（2 名）
         repeat(2) { i ->
             world.entity {
-                it.addComponent(Name(name = elderNames[i]))
+                it.addComponent(Name(value = elderNames[i]))
                 it.addComponent(CultivationProgress(
                     realm = Realm.FOUNDATION,
                     layer = 3,
@@ -140,7 +132,6 @@ object SectWorld {
                 ))
                 it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
                 it.addComponent(Spirit(currentSpirit = 50, maxSpirit = 50))
-                it.addComponent(Age(age = 60 + i * 5))
                 it.addComponent(SectPositionInfo(position = SectPositionType.ELDER))
                 it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
                 it.addComponent(SectLoyalty(value = 90))
@@ -154,7 +145,7 @@ object SectWorld {
         repeat(8) { i ->
             val layer = 1 + (i % 3) // 1,2,3,1,2,3,1,2
             world.entity {
-                it.addComponent(Name(name = innerNames[i]))
+                it.addComponent(Name(value = innerNames[i]))
                 it.addComponent(CultivationProgress(
                     realm = Realm.FOUNDATION,
                     layer = layer,
@@ -169,7 +160,6 @@ object SectWorld {
                 ))
                 it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
                 it.addComponent(Spirit(currentSpirit = 60, maxSpirit = 60))
-                it.addComponent(Age(age = 25 + i * 2))
                 it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_INNER))
                 it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
                 it.addComponent(SectLoyalty(value = 85))
@@ -185,7 +175,7 @@ object SectWorld {
         repeat(5) { i ->
             val layer = 3 + (i % 3) // 3,4,5,3,4
             world.entity {
-                it.addComponent(Name(name = outerNames[i]))
+                it.addComponent(Name(value = outerNames[i]))
                 it.addComponent(CultivationProgress(
                     realm = Realm.QI_REFINING,
                     layer = layer,
@@ -200,7 +190,6 @@ object SectWorld {
                 ))
                 it.addComponent(Vitality(currentHealth = 100, maxHealth = 100))
                 it.addComponent(Spirit(currentSpirit = 50, maxSpirit = 50))
-                it.addComponent(Age(age = 18 + i))
                 it.addComponent(SectPositionInfo(position = SectPositionType.DISCIPLE_OUTER))
                 it.addComponent(CurrentBehavior(type = BehaviorType.CULTIVATE))
                 it.addComponent(SectLoyalty(value = 80))
@@ -248,18 +237,12 @@ object SectWorld {
     fun getSystems(world: World): SectSystems {
         return SectSystems(
             timeSystem = TimeSystem(world),
-            cultivationSystem = CultivationSystem(world),
-            behaviorSystem = SimpleBehaviorSystem(world),
-            discipleInfoSystem = DiscipleInfoSystem(world),
-            resourceProductionSystem = ResourceProductionSystem(world),
-            resourceConsumptionSystem = ResourceConsumptionSystem(world),
-            sectStatusSystem = SectStatusSystem(world),
-            selectionTaskSystem = SelectionTaskSystem(world),
-            teamFormationSystem = TeamFormationSystem(world),
-            questExecutionSystem = QuestExecutionSystem(world),
-            elderEvaluationSystem = ElderEvaluationSystem(world),
-            promotionSystem = PromotionSystem(world),
-            policySystem = PolicySystem(world)
+            cultivationSystem = CultivationService(world),
+            behaviorSystem = SimpleBehaviorService(world),
+            discipleInfoSystem = DiscipleInfoService(world),
+            resourceProductionSystem = ResourceProductionService(world),
+            resourceConsumptionSystem = ResourceConsumptionService(world),
+            sectStatusSystem = SectStatusService(world)
         )
     }
 
@@ -276,16 +259,10 @@ object SectWorld {
  */
 data class SectSystems(
     val timeSystem: TimeSystem,
-    val cultivationSystem: CultivationSystem,
-    val behaviorSystem: SimpleBehaviorSystem,
-    val discipleInfoSystem: DiscipleInfoSystem,
-    val resourceProductionSystem: ResourceProductionSystem,
-    val resourceConsumptionSystem: ResourceConsumptionSystem,
-    val sectStatusSystem: SectStatusSystem,
-    val selectionTaskSystem: SelectionTaskSystem,
-    val teamFormationSystem: TeamFormationSystem,
-    val questExecutionSystem: QuestExecutionSystem,
-    val elderEvaluationSystem: ElderEvaluationSystem,
-    val promotionSystem: PromotionSystem,
-    val policySystem: PolicySystem
+    val cultivationSystem: CultivationService,
+    val behaviorSystem: SimpleBehaviorService,
+    val discipleInfoSystem: DiscipleInfoService,
+    val resourceProductionSystem: ResourceProductionService,
+    val resourceConsumptionSystem: ResourceConsumptionService,
+    val sectStatusSystem: SectStatusService
 )

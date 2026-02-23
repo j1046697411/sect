@@ -2,6 +2,8 @@ package cn.jzl.sect.engine.state
 
 import cn.jzl.sect.core.time.GameTime
 import cn.jzl.sect.core.time.Season
+import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.loop
 
 /**
  * 游戏全局状态管理器
@@ -148,15 +150,23 @@ class GameState {
     }
 
     companion object {
-        @Volatile
-        private var instance: GameState? = null
+        private val instanceRef = atomic<GameState?>(null)
 
         /**
          * 获取单例实例
          */
         fun getInstance(): GameState {
-            return instance ?: synchronized(this) {
-                instance ?: GameState().also { instance = it }
+            // 先检查是否已存在实例
+            val current = instanceRef.value
+            if (current != null) return current
+
+            // 使用原子操作创建实例
+            val newInstance = GameState()
+            return if (instanceRef.compareAndSet(null, newInstance)) {
+                newInstance
+            } else {
+                // 其他线程已经创建了实例
+                instanceRef.value!!
             }
         }
 
@@ -164,7 +174,7 @@ class GameState {
          * 重置单例（用于测试）
          */
         fun resetInstance() {
-            instance = null
+            instanceRef.value = null
         }
     }
 }

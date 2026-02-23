@@ -18,6 +18,7 @@ import cn.jzl.sect.quest.components.QuestDifficulty
 import cn.jzl.sect.quest.components.QuestExecutionComponent
 import cn.jzl.sect.quest.components.QuestStatus
 import cn.jzl.sect.quest.components.QuestType
+import kotlin.time.Clock
 
 /**
  * 选拔任务服务
@@ -73,7 +74,7 @@ class SelectionTaskService(override val world: World) : EntityRelationContext {
      */
     fun createSelectionTask(quota: Int): Entity {
         val questId = generateQuestId()
-        val currentTime = System.currentTimeMillis()
+        val currentTime = Clock.System.now().toEpochMilliseconds()
 
         return world.entity {
             it.addComponent(

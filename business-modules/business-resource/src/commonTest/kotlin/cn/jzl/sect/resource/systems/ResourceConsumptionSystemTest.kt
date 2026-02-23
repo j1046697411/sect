@@ -10,7 +10,7 @@ import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.config.GameConfig
 import cn.jzl.sect.core.disciple.SectLoyalty
-import cn.jzl.sect.core.facility.Facility
+import cn.jzl.sect.facility.components.Facility
 import cn.jzl.sect.core.facility.FacilityType
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
@@ -29,7 +29,6 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
 
     @BeforeTest
     fun setup() {
-        GameConfig.resetInstance()
         // 使用 SectWorld 创建世界，确保所有组件已注册
         world = SectWorld.create("测试宗门")
     }
@@ -178,7 +177,7 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     @Test
     fun testGameConfigSalary() {
         // Given: 获取游戏配置
-        val config = GameConfig.getInstance()
+        val config = GameConfig
 
         // Then: 验证各职位俸禄
         assertEquals(500L, config.salary.getMonthlySalary(SectPositionType.LEADER))
@@ -190,7 +189,7 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     @Test
     fun testGameConfigFacilityMaintenance() {
         // Given: 获取游戏配置
-        val config = GameConfig.getInstance()
+        val config = GameConfig
 
         // Then: 验证设施维护费计算
         // level 1, efficiency 1.0f -> 1 * 10 * 1.0 = 10
@@ -204,7 +203,7 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     @Test
     fun testGameConfigSectLoyalty() {
         // Given: 获取游戏配置
-        val config = GameConfig.getInstance()
+        val config = GameConfig
 
         // Then: 验证忠诚度配置
         assertEquals(1, config.loyalty.loyaltyIncreaseOnPayment)
@@ -229,8 +228,9 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
     @Test
     fun testFacilityComponent() {
         // Given: 创建设施组件
-        val facility1 = Facility(type = FacilityType.CULTIVATION_ROOM)
+        val facility1 = Facility(name = "修炼室", type = FacilityType.CULTIVATION_ROOM)
         val facility2 = Facility(
+            name = "宿舍",
             type = FacilityType.DORMITORY,
             level = 3,
             capacity = 50,
@@ -238,11 +238,13 @@ class ResourceConsumptionSystemTest : EntityRelationContext {
         )
 
         // Then: 验证设施属性
+        assertEquals("修炼室", facility1.name)
         assertEquals(FacilityType.CULTIVATION_ROOM, facility1.type)
         assertEquals(1, facility1.level)
         assertEquals(0, facility1.capacity)
         assertEquals(1.0f, facility1.efficiency)
 
+        assertEquals("宿舍", facility2.name)
         assertEquals(FacilityType.DORMITORY, facility2.type)
         assertEquals(3, facility2.level)
         assertEquals(50, facility2.capacity)

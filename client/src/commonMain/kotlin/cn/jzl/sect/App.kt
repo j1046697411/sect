@@ -19,7 +19,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.facility.*
+import cn.jzl.sect.core.facility.FacilityType
+import cn.jzl.sect.resource.components.ResourceType
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.engine.*
 import cn.jzl.sect.engine.WorldProvider
@@ -61,7 +62,6 @@ fun App() {
         val sectViewModel: SectViewModel = viewModel { SectViewModel() }
         val discipleViewModel: DiscipleViewModel = viewModel { DiscipleViewModel() }
         val skillViewModel: SkillViewModel = viewModel { SkillViewModel() }
-        val combatViewModel: CombatViewModel = viewModel { CombatViewModel() }
 
         // 游戏状态
         val gameState by gameViewModel.gameState.collectAsState()
@@ -104,7 +104,7 @@ fun App() {
                         // 右侧面板切换按钮（中屏时显示）
                         if (windowSizeClass == WindowSizeClass.MEDIUM) {
                             IconButton(onClick = { isRightPanelVisible = !isRightPanelVisible }) {
-                                Text(if (isRightPanelVisible) "📊" else "📋")
+                                Text(if (isRightPanelVisible) "◀" else "▶")
                             }
                         }
 
@@ -242,13 +242,13 @@ fun BottomNavigationBar(
             onClick = { onPageSelected(PageType.DISCIPLES) }
         )
         NavigationBarItem(
-            icon = { Text("🏛️") },
+            icon = { Text("🏯") },
             label = { Text("建筑") },
             selected = currentPage == PageType.BUILDINGS,
             onClick = { onPageSelected(PageType.BUILDINGS) }
         )
         NavigationBarItem(
-            icon = { Text("📋") },
+            icon = { Text("📜") },
             label = { Text("任务") },
             selected = currentPage == PageType.QUESTS,
             onClick = { onPageSelected(PageType.QUESTS) }
@@ -260,7 +260,7 @@ fun BottomNavigationBar(
             onClick = { onPageSelected(PageType.POLICY) }
         )
         NavigationBarItem(
-            icon = { Text("📖") },
+            icon = { Text("📚") },
             label = { Text("功法") },
             selected = currentPage == PageType.SKILLS,
             onClick = { onPageSelected(PageType.SKILLS) }
@@ -298,7 +298,7 @@ fun GameSpeedControl(
         }
 
         // 速度选择
-        GameSpeed.values().filter { it != GameSpeed.PAUSE }.forEach { speed ->
+        GameSpeed.entries.filter { it != GameSpeed.PAUSE }.forEach { speed ->
             val isSelected = gameSpeed == speed
             Button(
                 onClick = { onSpeedChange(speed) },
@@ -380,7 +380,7 @@ fun CollapsibleNavigationRail(
             )
 
             NavItem(
-                icon = "🏛️",
+                icon = "🏯",
                 label = "建筑",
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.BUILDINGS,
@@ -388,7 +388,7 @@ fun CollapsibleNavigationRail(
             )
 
             NavItem(
-                icon = "📋",
+                icon = "📜",
                 label = "任务",
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.QUESTS,
@@ -404,7 +404,7 @@ fun CollapsibleNavigationRail(
             )
 
             NavItem(
-                icon = "📖",
+                icon = "📚",
                 label = "功法",
                 isExpanded = isExpanded,
                 isSelected = currentPage == PageType.SKILLS,
@@ -481,7 +481,6 @@ fun RightPanel(
     val gameSpeed by gameViewModel.gameSpeed.collectAsState()
     val detailedTime by gameViewModel.detailedGameTime.collectAsState()
     val resourceProduction by gameViewModel.resourceProduction.collectAsState()
-    val pendingEvents by gameViewModel.pendingEvents.collectAsState()
     val selectedDisciple by discipleViewModel.selectedDisciple.collectAsState()
 
     Card(
@@ -504,7 +503,7 @@ fun RightPanel(
             } else {
                 // 实时游戏时间
                 Text(
-                    text = "📅 游戏时间",
+                    text = "⏰ 游戏时间",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -524,7 +523,7 @@ fun RightPanel(
 
                 // 资源产量
                 Text(
-                    text = "💎 资源产量",
+                    text = "💰 资源产量",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -537,7 +536,7 @@ fun RightPanel(
 
                 // 宗门信息
                 Text(
-                    text = "🏛️ 宗门信息",
+                    text = "🏯 宗门信息",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -574,37 +573,6 @@ fun RightPanel(
 
                 Divider()
 
-                // 待处理事件
-                Text(
-                    text = "🔔 待处理事件",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                if (pendingEvents.isEmpty()) {
-                    Text("暂无待处理事件", style = MaterialTheme.typography.bodySmall)
-                } else {
-                    pendingEvents.forEach { event ->
-                        when (event) {
-                            is PendingEvent.BreakthroughReminder -> {
-                                EventItem(
-                                    icon = "⚡",
-                                    text = "${event.count}名弟子可突破",
-                                    color = Color(0xFFFFA000)
-                                )
-                            }
-                            is PendingEvent.SelectionCountdown -> {
-                                EventItem(
-                                    icon = "⏰",
-                                    text = "选拔还有${event.yearsRemaining}年",
-                                    color = Color(0xFF2196F3)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Divider()
-
                 // 快速操作
                 Text(
                     text = "⚡ 快速操作",
@@ -612,10 +580,11 @@ fun RightPanel(
                     color = MaterialTheme.colorScheme.primary
                 )
                 Button(
-                    onClick = { gameViewModel.publishSelectionTask() },
-                    modifier = Modifier.fillMaxWidth()
+                    onClick = { /* 功能开发中 */ },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = false
                 ) {
-                    Text("发布选拔任务")
+                    Text("发布选拔任务(开发中)")
                 }
             }
         }
@@ -691,13 +660,12 @@ fun DiscipleDetailPanel(
         // 境界和状态
         InfoRow("境界", disciple.realmDisplay)
         InfoRow("状态", disciple.currentBehavior)
-        InfoRow("年龄", "${disciple.age}岁")
 
         Divider()
 
         // 修为详情
         Text(
-            text = "📿 修为详情",
+            text = "📈 修为详情",
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary
         )
@@ -901,41 +869,19 @@ fun StatCard(value: String, label: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * 设施管理页面
+ * 设施管理页面（简化版）
  */
 @Composable
-fun FacilitiesPage(viewModel: FacilityViewModel = viewModel { FacilityViewModel() }) {
-    val facilityList by viewModel.facilityList.collectAsState()
-    val totalProduction by viewModel.totalProduction.collectAsState()
-    val totalMaintenanceCost by viewModel.totalMaintenanceCost.collectAsState()
-    val operationResult by viewModel.operationResult.collectAsState()
-
-    // 对话框状态
-    var showBuildDialog by remember { mutableStateOf(false) }
-    var showUpgradeDialog by remember { mutableStateOf(false) }
-    var selectedFacility by remember { mutableStateOf<FacilityUiModel?>(null) }
-
+fun FacilitiesPage() {
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        // 标题和建造按钮
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "设施管理",
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Button(onClick = { showBuildDialog = true }) {
-                Text("+ 建造新设施")
-            }
-        }
+        Text(
+            text = "设施管理",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 产出汇总
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -944,339 +890,30 @@ fun FacilitiesPage(viewModel: FacilityViewModel = viewModel { FacilityViewModel(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "📊 产出汇总",
+                    text = "🏗️ 功能开发中",
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(8.dp))
-
-                if (totalProduction.isEmpty()) {
-                    Text("暂无设施产出", style = MaterialTheme.typography.bodyMedium)
-                } else {
-                    totalProduction.forEach { (resourceType, amount) ->
-                        InfoRow(
-                            label = resourceType.displayName,
-                            value = "+${amount}/小时"
-                        )
-                    }
-                }
-
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
-                InfoRow(
-                    label = "维护费用",
-                    value = "-${totalMaintenanceCost}灵石/小时"
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 设施列表
-        when (val state = facilityList) {
-            is FacilityListUiState.Loading -> {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
-            }
-            is FacilityListUiState.Success -> {
-                val facilities = state.facilities
-                if (facilities.isEmpty()) {
-                    Text("暂无设施，请建造新设施", style = MaterialTheme.typography.bodyLarge)
-                } else {
-                    androidx.compose.foundation.lazy.grid.LazyVerticalGrid(
-                        columns = androidx.compose.foundation.lazy.grid.GridCells.Adaptive(minSize = 250.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(facilities.size) { index ->
-                            FacilityCard(
-                                facility = facilities[index],
-                                onUpgrade = {
-                                    selectedFacility = facilities[index]
-                                    showUpgradeDialog = true
-                                }
-                            )
-                        }
-                    }
-                }
-            }
-            is FacilityListUiState.Error -> {
-                Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
-            }
-        }
-    }
-
-    // 建造对话框
-    if (showBuildDialog) {
-        BuildFacilityDialog(
-            onDismiss = { showBuildDialog = false },
-            onBuild = { name, type ->
-                viewModel.buildFacility(name, type)
-                showBuildDialog = false
-            },
-            getConstructionCost = { viewModel.getConstructionCost(it) }
-        )
-    }
-
-    // 升级对话框
-    if (showUpgradeDialog && selectedFacility != null) {
-        UpgradeFacilityDialog(
-            facility = selectedFacility!!,
-            upgradeCost = viewModel.getUpgradeCost(selectedFacility!!.type, selectedFacility!!.level),
-            onDismiss = {
-                showUpgradeDialog = false
-                selectedFacility = null
-            },
-            onUpgrade = {
-                viewModel.upgradeFacility(selectedFacility!!.id)
-                showUpgradeDialog = false
-                selectedFacility = null
-            }
-        )
-    }
-
-    // 操作结果提示
-    operationResult?.let { result ->
-        AlertDialog(
-            onDismissRequest = { viewModel.clearOperationResult() },
-            title = { Text(if (result.success) "成功" else "失败") },
-            text = { Text(result.message) },
-            confirmButton = {
-                Button(onClick = { viewModel.clearOperationResult() }) {
-                    Text("确定")
-                }
-            }
-        )
-    }
-}
-
-/**
- * 设施卡片组件
- */
-@Composable
-fun FacilityCard(
-    facility: FacilityUiModel,
-    onUpgrade: () -> Unit
-) {
-    val typeColor = when (facility.type) {
-        FacilityType.CULTIVATION_ROOM -> Color(0xFF4CAF50)
-        FacilityType.ALCHEMY_ROOM -> Color(0xFFFF9800)
-        FacilityType.FORGE_ROOM -> Color(0xFF795548)
-        FacilityType.LIBRARY -> Color(0xFF9C27B0)
-        FacilityType.WAREHOUSE -> Color(0xFF607D8B)
-        FacilityType.DORMITORY -> Color(0xFF3F51B5)
-        FacilityType.SPIRIT_STONE_MINE -> Color(0xFF2196F3)
-        FacilityType.CONTRIBUTION_HALL -> Color(0xFFE91E63)
-    }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // 名称和等级
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
                 Text(
-                    text = facility.name,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Surface(
-                    color = typeColor.copy(alpha = 0.2f),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = "Lv.${facility.level}",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = typeColor
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 类型
-            Text(
-                text = facility.type.displayName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 产出信息
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "📦 ${facility.productionType.displayName}: +${facility.productionAmount}/小时",
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // 维护费用
-            Text(
-                text = "💰 维护费: ${facility.maintenanceCost}灵石/小时",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 升级按钮
-            Button(
-                onClick = onUpgrade,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = facility.canUpgrade
-            ) {
-                Text(if (facility.canUpgrade) "升级" else "已满级")
-            }
-        }
-    }
-}
-
-/**
- * 建造设施对话框
- */
-@Composable
-fun BuildFacilityDialog(
-    onDismiss: () -> Unit,
-    onBuild: (String, FacilityType) -> Unit,
-    getConstructionCost: (FacilityType) -> FacilityCost
-) {
-    var facilityName by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf(FacilityType.CULTIVATION_ROOM) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("建造新设施") },
-        text = {
-            Column {
-                // 设施名称输入
-                OutlinedTextField(
-                    value = facilityName,
-                    onValueChange = { facilityName = it },
-                    label = { Text("设施名称") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 设施类型选择
-                Text("选择设施类型:", style = MaterialTheme.typography.bodyMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                FacilityType.entries.forEach { type ->
-                    val cost = getConstructionCost(type)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedType = type }
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = selectedType == type,
-                            onClick = { selectedType = type }
-                        )
-                        Column(modifier = Modifier.padding(start = 8.dp)) {
-                            Text(type.displayName, style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                type.description,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                "成本: ${cost.spiritStones}灵石 ${cost.contributionPoints}贡献点",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onBuild(facilityName, selectedType) },
-                enabled = facilityName.isNotBlank()
-            ) {
-                Text("建造")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
-            }
-        }
-    )
-}
-
-/**
- * 升级设施对话框
- */
-@Composable
-fun UpgradeFacilityDialog(
-    facility: FacilityUiModel,
-    upgradeCost: FacilityCost,
-    onDismiss: () -> Unit,
-    onUpgrade: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("升级设施") },
-        text = {
-            Column {
-                Text(
-                    "设施: ${facility.name}",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Text(
-                    "当前等级: ${facility.level}",
+                    text = "设施建设系统正在开发中，敬请期待...",
                     style = MaterialTheme.typography.bodyMedium
                 )
-                Text(
-                    "升级后等级: ${facility.level + 1}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    "升级成本:",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text("💎 ${upgradeCost.spiritStones} 灵石")
-                Text("⭐ ${upgradeCost.contributionPoints} 贡献点")
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    "升级后产出效率提升10%",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = onUpgrade) {
-                Text("确认升级")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
             }
         }
-    )
+    }
+}
+
+/**
+ * 获取职务图标
+ */
+fun getPositionIcon(position: SectPositionType): String {
+    return when (position) {
+        SectPositionType.LEADER -> "👑"
+        SectPositionType.ELDER -> "🎓"
+        SectPositionType.DISCIPLE_INNER -> "⭐"
+        SectPositionType.DISCIPLE_OUTER -> "○"
+    }
 }
 
 /**
@@ -1286,10 +923,6 @@ fun UpgradeFacilityDialog(
 fun DisciplesPage(viewModel: DiscipleViewModel) {
     val discipleList by viewModel.discipleList.collectAsState()
     val currentFilter by viewModel.currentFilter.collectAsState()
-
-    // 详情对话框状态
-    var showDetailDialog by remember { mutableStateOf(false) }
-    var selectedDisciple by remember { mutableStateOf<DiscipleUiModel?>(null) }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -1370,14 +1003,6 @@ fun DisciplesPage(viewModel: DiscipleViewModel) {
                 Text("错误: ${state.message}", color = MaterialTheme.colorScheme.error)
             }
         }
-    }
-
-    // 弟子详情对话框
-    if (showDetailDialog && selectedDisciple != null) {
-        DiscipleDetailDialog(
-            disciple = selectedDisciple!!,
-            onDismiss = { showDetailDialog = false }
-        )
     }
 }
 
@@ -1504,21 +1129,6 @@ fun DiscipleCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 年龄
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "年龄: ",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "${disciple.age}岁",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-
             Spacer(modifier = Modifier.height(12.dp))
 
             // 修为进度（游戏风格）
@@ -1529,7 +1139,7 @@ fun DiscipleCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "📿 修为",
+                        text = "📈 修为",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1742,178 +1352,6 @@ fun GameCultivationBar(
     }
 }
 
-/**
- * 获取职务图标
- */
-fun getPositionIcon(position: SectPositionType): String {
-    return when (position) {
-        SectPositionType.LEADER -> "👑"
-        SectPositionType.ELDER -> "🎓"
-        SectPositionType.DISCIPLE_INNER -> "⭐"
-        SectPositionType.DISCIPLE_OUTER -> "○"
-    }
-}
-
-/**
- * 弟子详情对话框
- */
-@Composable
-fun DiscipleDetailDialog(disciple: DiscipleUiModel, onDismiss: () -> Unit) {
-    val positionColor = when (disciple.position) {
-        SectPositionType.LEADER -> MaterialTheme.colorScheme.primary
-        SectPositionType.ELDER -> MaterialTheme.colorScheme.tertiary
-        SectPositionType.DISCIPLE_INNER -> MaterialTheme.colorScheme.secondary
-        SectPositionType.DISCIPLE_OUTER -> MaterialTheme.colorScheme.surfaceVariant
-    }
-
-    val behaviorColor = when (disciple.currentBehavior) {
-        "修炼中" -> MaterialTheme.colorScheme.primary
-        "工作中" -> MaterialTheme.colorScheme.tertiary
-        "休息中" -> MaterialTheme.colorScheme.secondary
-        "社交中" -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(disciple.name, style = MaterialTheme.typography.headlineSmall)
-                Surface(
-                    color = positionColor.copy(alpha = 0.2f),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = disciple.positionDisplay,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = positionColor
-                    )
-                }
-            }
-        },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // 境界和状态
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "境界: ${disciple.realmDisplay}",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Surface(
-                        color = behaviorColor.copy(alpha = 0.15f),
-                        shape = MaterialTheme.shapes.extraSmall
-                    ) {
-                        Text(
-                            text = disciple.currentBehavior,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = behaviorColor
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 基本信息
-                DetailItem(label = "年龄", value = "${disciple.age}岁")
-                DetailItem(label = "职务", value = disciple.positionDisplay)
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 修为详情
-                Text(
-                    text = "修为详情",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                DetailItem(label = "当前修为", value = "${disciple.cultivation}/${disciple.maxCultivation}")
-                DetailItem(label = "突破进度", value = "${(disciple.cultivationProgress * 100).toInt()}%")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 生命和精力
-                Text(
-                    text = "状态",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                DetailItem(label = "生命值", value = "${disciple.health}/${disciple.maxHealth}")
-                DetailItem(label = "精力值", value = "${disciple.spirit}/${disciple.maxSpirit}")
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 进度条
-                Text("修为进度", style = MaterialTheme.typography.bodySmall)
-                LinearProgressIndicator(
-                    progress = { disciple.cultivationProgress },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.secondary
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text("生命值", style = MaterialTheme.typography.bodySmall)
-                LinearProgressIndicator(
-                    progress = { disciple.health.toFloat() / disciple.maxHealth.toFloat() },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = if (disciple.health < disciple.maxHealth * 0.3f) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text("精力值", style = MaterialTheme.typography.bodySmall)
-                LinearProgressIndicator(
-                    progress = { disciple.spirit.toFloat() / disciple.maxSpirit.toFloat() },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = onDismiss) {
-                Text("关闭")
-            }
-        }
-    )
-}
-
-/**
- * 详情项组件
- */
-@Composable
-fun DetailItem(label: String, value: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
-
 @Composable
 fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val backgroundColor = if (selected) {
@@ -1941,34 +1379,15 @@ fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun DiscipleRow(position: String, realm: String, age: String, status: String) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(position, modifier = Modifier.weight(1f))
-        Text(realm, modifier = Modifier.weight(1f))
-        Text(age, modifier = Modifier.weight(1f))
-        Text(status, modifier = Modifier.weight(1f))
-    }
-}
+// 占位符数据类 - 任务相关（简化版）
+enum class TaskStatus { PENDING_APPROVAL, APPROVED, IN_PROGRESS, COMPLETED, CANCELLED }
+data class TaskInfo(val id: Long, val title: String, val description: String, val createdAt: String, val status: TaskStatus)
 
 /**
- * 任务大厅页面
+ * 任务大厅页面（简化版）
  */
 @Composable
 fun QuestsPage(gameViewModel: GameViewModel) {
-    val pendingTasks by gameViewModel.pendingTasks.collectAsState()
-    val completedTasks by gameViewModel.completedTasks.collectAsState()
-    val candidates by gameViewModel.candidates.collectAsState()
-
-    var showPublishDialog by remember { mutableStateOf(false) }
-    var showCandidatesDialog by remember { mutableStateOf(false) }
-    var selectedTaskId by remember { mutableStateOf<Long?>(null) }
-
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -1978,43 +1397,6 @@ fun QuestsPage(gameViewModel: GameViewModel) {
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // 操作按钮
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(onClick = { showPublishDialog = true }) {
-                Text("发布选拔任务")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 任务统计
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            StatCard(
-                value = pendingTasks.count { it.status == TaskStatus.IN_PROGRESS }.toString(),
-                label = "进行中",
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                value = pendingTasks.count { it.status == TaskStatus.PENDING_APPROVAL }.toString(),
-                label = "待审批",
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                value = completedTasks.size.toString(),
-                label = "已完成",
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 任务列表
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -2023,225 +1405,25 @@ fun QuestsPage(gameViewModel: GameViewModel) {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "任务列表",
+                    text = "📜 功能开发中",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    color = MaterialTheme.colorScheme.primary
                 )
-
-                if (pendingTasks.isEmpty()) {
-                    Text("暂无待处理任务", style = MaterialTheme.typography.bodyMedium)
-                } else {
-                    pendingTasks.forEach { task ->
-                        TaskItem(
-                            task = task,
-                            onApprove = {
-                                gameViewModel.approveTask(task.id, true)
-                                // 执行任务
-                                gameViewModel.executeTask(task.id)
-                                // 加载候选人
-                                gameViewModel.loadCandidates(task.id)
-                                selectedTaskId = task.id
-                                showCandidatesDialog = true
-                            },
-                            onReject = { gameViewModel.approveTask(task.id, false) }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                }
-            }
-        }
-    }
-
-    // 发布任务对话框
-    if (showPublishDialog) {
-        AlertDialog(
-            onDismissRequest = { showPublishDialog = false },
-            title = { Text("发布选拔任务") },
-            text = { Text("确定要发布外门弟子选拔任务吗？") },
-            confirmButton = {
-                Button(onClick = {
-                    gameViewModel.publishSelectionTask()
-                    showPublishDialog = false
-                }) {
-                    Text("确定")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showPublishDialog = false }) {
-                    Text("取消")
-                }
-            }
-        )
-    }
-
-    // 候选人对话框
-    if (showCandidatesDialog) {
-        AlertDialog(
-            onDismissRequest = { showCandidatesDialog = false },
-            title = { Text("晋升候选人") },
-            text = {
-                Column {
-                    if (candidates.isEmpty()) {
-                        Text("暂无候选人")
-                    } else {
-                        Text("请选择要晋升的弟子：", style = MaterialTheme.typography.bodySmall)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        candidates.forEach { candidate ->
-                            CandidateItem(candidate = candidate)
-                            Spacer(modifier = Modifier.height(4.dp))
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val selectedIds = candidates.map { it.id }
-                        if (selectedIds.isNotEmpty()) {
-                            gameViewModel.promoteDisciples(selectedIds)
-                        }
-                        showCandidatesDialog = false
-                    }
-                ) {
-                    Text("确认晋升")
-                }
-            },
-            dismissButton = {
-                Button(onClick = { showCandidatesDialog = false }) {
-                    Text("关闭")
-                }
-            }
-        )
-    }
-}
-
-@Composable
-fun TaskItem(task: TaskInfo, onApprove: () -> Unit, onReject: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(task.title, style = MaterialTheme.typography.titleSmall)
-                    Text(task.description, style = MaterialTheme.typography.bodySmall)
-                    Text("创建时间: ${task.createdAt}", style = MaterialTheme.typography.bodySmall)
-                }
-                TaskStatusBadge(status = task.status)
-            }
-
-            if (task.status == TaskStatus.PENDING_APPROVAL) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(onClick = onApprove, modifier = Modifier.weight(1f)) {
-                        Text("批准")
-                    }
-                    Button(
-                        onClick = onReject,
-                        modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text("拒绝")
-                    }
-                }
+                Text(
+                    text = "任务系统正在开发中，敬请期待...",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
-        }
-    }
-}
-
-@Composable
-fun TaskStatusBadge(status: TaskStatus) {
-    val (text, color) = when (status) {
-        TaskStatus.PENDING_APPROVAL -> "待审批" to MaterialTheme.colorScheme.error
-        TaskStatus.APPROVED -> "已批准" to MaterialTheme.colorScheme.primary
-        TaskStatus.IN_PROGRESS -> "进行中" to MaterialTheme.colorScheme.tertiary
-        TaskStatus.COMPLETED -> "已完成" to MaterialTheme.colorScheme.secondary
-        TaskStatus.CANCELLED -> "已取消" to MaterialTheme.colorScheme.surfaceVariant
-    }
-
-    Surface(
-        color = color.copy(alpha = 0.15f),
-        shape = MaterialTheme.shapes.extraSmall
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            color = color,
-            style = MaterialTheme.typography.labelSmall
-        )
-    }
-}
-
-@Composable
-fun CandidateItem(candidate: CandidateInfo) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp)
-        ) {
-            Text(candidate.name, style = MaterialTheme.typography.titleSmall)
-            Text("评分: ${String.format("%.2f", candidate.score)}", style = MaterialTheme.typography.bodySmall)
-            Text(
-                "完成度: ${(candidate.completionRate * 100).toInt()}% | " +
-                "效率: ${(candidate.efficiency * 100).toInt()}% | " +
-                "质量: ${(candidate.quality * 100).toInt()}%",
-                style = MaterialTheme.typography.bodySmall
-            )
         }
     }
 }
 
 /**
- * 政策配置页面
+ * 政策配置页面（简化版）
  */
 @Composable
 fun PolicyPage(gameViewModel: GameViewModel) {
-    val currentPolicy by gameViewModel.currentPolicy.collectAsState()
-
-    // 根据当前政策初始化状态
-    var selectionCycle by remember(currentPolicy) {
-        mutableStateOf(
-            when (currentPolicy?.selectionCycle) {
-                3 -> 0
-                5 -> 1
-                10 -> 2
-                else -> 1
-            }
-        )
-    }
-    var selectionRatio by remember(currentPolicy) {
-        mutableStateOf(currentPolicy?.selectionRatio ?: 0.05f)
-    }
-    var cultivationRatio by remember(currentPolicy) {
-        mutableStateOf((currentPolicy?.cultivationRatio ?: 40).toFloat())
-    }
-    var facilityRatio by remember(currentPolicy) {
-        mutableStateOf((currentPolicy?.facilityRatio ?: 30).toFloat())
-    }
-    var reserveRatio by remember(currentPolicy) {
-        mutableStateOf((currentPolicy?.reserveRatio ?: 30).toFloat())
-    }
-
-    // 计算总和
-    val totalRatio = cultivationRatio + facilityRatio + reserveRatio
-    val isValid = kotlin.math.abs(totalRatio - 100f) < 0.1f
-
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -2258,114 +1440,16 @@ fun PolicyPage(gameViewModel: GameViewModel) {
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                // 选拔周期
                 Text(
-                    text = "选拔周期",
+                    text = "⚙️ 功能开发中",
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    color = MaterialTheme.colorScheme.primary
                 )
-                Row {
-                    RadioButton(
-                        selected = selectionCycle == 0,
-                        onClick = { selectionCycle = 0 }
-                    )
-                    Text("3年", modifier = Modifier.padding(end = 16.dp, top = 12.dp))
-
-                    RadioButton(
-                        selected = selectionCycle == 1,
-                        onClick = { selectionCycle = 1 }
-                    )
-                    Text("5年", modifier = Modifier.padding(end = 16.dp, top = 12.dp))
-
-                    RadioButton(
-                        selected = selectionCycle == 2,
-                        onClick = { selectionCycle = 2 }
-                    )
-                    Text("10年", modifier = Modifier.padding(top = 12.dp))
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 选拔比例
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "选拔比例: ${(selectionRatio * 100).toInt()}%",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    text = "政策配置系统正在开发中，敬请期待...",
+                    style = MaterialTheme.typography.bodyMedium
                 )
-                Slider(
-                    value = selectionRatio,
-                    onValueChange = { selectionRatio = it },
-                    valueRange = 0.03f..0.10f,
-                    steps = 6
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 资源分配
-                Text(
-                    text = "资源分配比例",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                Text("修炼: ${cultivationRatio.toInt()}%")
-                Slider(
-                    value = cultivationRatio,
-                    onValueChange = { cultivationRatio = it },
-                    valueRange = 0f..100f
-                )
-
-                Text("设施: ${facilityRatio.toInt()}%")
-                Slider(
-                    value = facilityRatio,
-                    onValueChange = { facilityRatio = it },
-                    valueRange = 0f..100f
-                )
-
-                Text("储备: ${reserveRatio.toInt()}%")
-                Slider(
-                    value = reserveRatio,
-                    onValueChange = { reserveRatio = it },
-                    valueRange = 0f..100f
-                )
-
-                // 验证总和
-                if (!isValid) {
-                    Text(
-                        text = "警告: 资源分配总和必须为100% (当前: ${totalRatio.toInt()}%)",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 保存按钮
-                Box(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = Alignment.CenterEnd
-                ) {
-                    Button(
-                        onClick = {
-                            val cycleYears = when (selectionCycle) {
-                                0 -> 3
-                                1 -> 5
-                                else -> 10
-                            }
-                            val policyInfo = PolicyInfo(
-                                selectionCycle = cycleYears,
-                                selectionRatio = selectionRatio,
-                                cultivationRatio = cultivationRatio.toInt(),
-                                facilityRatio = facilityRatio.toInt(),
-                                reserveRatio = reserveRatio.toInt()
-                            )
-                            gameViewModel.savePolicy(policyInfo)
-                        },
-                        enabled = isValid
-                    ) {
-                        Text("保存配置")
-                    }
-                }
             }
         }
     }

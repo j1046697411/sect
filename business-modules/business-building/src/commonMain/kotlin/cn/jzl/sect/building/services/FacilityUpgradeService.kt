@@ -14,9 +14,9 @@ import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.facility.Facility
-import cn.jzl.sect.core.facility.FacilityCost
 import cn.jzl.sect.core.facility.FacilityType
+import cn.jzl.sect.facility.components.Facility
+import cn.jzl.sect.facility.components.FacilityCost
 
 /**
  * 设施升级服务

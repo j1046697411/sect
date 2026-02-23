@@ -10,9 +10,9 @@ import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.entity.addComponent
 import cn.jzl.ecs.world
 import cn.jzl.sect.core.ai.Personality6
-import cn.jzl.sect.core.cultivation.CultivationProgress
-import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.cultivation.components.CultivationProgress
+import cn.jzl.sect.cultivation.components.Realm
+import cn.jzl.sect.cultivation.components.Talent
 import cn.jzl.sect.core.quest.CandidateScore
 import cn.jzl.sect.core.quest.EvaluationComponent
 import cn.jzl.sect.core.quest.ElderPersonality

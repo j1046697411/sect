@@ -18,7 +18,6 @@ import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.config.GameConfig
 import cn.jzl.sect.core.disciple.SectLoyalty
-import cn.jzl.sect.core.facility.Facility
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.core.sect.SectTreasury
@@ -28,7 +27,6 @@ import cn.jzl.sect.core.sect.SectTreasury
  *
  * 提供宗门资源消耗管理功能的核心服务：
  * - 月度俸禄发放
- * - 设施维护费用结算
  * - 忠诚度影响计算
  *
  * 使用方式：
@@ -41,19 +39,19 @@ import cn.jzl.sect.core.sect.SectTreasury
  */
 class ResourceConsumptionService(override val world: World) : EntityRelationContext {
 
-    private val config = GameConfig.getInstance()
+    private val config = GameConfig
 
     /**
      * 月度资源消耗结算
+     * @param maintenanceCost 设施维护费用（由调用方计算）
      * @return 消耗结算结果
      */
-    fun monthlyConsumption(): ConsumptionResult {
+    fun monthlyConsumption(maintenanceCost: Long = 0L): ConsumptionResult {
         val sect = getSectEntity() ?: return ConsumptionResult(false, 0, 0, 0, emptyList())
         val sectTreasury = getSectTreasury(sect)
 
         // 计算各项支出
         val salaryCost = calculateSalaryCost()
-        val maintenanceCost = calculateMaintenanceCost()
         val totalCost = salaryCost + maintenanceCost
 
         var remainingSpiritStones = sectTreasury.spiritStones
@@ -133,31 +131,10 @@ class ResourceConsumptionService(override val world: World) : EntityRelationCont
     }
 
     /**
-     * 计算设施维护总支出
-     */
-    private fun calculateMaintenanceCost(): Long {
-        var total = 0L
-        val query = world.query { FacilityQueryContext(this) }
-
-        query.forEach { ctx ->
-            total += calculateFacilityMaintenance(ctx.facility)
-        }
-
-        return total
-    }
-
-    /**
      * 根据职位获取俸禄
      */
     private fun getSalaryByPosition(position: SectPositionType): Long {
         return config.salary.getMonthlySalary(position)
-    }
-
-    /**
-     * 计算设施维护费
-     */
-    private fun calculateFacilityMaintenance(facility: Facility): Long {
-        return config.facility.calculateMaintenanceCost(facility.level, facility.efficiency)
     }
 
     /**
@@ -213,38 +190,11 @@ class ResourceConsumptionService(override val world: World) : EntityRelationCont
     }
 
     /**
-     * 计算总维护费用
-     * @return 维护费用总额
-     */
-    fun calculateTotalMaintenanceCost(): Long {
-        // 通过执行一次消耗结算来获取维护费用
-        val result = monthlyConsumption()
-        return result.maintenancePaid
-    }
-
-    /**
-     * 计算总俸禄支出
-     * @return 俸禄支出总额
-     */
-    fun calculateTotalSalaryCost(): Long {
-        // 通过执行一次消耗结算来获取俸禄支出
-        val result = monthlyConsumption()
-        return result.salaryPaid
-    }
-
-    /**
      * 查询上下文 - 俸禄
      */
     class SalaryQueryContext(world: World) : EntityQueryContext(world) {
         val position: SectPositionInfo by component()
         val loyalty: SectLoyalty by component()
-    }
-
-    /**
-     * 查询上下文 - 设施
-     */
-    class FacilityQueryContext(world: World) : EntityQueryContext(world) {
-        val facility: Facility by component()
     }
 
     /**

@@ -28,6 +28,7 @@ kotlin {
                 implementation(libs.kodein.kaverit)
                 implementation(project(":business-modules:business-core"))
                 implementation(project(":business-modules:business-common"))
+                implementation(project(":business-modules:business-cultivation"))
                 implementation(project(":business-modules:business-disciples"))
                 implementation(project(":business-modules:business-combat"))
                 implementation(project(":libs:lko-ecs"))

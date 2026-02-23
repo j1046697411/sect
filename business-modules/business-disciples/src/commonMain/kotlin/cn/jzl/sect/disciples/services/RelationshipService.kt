@@ -12,6 +12,7 @@ import cn.jzl.ecs.World
 import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.sect.disciples.components.Relationship
 import cn.jzl.sect.disciples.components.RelationshipType
+import kotlin.time.Clock
 
 /**
  * 关系服务
@@ -58,7 +59,7 @@ class RelationshipService : EntityRelationContext {
         targetId: Long,
         type: RelationshipType,
         level: Int = 50,
-        establishedTime: Long = System.currentTimeMillis()
+        establishedTime: Long = Clock.System.now().toEpochMilliseconds()
     ): Relationship {
         val relationship = Relationship(
             sourceId = sourceId,

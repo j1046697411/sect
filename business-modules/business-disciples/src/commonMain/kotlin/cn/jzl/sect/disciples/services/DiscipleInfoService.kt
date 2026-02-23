@@ -13,15 +13,14 @@ import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.cultivation.Talent
-import cn.jzl.sect.core.disciple.Age
 import cn.jzl.sect.core.disciple.SectLoyalty
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.core.vitality.Spirit
 import cn.jzl.sect.core.vitality.Vitality
+import cn.jzl.sect.cultivation.components.CultivationProgress
+import cn.jzl.sect.cultivation.components.Talent
 
 /**
  * 弟子信息服务
@@ -65,7 +64,6 @@ class DiscipleInfoService(override val world: World) : EntityRelationContext {
                     maxHealth = ctx.vitality.maxHealth,
                     spirit = ctx.spirit.currentSpirit,
                     maxSpirit = ctx.spirit.maxSpirit,
-                    age = ctx.age.age,
                     physique = ctx.talent.physique,
                     comprehension = ctx.talent.comprehension,
                     fortune = ctx.talent.fortune,
@@ -131,7 +129,6 @@ class DiscipleInfoService(override val world: World) : EntityRelationContext {
         val talent: Talent by component()
         val vitality: Vitality by component()
         val spirit: Spirit by component()
-        val age: Age by component()
         val loyalty: SectLoyalty by component()
     }
 }
@@ -151,7 +148,6 @@ data class DiscipleInfo(
     val maxHealth: Int,
     val spirit: Int,
     val maxSpirit: Int,
-    val age: Int,
     val physique: Int,
     val comprehension: Int,
     val fortune: Int,
@@ -164,7 +160,7 @@ data class DiscipleInfo(
         return "${position.displayName} | ${realm.displayName}${layer}层 | " +
                "修为: ${cultivation}/${maxCultivation} ${progressBar} | " +
                "气血: ${health}/${maxHealth} | 灵力: ${spirit}/${maxSpirit} | " +
-               "年龄: ${age} | 忠诚: ${loyalty}(${loyaltyLevel.displayName})"
+               "忠诚: ${loyalty}(${loyaltyLevel.displayName})"
     }
 }
 

@@ -2,9 +2,9 @@ package cn.jzl.sect.viewmodel
 
 import cn.jzl.sect.core.cultivation.Realm
 import cn.jzl.sect.core.facility.FacilityType
-import cn.jzl.sect.core.relation.RelationshipType
+import cn.jzl.sect.disciples.components.RelationshipType
 import cn.jzl.sect.core.sect.SectPositionType
-import cn.jzl.sect.facility.systems.FacilityValueCalculator
+import cn.jzl.sect.facility.services.FacilityValueService
 import cn.jzl.sect.skill.components.SkillRarity
 import cn.jzl.sect.skill.components.SkillType
 
@@ -219,12 +219,12 @@ fun Realm.getDisplayName(): String {
 /**
  * 扩展函数：获取设施价值等级显示名称
  */
-fun FacilityValueCalculator.FacilityValueLevel.getDisplayName(): String {
+fun FacilityValueService.FacilityValueLevel.getDisplayName(): String {
     return when (this) {
-        FacilityValueCalculator.FacilityValueLevel.BASIC -> "基础"
-        FacilityValueCalculator.FacilityValueLevel.STANDARD -> "标准"
-        FacilityValueCalculator.FacilityValueLevel.ADVANCED -> "高级"
-        FacilityValueCalculator.FacilityValueLevel.PREMIUM -> "顶级"
-        FacilityValueCalculator.FacilityValueLevel.LEGENDARY -> "传奇"
+        FacilityValueService.FacilityValueLevel.BASIC -> "基础"
+        FacilityValueService.FacilityValueLevel.STANDARD -> "标准"
+        FacilityValueService.FacilityValueLevel.ADVANCED -> "高级"
+        FacilityValueService.FacilityValueLevel.PREMIUM -> "顶级"
+        FacilityValueService.FacilityValueLevel.LEGENDARY -> "传奇"
     }
 }

@@ -18,10 +18,10 @@ import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
 import cn.jzl.sect.core.ai.Personality6
-import cn.jzl.sect.core.cultivation.CultivationProgress
-import cn.jzl.sect.core.quest.CandidateScore
 import cn.jzl.sect.core.sect.SectPositionInfo
 import cn.jzl.sect.core.sect.SectPositionType
+import cn.jzl.sect.cultivation.components.CultivationProgress
+import cn.jzl.sect.quest.components.CandidateScore
 
 /**
  * 晋升服务

@@ -29,6 +29,7 @@ kotlin {
                 implementation(projects.libs.lkoEcs)
                 implementation(projects.libs.lkoLog)
                 implementation(projects.businessModules.businessCommon)
+                implementation(projects.businessModules.businessCultivation)
                 implementation(projects.businessModules.businessDisciples)
                 implementation(projects.businessModules.businessCore)
 

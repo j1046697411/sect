@@ -64,7 +64,8 @@ data class Personality6(
     }
 
     private fun formatValue(value: Double): String {
-        return String.format("%+.2f", value)
+        val sign = if (value >= 0) "+" else ""
+        return "${sign}${(value * 100).toInt() / 100.0}"
     }
 
     private fun getTraitDescription(value: Double): String {

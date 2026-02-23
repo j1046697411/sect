@@ -4,12 +4,12 @@ import cn.jzl.ecs.World
 import cn.jzl.sect.engine.SectWorld
 import cn.jzl.sect.engine.SectSystems
 import cn.jzl.sect.engine.systems.TimeSystem
-import cn.jzl.sect.cultivation.systems.CultivationSystem
-import cn.jzl.sect.disciples.systems.DiscipleInfoSystem
-import cn.jzl.sect.resource.systems.ResourceProductionSystem
-import cn.jzl.sect.resource.systems.ResourceConsumptionSystem
-import cn.jzl.sect.facility.systems.SectStatusSystem
-import cn.jzl.sect.facility.systems.SectStatus
+import cn.jzl.sect.cultivation.services.CultivationService
+import cn.jzl.sect.disciples.services.DiscipleInfoService
+import cn.jzl.sect.resource.services.ResourceProductionService
+import cn.jzl.sect.resource.services.ResourceConsumptionService
+import cn.jzl.sect.facility.services.SectStatusService
+import cn.jzl.sect.facility.components.SectStatus
 import cn.jzl.sect.core.sect.SectPositionType
 import cn.jzl.sect.core.time.toDisplayString
 
@@ -155,7 +155,7 @@ class CultivationDemo {
     }
 
     private fun advanceTimeLarge() {
-        val allBreakthroughs = mutableListOf<CultivationSystem.BreakthroughEvent>()
+        val allBreakthroughs = mutableListOf<CultivationService.BreakthroughEvent>()
 
         // 先进行资源产出（30天）
         val productionSummary = systems.resourceProductionSystem.monthlyProduction()

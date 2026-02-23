@@ -3,17 +3,18 @@ package cn.jzl.sect.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.jzl.ecs.World
-import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.cultivation.components.Talent
 import cn.jzl.sect.engine.WorldProvider
 import cn.jzl.sect.skill.components.Skill
 import cn.jzl.sect.skill.components.SkillLearned
 import cn.jzl.sect.skill.components.SkillRarity
-import cn.jzl.sect.skill.systems.SkillInheritanceSystem
-import cn.jzl.sect.skill.systems.SkillLearningSystem
+import cn.jzl.sect.skill.services.SkillInheritanceService
+import cn.jzl.sect.skill.services.SkillLearningService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 /**
  * 功法视图模型
@@ -22,8 +23,8 @@ import kotlinx.coroutines.launch
 class SkillViewModel : ViewModel() {
 
     private val world: World = WorldProvider.world
-    private val learningSystem = SkillLearningSystem()
-    private val inheritanceSystem = SkillInheritanceSystem()
+    private val learningSystem = SkillLearningService(world)
+    private val inheritanceSystem = SkillInheritanceService(world)
 
     // 功法列表状态
     private val _skillList = MutableStateFlow<SkillListUiState>(SkillListUiState.Loading)
@@ -160,7 +161,7 @@ class SkillViewModel : ViewModel() {
                     skillId = 1,
                     skillName = "基础心法",
                     proficiency = 75,
-                    learnedTime = System.currentTimeMillis() - 86400000 * 30,
+                    learnedTime = Clock.System.now().toEpochMilliseconds() - 86400000 * 30,
                     canInherit = true
                 )
             )
@@ -287,7 +288,7 @@ class SkillViewModel : ViewModel() {
             val learned = SkillLearned(
                 skillId = skillId,
                 proficiency = masterProficiency,
-                learnedTime = System.currentTimeMillis()
+                learnedTime = Clock.System.now().toEpochMilliseconds()
             )
             val canInherit = inheritanceSystem.canInherit(
                 skill = skill,
@@ -296,8 +297,8 @@ class SkillViewModel : ViewModel() {
                 apprenticeRealm = apprenticeRealm
             )
 
-            val requiredProficiency = SkillInheritanceSystem.MIN_PROFICIENCY_FOR_INHERITANCE
-            val minRealmGap = SkillInheritanceSystem.MAX_REALM_GAP
+            val requiredProficiency = SkillInheritanceService.MIN_PROFICIENCY_FOR_INHERITANCE
+            val minRealmGap = SkillInheritanceService.MAX_REALM_GAP
 
             _inheritanceCondition.value = SkillInheritanceConditionUiState.Ready(
                 SkillInheritanceConditionUiModel(
@@ -333,7 +334,7 @@ class SkillViewModel : ViewModel() {
                     skillId = skillId,
                     skillName = skillName,
                     proficiency = 0,
-                    learnedTime = System.currentTimeMillis(),
+                    learnedTime = Clock.System.now().toEpochMilliseconds(),
                     canInherit = false
                 )
 

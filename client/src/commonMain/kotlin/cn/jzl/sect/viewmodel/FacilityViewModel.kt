@@ -3,13 +3,10 @@ package cn.jzl.sect.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.jzl.ecs.World
-import cn.jzl.sect.building.systems.FacilityConstructionSystem
-import cn.jzl.sect.building.systems.FacilityProductionSystem
-import cn.jzl.sect.building.systems.FacilityUpgradeSystem
-import cn.jzl.sect.core.facility.*
+import cn.jzl.sect.core.facility.FacilityType
 import cn.jzl.sect.engine.WorldProvider
-import cn.jzl.sect.facility.systems.FacilityUsageSystem
-import cn.jzl.sect.facility.systems.FacilityValueCalculator
+import cn.jzl.sect.facility.services.FacilityValueService
+import cn.jzl.sect.resource.components.ResourceType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,13 +57,8 @@ data class FacilityOperationResult(
 class FacilityViewModel : ViewModel() {
 
     private val world: World = WorldProvider.world
-        ?: throw IllegalStateException("World not initialized")
 
-    private val constructionSystem = FacilityConstructionSystem(world)
-    private val upgradeSystem = FacilityUpgradeSystem(world)
-    private val productionSystem = FacilityProductionSystem(world)
-    private val valueCalculator = FacilityValueCalculator()
-    private val usageSystem = FacilityUsageSystem()
+    private val valueCalculator = FacilityValueService(world)
 
     // 设施列表状态
     private val _facilityList = MutableStateFlow<FacilityListUiState>(FacilityListUiState.Loading)
@@ -88,13 +80,8 @@ class FacilityViewModel : ViewModel() {
     private val _facilityValueReports = MutableStateFlow<Map<Long, FacilityValueReportUiModel>>(emptyMap())
     val facilityValueReports: StateFlow<Map<Long, FacilityValueReportUiModel>> = _facilityValueReports.asStateFlow()
 
-    // 设施使用结果
-    private val _usageResult = MutableStateFlow<FacilityUsageResultUiModel?>(null)
-    val usageResult: StateFlow<FacilityUsageResultUiModel?> = _usageResult.asStateFlow()
-
     init {
         loadFacilities()
-        updateProductionSummary()
     }
 
     /**
@@ -126,7 +113,7 @@ class FacilityViewModel : ViewModel() {
                 level = 1,
                 maxLevel = 10,
                 isActive = true,
-                productionType = ResourceType.CULTIVATION_SPEED,
+                productionType = ResourceType.SPIRIT_STONE,
                 productionAmount = 10,
                 maintenanceCost = 5,
                 canUpgrade = true,
@@ -164,7 +151,7 @@ class FacilityViewModel : ViewModel() {
                 level = 1,
                 maxLevel = 10,
                 isActive = true,
-                productionType = ResourceType.CONTRIBUTION_POINT,
+                productionType = ResourceType.HERB,
                 productionAmount = 10,
                 maintenanceCost = 6,
                 canUpgrade = true,
@@ -234,7 +221,7 @@ class FacilityViewModel : ViewModel() {
             valueLevel = valueLevel.name,
             valueLevelDisplay = valueLevel.getDisplayName(),
             roi = facility.roi,
-            roiDisplay = String.format("%.1f%%", facility.roi * 100),
+            roiDisplay = "${(facility.roi * 100).toInt()}%",
             paybackPeriod = facility.paybackPeriod,
             paybackPeriodDisplay = if (facility.paybackPeriod == Int.MAX_VALUE) "无法回收" else "${facility.paybackPeriod}天",
             recommendation = facility.recommendation,
@@ -243,123 +230,9 @@ class FacilityViewModel : ViewModel() {
     }
 
     /**
-     * 使用设施
-     */
-    fun useFacility(facilityId: Long, discipleId: Long, facilityType: FacilityType, contributionPoints: Int = 100) {
-        viewModelScope.launch {
-            try {
-                // 检查是否可以使用
-                val canUse = usageSystem.canUseFacility(facilityType, contributionPoints, 1)
-                if (!canUse) {
-                    _usageResult.value = FacilityUsageResultUiModel(
-                        success = false,
-                        message = "贡献点不足，无法使用此设施",
-                        consumedResources = emptyMap(),
-                        gainedBenefits = emptyMap()
-                    )
-                    return@launch
-                }
-
-                // 获取使用成本
-                val cost = usageSystem.calculateUsageCost(facilityType, 1)
-
-                // 获取设施效果
-                val effect = usageSystem.getFacilityEffect(facilityType)
-
-                _usageResult.value = FacilityUsageResultUiModel(
-                    success = true,
-                    message = "成功使用设施: ${usageSystem.getFacilityFunctionDescription(facilityType)}",
-                    consumedResources = mapOf(
-                        "贡献点" to cost
-                    ),
-                    gainedBenefits = mapOf(
-                        "效率加成" to (effect.efficiencyBonus * 100).toInt(),
-                        "成功率加成" to (effect.successRateBonus * 100).toInt()
-                    )
-                )
-            } catch (e: Exception) {
-                _usageResult.value = FacilityUsageResultUiModel(
-                    success = false,
-                    message = "使用设施失败: ${e.message}",
-                    consumedResources = emptyMap(),
-                    gainedBenefits = emptyMap()
-                )
-            }
-        }
-    }
-
-    /**
-     * 清除使用结果
-     */
-    fun clearUsageResult() {
-        _usageResult.value = null
-    }
-
-    /**
-     * 建造设施
-     */
-    fun buildFacility(name: String, type: FacilityType) {
-        viewModelScope.launch {
-            val checkResult = constructionSystem.canBuild(type)
-            if (!checkResult.canBuild) {
-                _operationResult.value = FacilityOperationResult(false, checkResult.reason)
-                return@launch
-            }
-
-            val result = constructionSystem.build(name, type)
-            _operationResult.value = FacilityOperationResult(result.success, result.message)
-
-            if (result.success) {
-                loadFacilities()
-                updateProductionSummary()
-            }
-        }
-    }
-
-    /**
-     * 升级设施
-     */
-    fun upgradeFacility(facilityId: Long) {
-        viewModelScope.launch {
-            // 这里应该根据facilityId获取设施实体
-            // 暂时模拟升级成功
-            _operationResult.value = FacilityOperationResult(true, "升级成功")
-            loadFacilities()
-            updateProductionSummary()
-        }
-    }
-
-    /**
-     * 更新产出汇总
-     */
-    fun updateProductionSummary() {
-        viewModelScope.launch {
-            val summary = productionSystem.summarizeProductionByResource()
-            _totalProduction.value = summary
-
-            val maintenanceCost = productionSystem.calculateTotalMaintenanceCost()
-            _totalMaintenanceCost.value = maintenanceCost
-        }
-    }
-
-    /**
      * 清除操作结果
      */
     fun clearOperationResult() {
         _operationResult.value = null
-    }
-
-    /**
-     * 获取设施建造成本
-     */
-    fun getConstructionCost(type: FacilityType): FacilityCost {
-        return FacilityCost.getConstructionCost(type)
-    }
-
-    /**
-     * 获取设施升级成本
-     */
-    fun getUpgradeCost(type: FacilityType, currentLevel: Int): FacilityCost {
-        return FacilityCost.getUpgradeCost(type, currentLevel)
     }
 }

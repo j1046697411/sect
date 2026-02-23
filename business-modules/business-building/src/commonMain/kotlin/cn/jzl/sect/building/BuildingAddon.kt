@@ -28,8 +28,9 @@ package cn.jzl.sect.building
 import cn.jzl.di.new
 import cn.jzl.di.singleton
 import cn.jzl.ecs.addon.Phase
+import cn.jzl.ecs.addon.components
 import cn.jzl.ecs.addon.createAddon
-import cn.jzl.ecs.componentId
+import cn.jzl.ecs.component.componentId
 import cn.jzl.sect.building.components.FacilityBuildProgress
 import cn.jzl.sect.building.services.FacilityConstructionService
 import cn.jzl.sect.building.services.FacilityProductionService

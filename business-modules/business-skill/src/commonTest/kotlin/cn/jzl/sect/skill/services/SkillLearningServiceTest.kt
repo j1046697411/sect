@@ -1,7 +1,7 @@
 package cn.jzl.sect.skill.services
 
 import cn.jzl.sect.core.cultivation.Realm
-import cn.jzl.sect.core.cultivation.Talent
+import cn.jzl.sect.cultivation.components.Talent
 import cn.jzl.sect.skill.components.Skill
 import cn.jzl.sect.skill.components.SkillRarity
 import cn.jzl.sect.skill.components.SkillType

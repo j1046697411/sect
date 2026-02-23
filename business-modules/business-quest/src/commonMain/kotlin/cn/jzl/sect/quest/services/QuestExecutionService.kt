@@ -17,14 +17,15 @@ import cn.jzl.ecs.entity.id
 import cn.jzl.ecs.query
 import cn.jzl.ecs.query.EntityQueryContext
 import cn.jzl.ecs.query.forEach
-import cn.jzl.sect.core.cultivation.CultivationProgress
 import cn.jzl.sect.core.cultivation.Realm
+import cn.jzl.sect.cultivation.components.CultivationProgress
 import cn.jzl.sect.quest.components.ExecutionResult
 import cn.jzl.sect.quest.components.QuestComponent
 import cn.jzl.sect.quest.components.QuestDifficulty
 import cn.jzl.sect.quest.components.QuestExecutionComponent
 import cn.jzl.sect.quest.components.QuestStatus
 import kotlin.random.Random
+import kotlin.time.Clock
 
 /**
  * 任务执行服务
@@ -193,7 +194,7 @@ class QuestExecutionService(override val world: World) : EntityRelationContext {
                     outerDiscipleIds = targetExecution!!.outerDiscipleIds,
                     progress = 100.0f,
                     startTime = targetExecution!!.startTime,
-                    estimatedEndTime = System.currentTimeMillis()
+                    estimatedEndTime = Clock.System.now().toEpochMilliseconds()
                 )
             )
         }
