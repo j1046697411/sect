@@ -6,14 +6,14 @@
     "conventions:游戏可玩性设计混合型政策体系.md": 2,
     "solutions:游戏可玩性设计时间加速功能.md": 0,
     "solutions:游戏可玩性设计隐形难度曲线.md": 1,
-    "lessons:游戏可玩性设计境界补偿机制.md": 0,
+    "solutions:游戏可玩性设计境界补偿机制.md": 0,
     "solutions:游戏可玩性设计里程碑进度显示.md": 0,
     "solutions:游戏可玩性设计政策效果反馈.md": 0,
     "solutions:游戏可玩性设计单个ai干预机制.md": 0,
-    "lessons:游戏可玩性设计ai行为信息分级.md": 0,
+    "solutions:游戏可玩性设计ai行为信息分级.md": 0,
     "solutions:游戏可玩性设计事件频率系统.md": 0,
     "solutions:游戏可玩性设计多样化目标系统.md": 0,
-    "lessons:经济系统设计灵石流动机制.md": 2,
+    "solutions:经济系统设计灵石流动机制.md": 2,
     "solutions:经济系统设计贡献点机制.md": 2,
     "solutions:经济系统设计兑换机制.md": 2,
     "solutions:经济系统设计经济循环平衡.md": 2,
@@ -24,7 +24,7 @@
     "solutions:角色系统设计属性体系.md": 2,
     "solutions:角色系统设计资质系统.md": 1,
     "solutions:角色系统设计ai行为系统.md": 1,
-    "preferences:角色系统设计角色层级系统.md": 1,
+    "conventions:角色系统设计角色层级系统.md": 1,
     "solutions:角色系统设计角色关系系统.md": 2,
     "solutions:功法系统设计功法分类与学习.md": 2,
     "solutions:功法系统设计功法效果与传承.md": 2,
@@ -42,5 +42,5 @@
       "solutions:ecs-query-性能优化.md"
     ]
   },
-  "updated": "2026-02-22T20:43:19.781120"
+  "updated": "2026-02-23T00:00:00.000000"
 }
