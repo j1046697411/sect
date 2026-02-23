@@ -1,9 +1,9 @@
-## Kotlin多平台Java库不兼容
+## Java库兼容
 
 > 创建时间: 2026-02-23
 > 分类: lessons
 > 状态: active
-> 标签: #kotlin #多平台 #兼容性
+> 标签: #kotlin #陷阱
 
 **问题/背景**:
 在 Kotlin 多平台项目中使用 `java.util.PriorityQueue`，导致编译失败。

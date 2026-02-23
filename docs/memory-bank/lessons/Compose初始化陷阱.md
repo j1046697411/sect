@@ -1,9 +1,9 @@
-## Compose初始化时序问题
+## Compose初始化陷阱
 
 > 创建时间: 2026-02-23
 > 分类: lessons
 > 状态: active
-> 标签: #compose #初始化 #时序
+> 标签: #compose #陷阱
 
 **问题/背景**:
 ViewModel 依赖 World 实例，但 World 在 LaunchedEffect 中异步初始化，导致 ViewModel 创建时 World 为 null。

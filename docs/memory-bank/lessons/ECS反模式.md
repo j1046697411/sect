@@ -1,9 +1,9 @@
-## ECS反模式清单
+## ECS反模式
 
 > 创建时间: 2026-02-23
 > 分类: lessons
 > 状态: active
-> 标签: #ecs #反模式 #陷阱
+> 标签: #ecs #陷阱
 
 **问题/背景**:
 ECS 开发中常见错误，需要避免。
@@ -31,4 +31,4 @@ data class PlayerName(val value: String)
 data class Health(val current: Int, val max: Int)
 ```
 
-**关联记忆**: #conventions:ecs架构模式
+**关联记忆**: #conventions:ECS架构
