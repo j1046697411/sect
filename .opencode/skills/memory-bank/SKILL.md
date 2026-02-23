@@ -26,7 +26,7 @@ docs/memory-bank/
 
 **自动生成**：
 ```bash
-python3 scripts/generate-memory-index.py
+python3 .opencode/skills/memory-bank/scripts/generate-memory-index.py
 ```
 
 **触发时机**：
@@ -189,7 +189,7 @@ python3 scripts/generate-memory-index.py
 
 ## 注意事项
 
-- 所有操作后必须运行 `python3 scripts/generate-memory-index.py` 更新索引
+- 所有操作后必须运行脚本更新索引
 - 标题控制在 5 字以内
 - 标签格式：#系统域 #类型（两个标签）
 - 每次变更必须 git commit

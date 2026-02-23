@@ -11,7 +11,9 @@ from pathlib import Path
 from collections import defaultdict
 from datetime import datetime
 
-BASE_DIR = Path(__file__).parent.parent / "docs" / "memory-bank"
+SCRIPT_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = SCRIPT_DIR.parent.parent.parent.parent
+BASE_DIR = PROJECT_ROOT / "docs" / "memory-bank"
 OUTPUT_FILE = BASE_DIR / "index.md"
 
 def parse_memory_file(file_path: Path) -> dict:
