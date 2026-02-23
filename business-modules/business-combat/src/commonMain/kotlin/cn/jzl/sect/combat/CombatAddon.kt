@@ -33,6 +33,9 @@ import cn.jzl.ecs.addon.createAddon
 import cn.jzl.ecs.component.componentId
 import cn.jzl.sect.combat.components.CombatStats
 import cn.jzl.sect.combat.components.Combatant
+import cn.jzl.sect.combat.events.CombatEndedEvent
+import cn.jzl.sect.combat.events.DamageDealtEvent
+import cn.jzl.sect.combat.events.CombatStartedEvent
 import cn.jzl.sect.combat.services.CombatPowerService
 import cn.jzl.sect.combat.services.CombatService
 import cn.jzl.sect.combat.services.CombatSettlementService
@@ -60,6 +63,9 @@ val combatAddon = createAddon("combatAddon") {
     components {
         world.componentId<Combatant>()
         world.componentId<CombatStats>()
+        world.componentId<CombatStartedEvent>()
+        world.componentId<CombatEndedEvent>()
+        world.componentId<DamageDealtEvent>()
     }
 
     // 注册服务
