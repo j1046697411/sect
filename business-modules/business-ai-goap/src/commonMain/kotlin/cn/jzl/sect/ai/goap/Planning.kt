@@ -1,3 +1,29 @@
+/**
+ * GOAP 规划系统核心模块
+ *
+ * 包含 GOAP（面向目标的动作规划）系统的核心组件：
+ * - 世界状态和智能体状态定义
+ * - 动作、目标和规划器接口
+ * - A* 搜索算法实现
+ * - 规划服务和 addon 配置
+ *
+ * 使用示例：
+ * ```kotlin
+ * // 在 World 设置中安装规划 addon
+ * world.planning {
+ *     register(MyActionProvider())
+ *     register(MyGoalProvider())
+ *     register(MyStateResolverRegistry())
+ * }
+ *
+ * // 使用规划服务
+ * val planningService by world.di.instance<PlanningService>()
+ * val plan = planningService.planBestGoal(agent)
+ * if (plan != null) {
+ *     planningService.execPlan(agent, plan)
+ * }
+ * ```
+ */
 package cn.jzl.sect.ai.goap
 
 import cn.jzl.di.instance
@@ -17,40 +43,75 @@ import cn.jzl.ecs.entity.EntityRelationContext
 import cn.jzl.log.logAddon
 
 /**
- * 规划系统包，包含GOAP（面向目标的动作规划）系统的核心组件
+ * 增加整数值状态
  *
- * 主要功能：
- * 1. 定义世界状态和智能体状态
- * 2. 提供动作、目标和规划器接口
- * 3. 实现A*搜索算法进行规划
- * 4. 支持状态解析和注册机制
- * 5. 提供规划服务和addon配置
+ * @param agent 智能体实体
+ * @param key 整数类型的状态键
+ * @param value 增加的值
  */
-
 fun WorldStateWriter.increase(agent: Entity, key: StateKey<Int>, value: Int) {
     setValue(key, getValue(agent, key) + value)
 }
 
+/**
+ * 减少整数值状态
+ *
+ * @param agent 智能体实体
+ * @param key 整数类型的状态键
+ * @param value 减少的值
+ */
 fun WorldStateWriter.decrease(agent: Entity, key: StateKey<Int>, value: Int) {
     setValue(key, getValue(agent, key) - value)
 }
 
+/**
+ * 增加长整数值状态
+ *
+ * @param agent 智能体实体
+ * @param key 长整数类型的状态键
+ * @param value 增加的值
+ */
 fun WorldStateWriter.increase(agent: Entity, key: StateKey<Long>, value: Long) {
     setValue(key, getValue(agent, key) + value)
 }
 
+/**
+ * 减少长整数值状态
+ *
+ * @param agent 智能体实体
+ * @param key 长整数类型的状态键
+ * @param value 减少的值
+ */
 fun WorldStateWriter.decrease(agent: Entity, key: StateKey<Long>, value: Long) {
     setValue(key, getValue(agent, key) - value)
 }
 
+/**
+ * 在 WorldSetup 中安装规划 addon
+ *
+ * @param block 配置块
+ */
 @ECSDsl
 fun WorldSetup.planning(block: PlanningRegistry.() -> Unit) =
     install(planningAddon) { config(block) }
 
+/**
+ * 在 AddonSetup 中安装规划 addon
+ *
+ * @param block 配置块
+ */
 @ECSDsl
 fun AddonSetup<*>.planning(block: PlanningRegistry.() -> Unit) =
     install(planningAddon) { config(block) }
 
+/**
+ * 规划系统 Addon
+ *
+ * 注册规划相关的服务：
+ * - [PlanningService] 规划核心服务
+ * - [PlanningExecuteService] 计划执行服务
+ * - [OnPlanExecutionCompleted] 计划完成事件标签
+ */
 val planningAddon = createAddon("planning", { GOAPBuilder() }) {
     install(logAddon)
     injects {
@@ -67,6 +128,16 @@ val planningAddon = createAddon("planning", { GOAPBuilder() }) {
     }
 }
 
+/**
+ * 智能体世界状态
+ *
+ * 智能体在规划过程中的状态表示。
+ * 维护一个本地状态缓存，支持状态的复制和效果合并。
+ *
+ * @property planningService 规划服务
+ * @property agent 智能体实体
+ * @property states 本地状态缓存
+ */
 class AgentWorldState(
     private val planningService: PlanningService,
     private val agent: Entity,
@@ -97,6 +168,19 @@ class AgentWorldState(
     }
 }
 
+/**
+ * A* 规划器
+ *
+ * 使用 A* 搜索算法从当前状态找到到达目标状态的最优动作序列。
+ *
+ * 算法特性：
+ * - 使用最小堆（优先队列）管理开放列表
+ * - 使用状态哈希进行去重
+ * - 支持最大搜索深度限制
+ *
+ * @property planningService 规划服务
+ * @property maxSearchDepth 最大搜索深度，默认为 50
+ */
 class AStarPlanner(
     private val planningService: PlanningService,
     private val maxSearchDepth: Int = 50
@@ -173,11 +257,28 @@ class AStarPlanner(
         return null
     }
 
+    /**
+     * 计算启发式值
+     *
+     * @param state 世界状态
+     * @param goal 目标
+     * @param agent 智能体
+     * @return 启发式值，目标已满足时返回 0
+     */
     private fun calculateHeuristic(state: WorldState, goal: GOAPGoal, agent: Entity): Double {
         if (goal.isSatisfied(state, agent)) return 0.0
         return goal.calculateHeuristic(state, agent)
     }
 
+    /**
+     * 生成状态哈希
+     *
+     * 用于状态去重
+     *
+     * @param state 世界状态
+     * @param agent 智能体
+     * @return 状态哈希字符串
+     */
     private fun getStateHash(state: WorldState, agent: Entity): String {
         // 使用状态的键和值生成哈希
         val keys = state.stateKeys.sortedBy { it.hashCode() }
@@ -192,9 +293,15 @@ class AStarPlanner(
         }
     }
 
-
     /**
-     * A*搜索节点，表示搜索过程中的一个状态
+     * A* 搜索节点
+     *
+     * 表示搜索过程中的一个状态
+     *
+     * @property worldState 当前世界状态
+     * @property actions 到达此状态的动作序列
+     * @property cost 累计成本
+     * @property heuristic 启发式值
      */
     private data class AStarNode(
         val worldState: AgentState,
@@ -202,6 +309,9 @@ class AStarPlanner(
         val cost: Double,
         val heuristic: Double
     ) : Comparable<AStarNode> {
+        /**
+         * f 成本 = g 成本 + h 启发值
+         */
         val fCost: Double get() = cost + heuristic
 
         override fun compareTo(other: AStarNode): Int {
@@ -211,8 +321,12 @@ class AStarPlanner(
 }
 
 /**
- * 最小堆实现，用于替代 Kotlin 多平台中不可用的 PriorityQueue
- * 基于 Comparable 接口进行比较，保证堆顶元素始终是最小值
+ * 最小堆实现
+ *
+ * 用于替代 Kotlin 多平台中不可用的 PriorityQueue。
+ * 基于 Comparable 接口进行比较，保证堆顶元素始终是最小值。
+ *
+ * @param T 堆元素类型，必须实现 Comparable
  */
 private class MinHeap<T : Comparable<T>> {
     private val data: MutableList<T> = mutableListOf()
@@ -221,11 +335,26 @@ private class MinHeap<T : Comparable<T>> {
 
     fun isNotEmpty(): Boolean = data.isNotEmpty()
 
+    /**
+     * 添加元素
+     *
+     * 时间复杂度：O(log n)
+     *
+     * @param element 要添加的元素
+     */
     fun add(element: T) {
         data.add(element)
         siftUp(data.lastIndex)
     }
 
+    /**
+     * 取出并移除堆顶元素
+     *
+     * 时间复杂度：O(log n)
+     *
+     * @return 堆顶元素（最小值）
+     * @throws NoSuchElementException 如果堆为空
+     */
     fun poll(): T {
         if (data.isEmpty()) throw NoSuchElementException("Heap is empty")
         val result = data[0]
@@ -270,4 +399,3 @@ private class MinHeap<T : Comparable<T>> {
         this[j] = temp
     }
 }
-
